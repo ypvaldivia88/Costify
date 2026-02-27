@@ -15,6 +15,7 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editAmount, setEditAmount] = useState<number>(0);
+  const [editUnits, setEditUnits] = useState<number>(1);
 
   const handleAdd = () => {
     const id = window.crypto.randomUUID();
@@ -22,6 +23,7 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
       id,
       name: 'Nuevo Costo',
       amount: 0,
+      distributionUnits: 1,
     };
     const updated = [...localCosts, newCost];
     setLocalCosts(updated);
@@ -32,6 +34,7 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
     setEditingId(cost.id);
     setEditName(cost.name);
     setEditAmount(cost.amount);
+    setEditUnits(cost.distributionUnits || 1);
   };
 
   const cancelEditing = () => {
@@ -41,7 +44,7 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
   const saveEditing = () => {
     if (!editingId) return;
     const updated = localCosts.map((c) =>
-      c.id === editingId ? { ...c, name: editName, amount: editAmount } : c
+      c.id === editingId ? { ...c, name: editName, amount: editAmount, distributionUnits: editUnits } : c
     );
     setLocalCosts(updated);
     setEditingId(null);
@@ -91,13 +94,13 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
               >
                 {editingId === cost.id ? (
                   <>
-                    <div className="flex-1 grid grid-cols-2 gap-2">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         className="px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
-                        placeholder="Nombre del costo"
+                        placeholder="Nombre"
                         autoFocus
                       />
                       <input
@@ -105,7 +108,15 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
                         value={editAmount || ''}
                         onChange={(e) => setEditAmount(Number(e.target.value))}
                         className="px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
-                        placeholder="Monto"
+                        placeholder="Monto Total"
+                      />
+                      <input
+                        type="number"
+                        value={editUnits || ''}
+                        onChange={(e) => setEditUnits(Math.max(1, Number(e.target.value)))}
+                        className="px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
+                        placeholder="Unidades"
+                        title="Unidades estimadas para cubrir este costo"
                       />
                     </div>
                     <div className="flex gap-1">
@@ -127,7 +138,11 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
                   <>
                     <div className="flex-1">
                       <p className="font-semibold text-zinc-900">{cost.name}</p>
-                      <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Monto: ${cost.amount.toFixed(2)}</p>
+                      <div className="flex gap-4 mt-1">
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Total: ${cost.amount.toFixed(2)}</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Distribución: {cost.distributionUnits || 1}u</p>
+                        <p className="text-[10px] text-emerald-600 uppercase tracking-wider font-bold">Por Unidad: ${((cost.amount || 0) / (cost.distributionUnits || 1)).toFixed(2)}</p>
+                      </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button

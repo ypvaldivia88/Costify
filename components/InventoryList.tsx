@@ -99,8 +99,8 @@ export default function InventoryList({ items, onDelete }: InventoryListProps) {
                           </div>
                           {item.indirectCosts.map((ic) => (
                             <div key={ic.id} className="flex justify-between text-sm">
-                              <span className="text-zinc-500">{ic.name}</span>
-                              <span className="font-medium text-zinc-900">${ic.amount.toFixed(2)}</span>
+                              <span className="text-zinc-500">{ic.name} (${ic.amount.toFixed(2)} / {ic.distributionUnits || 1}u)</span>
+                              <span className="font-medium text-zinc-900">${(ic.amount / (ic.distributionUnits || 1)).toFixed(2)}</span>
                             </div>
                           ))}
                           <div className="pt-2 border-t border-zinc-200 flex justify-between text-sm font-bold">

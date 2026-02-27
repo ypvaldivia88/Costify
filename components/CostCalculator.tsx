@@ -9,6 +9,7 @@ export interface IndirectCost {
   id: string;
   name: string;
   amount: number;
+  distributionUnits: number; // How many units cover this cost
 }
 
 export interface ProductCalculation {
@@ -39,7 +40,10 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
 
   // Derived state
   const unitCost = purchasePrice / (unitsPerPackage || 1);
-  const totalIndirect = indirectCosts.reduce((acc, cost) => acc + cost.amount, 0);
+  const totalIndirect = indirectCosts.reduce((acc, cost) => {
+    const units = cost.distributionUnits || 1;
+    return acc + (cost.amount / units);
+  }, 0);
   const totalUnitCost = unitCost + totalIndirect;
   const suggestedPrice = totalUnitCost * (1 + profitMargin / 100);
   const profitPerUnit = suggestedPrice - totalUnitCost;
@@ -55,7 +59,7 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
   const addIndirectCost = () => {
     setIndirectCosts([
       ...indirectCosts,
-      { id: window.crypto.randomUUID(), name: '', amount: 0 },
+      { id: window.crypto.randomUUID(), name: '', amount: 0, distributionUnits: 1 },
     ]);
   };
 
@@ -69,7 +73,11 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
       return;
     }
 
-    setIndirectCosts([...indirectCosts, ...newCosts.map(c => ({ ...c, id: window.crypto.randomUUID() }))]);
+    setIndirectCosts([...indirectCosts, ...newCosts.map(c => ({ 
+      ...c, 
+      id: window.crypto.randomUUID(),
+      distributionUnits: c.distributionUnits || 1
+    }))]);
   };
 
   const removeIndirectCost = (id: string) => {
@@ -187,13 +195,24 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
                         onChange={(e) => updateIndirectCost(cost.id, 'name', e.target.value)}
                         className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
                       />
-                      <input
-                        type="number"
-                        placeholder="Monto"
-                        value={cost.amount || ''}
-                        onChange={(e) => updateIndirectCost(cost.id, 'amount', Number(e.target.value))}
-                        className="w-24 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
-                      />
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          placeholder="Monto Total"
+                          value={cost.amount || ''}
+                          onChange={(e) => updateIndirectCost(cost.id, 'amount', Number(e.target.value))}
+                          className="w-20 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
+                        />
+                        <span className="text-zinc-400 text-xs">/</span>
+                        <input
+                          type="number"
+                          placeholder="Unidades"
+                          value={cost.distributionUnits || ''}
+                          onChange={(e) => updateIndirectCost(cost.id, 'distributionUnits', Math.max(1, Number(e.target.value)))}
+                          className="w-16 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
+                          title="Unidades entre las que se distribuye este costo"
+                        />
+                      </div>
                       <button
                         onClick={() => removeIndirectCost(cost.id)}
                         className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
@@ -246,8 +265,27 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
               </div>
 
               <div className="bg-white p-4 rounded-xl border border-zinc-100 shadow-sm">
-                <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold mb-1">Costos Indirectos Totales</p>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold mb-1">Aporte a Gastos Indirectos</p>
                 <p className="text-2xl font-light text-zinc-900">${results.totalIndirectCostPerUnit.toFixed(2)}</p>
+                <div className="mt-2 pt-2 border-t border-zinc-50">
+                  <p className="text-[10px] text-zinc-400 font-bold uppercase mb-1">Análisis de Cobertura</p>
+                  {indirectCosts.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-zinc-500">Gastos Totales Listados:</span>
+                        <span className="font-bold text-zinc-700">${indirectCosts.reduce((a, b) => a + b.amount, 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-zinc-500">Cobertura por Venta:</span>
+                        <span className="font-bold text-emerald-600">
+                          {((results.totalIndirectCostPerUnit / (indirectCosts.reduce((a, b) => a + b.amount, 0) || 1)) * 100).toFixed(2)}%
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-zinc-300 italic">Sin costos indirectos aplicados</p>
+                  )}
+                </div>
               </div>
 
               <div className="bg-white p-4 rounded-xl border border-zinc-100 shadow-sm">
@@ -271,7 +309,7 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
           </div>
 
           <div className="mt-8 p-4 bg-zinc-100 rounded-xl text-xs text-zinc-500 italic">
-            * El precio sugerido se calcula sumando el costo directo (precio de compra / unidades) más todos los costos indirectos configurados, aplicando luego el margen de ganancia sobre el costo total.
+            * El precio sugerido se calcula sumando el costo directo más el aporte proporcional de cada gasto indirecto (Monto / Unidades a distribuir). Esto permite cubrir tus gastos fijos gradualmente con cada venta sin cargar el costo total a un solo producto.
           </div>
         </section>
       </div>
