@@ -166,7 +166,7 @@ export default function Home() {
           transition={{ duration: 0.2 }}
         >
           {activeTab === 'calculator' ? (
-            <CostCalculator onSave={handleSaveProduct} globalIndirectCosts={globalIndirectCosts} />
+            <CostCalculator onSave={handleSaveProduct} globalIndirectCosts={globalIndirectCosts} inventory={inventory} />
           ) : activeTab === 'inventory' ? (
             <InventoryList items={inventory} onDelete={handleDeleteProduct} />
           ) : (

@@ -9,7 +9,8 @@ export interface IndirectCost {
   id: string;
   name: string;
   amount: number;
-  distributionUnits: number; // How many units cover this cost
+  distributionCriteria: 'units' | 'direct-cost' | 'weight' | 'manual';
+  distributionUnits?: number; // Only used when distributionCriteria === 'manual'
 }
 
 export interface ProductCalculation {
@@ -17,6 +18,8 @@ export interface ProductCalculation {
   name: string;
   purchasePrice: number;
   unitsPerPackage: number;
+  productionUnits: number;
+  productWeight?: number;
   indirectCosts: IndirectCost[];
   profitMargin: number; // percentage
   unitCost: number;
@@ -29,21 +32,106 @@ export interface ProductCalculation {
 interface CostCalculatorProps {
   onSave: (calc: ProductCalculation) => void;
   globalIndirectCosts: IndirectCost[];
+  inventory: ProductCalculation[];
 }
 
-export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalculatorProps) {
+/**
+ * Calculates proportionally distributed indirect costs for a product,
+ * taking into account ALL products in the inventory.
+ */
+function calculateProportionalIndirectCosts(
+  currentProduct: {
+    purchasePrice: number;
+    productionUnits: number;
+    productWeight?: number;
+  },
+  allProducts: ProductCalculation[],
+  indirectCosts: IndirectCost[]
+): { totalPerUnit: number; breakdown: Array<{ name: string; assigned: number; perUnit: number }> } {
+  const breakdown: Array<{ name: string; assigned: number; perUnit: number }> = [];
+  let totalPerUnit = 0;
+
+  const allProductsIncludingCurrent: Array<{ purchasePrice: number; productionUnits: number; productWeight?: number }> = [
+    ...allProducts.map(({ purchasePrice, productionUnits, productWeight }) => ({ purchasePrice, productionUnits, productWeight })),
+    currentProduct,
+  ];
+
+  indirectCosts.forEach((cost) => {
+    let assignedCost = 0;
+    let costPerUnit = 0;
+    const criteria = cost.distributionCriteria || 'manual';
+
+    switch (criteria) {
+      case 'units': {
+        const totalUnits = allProductsIncludingCurrent.reduce(
+          (sum, p) => sum + (p.productionUnits || 0),
+          0
+        );
+        if (totalUnits > 0) {
+          costPerUnit = cost.amount / totalUnits;
+          assignedCost = costPerUnit * currentProduct.productionUnits;
+        }
+        break;
+      }
+      case 'direct-cost': {
+        const totalDirectCosts = allProductsIncludingCurrent.reduce(
+          (sum, p) => sum + (p.purchasePrice || 0) * (p.productionUnits || 0),
+          0
+        );
+        const productDirectCost = currentProduct.purchasePrice * currentProduct.productionUnits;
+        if (totalDirectCosts > 0) {
+          const percentage = productDirectCost / totalDirectCosts;
+          assignedCost = cost.amount * percentage;
+          costPerUnit = currentProduct.productionUnits > 0 ? assignedCost / currentProduct.productionUnits : 0;
+        }
+        break;
+      }
+      case 'weight': {
+        const totalWeight = allProductsIncludingCurrent.reduce(
+          (sum, p) => sum + (p.productWeight || 0) * (p.productionUnits || 0),
+          0
+        );
+        const productTotalWeight = (currentProduct.productWeight || 0) * currentProduct.productionUnits;
+        if (totalWeight > 0) {
+          const percentage = productTotalWeight / totalWeight;
+          assignedCost = cost.amount * percentage;
+          costPerUnit = currentProduct.productionUnits > 0 ? assignedCost / currentProduct.productionUnits : 0;
+        }
+        break;
+      }
+      case 'manual':
+      default: {
+        const units = cost.distributionUnits || 1;
+        costPerUnit = cost.amount / units;
+        assignedCost = costPerUnit * currentProduct.productionUnits;
+        break;
+      }
+    }
+
+    totalPerUnit += costPerUnit;
+    breakdown.push({ name: cost.name, assigned: assignedCost, perUnit: costPerUnit });
+  });
+
+  return { totalPerUnit, breakdown };
+}
+
+export default function CostCalculator({ onSave, globalIndirectCosts, inventory }: CostCalculatorProps) {
   const [name, setName] = useState('');
   const [purchasePrice, setPurchasePrice] = useState<number>(0);
   const [unitsPerPackage, setUnitsPerPackage] = useState<number>(1);
+  const [productionUnits, setProductionUnits] = useState<number>(100);
+  const [productWeight, setProductWeight] = useState<number>(0);
   const [profitMargin, setProfitMargin] = useState<number>(30);
   const [indirectCosts, setIndirectCosts] = useState<IndirectCost[]>([]);
 
   // Derived state
   const unitCost = purchasePrice / (unitsPerPackage || 1);
-  const totalIndirect = indirectCosts.reduce((acc, cost) => {
-    const units = cost.distributionUnits || 1;
-    return acc + (cost.amount / units);
-  }, 0);
+  const proportionalCosts = calculateProportionalIndirectCosts(
+    { purchasePrice, productionUnits, productWeight },
+    inventory,
+    indirectCosts
+  );
+  const totalIndirect = proportionalCosts.totalPerUnit;
   const totalUnitCost = unitCost + totalIndirect;
   const suggestedPrice = totalUnitCost * (1 + profitMargin / 100);
   const profitPerUnit = suggestedPrice - totalUnitCost;
@@ -59,7 +147,7 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
   const addIndirectCost = () => {
     setIndirectCosts([
       ...indirectCosts,
-      { id: window.crypto.randomUUID(), name: '', amount: 0, distributionUnits: 1 },
+      { id: window.crypto.randomUUID(), name: '', amount: 0, distributionCriteria: 'manual', distributionUnits: 1 },
     ]);
   };
 
@@ -76,6 +164,7 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
     setIndirectCosts([...indirectCosts, ...newCosts.map(c => ({ 
       ...c, 
       id: window.crypto.randomUUID(),
+      distributionCriteria: c.distributionCriteria || 'manual',
       distributionUnits: c.distributionUnits || 1
     }))]);
   };
@@ -92,12 +181,15 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
 
   const handleSave = () => {
     if (!name) return alert('Por favor, ingresa un nombre para el producto');
+    if (productionUnits <= 0) return alert('Por favor, ingresa las unidades de producción/venta');
     
     const calculation: ProductCalculation = {
       id: window.crypto.randomUUID(),
       name,
       purchasePrice,
       unitsPerPackage,
+      productionUnits,
+      productWeight: productWeight || undefined,
       indirectCosts: [...indirectCosts],
       profitMargin,
       unitCost: results.unitCost,
@@ -112,6 +204,8 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
     setName('');
     setPurchasePrice(0);
     setUnitsPerPackage(1);
+    setProductionUnits(100);
+    setProductWeight(0);
     setIndirectCosts([]);
   };
 
@@ -155,6 +249,39 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
                   onChange={(e) => setUnitsPerPackage(Number(e.target.value))}
                   className="w-full px-4 py-2 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-500 mb-1">
+                  Unidades de Producción/Venta (mensual)
+                </label>
+                <input
+                  type="number"
+                  value={productionUnits || ''}
+                  onChange={(e) => setProductionUnits(Number(e.target.value))}
+                  className="w-full px-4 py-2 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  placeholder="Ej: 100"
+                />
+                <p className="text-xs text-zinc-400 mt-1">
+                  ¿Cuántas unidades produces o vendes en el período?
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-500 mb-1">
+                  Peso/Volumen por Unidad (opcional)
+                </label>
+                <input
+                  type="number"
+                  value={productWeight || ''}
+                  onChange={(e) => setProductWeight(Number(e.target.value))}
+                  className="w-full px-4 py-2 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  placeholder="En kg o m³"
+                />
+                <p className="text-xs text-zinc-400 mt-1">
+                  Para costos como transporte o almacenamiento
+                </p>
               </div>
             </div>
 
@@ -203,15 +330,26 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
                           onChange={(e) => updateIndirectCost(cost.id, 'amount', Number(e.target.value))}
                           className="w-20 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
                         />
-                        <span className="text-zinc-400 text-xs">/</span>
-                        <input
-                          type="number"
-                          placeholder="Unidades"
-                          value={cost.distributionUnits || ''}
-                          onChange={(e) => updateIndirectCost(cost.id, 'distributionUnits', Math.max(1, Number(e.target.value)))}
-                          className="w-16 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
-                          title="Unidades entre las que se distribuye este costo"
-                        />
+                        {(!cost.distributionCriteria || cost.distributionCriteria === 'manual') && (
+                          <>
+                            <span className="text-zinc-400 text-xs">/</span>
+                            <input
+                              type="number"
+                              placeholder="Unidades"
+                              value={cost.distributionUnits || ''}
+                              onChange={(e) => updateIndirectCost(cost.id, 'distributionUnits', Math.max(1, Number(e.target.value)))}
+                              className="w-16 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
+                              title="Unidades entre las que se distribuye este costo"
+                            />
+                          </>
+                        )}
+                        {cost.distributionCriteria && cost.distributionCriteria !== 'manual' && (
+                          <span className="text-[10px] text-emerald-600 font-semibold px-1 whitespace-nowrap">
+                            {cost.distributionCriteria === 'units' ? 'Por Unidades' :
+                             cost.distributionCriteria === 'direct-cost' ? 'Por Costo' :
+                             'Por Peso'}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={() => removeIndirectCost(cost.id)}
@@ -267,24 +405,26 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
               <div className="bg-white p-4 rounded-xl border border-zinc-100 shadow-sm">
                 <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold mb-1">Aporte a Gastos Indirectos</p>
                 <p className="text-2xl font-light text-zinc-900">${results.totalIndirectCostPerUnit.toFixed(2)}</p>
-                <div className="mt-2 pt-2 border-t border-zinc-50">
-                  <p className="text-[10px] text-zinc-400 font-bold uppercase mb-1">Análisis de Cobertura</p>
-                  {indirectCosts.length > 0 ? (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px]">
-                        <span className="text-zinc-500">Gastos Totales Listados:</span>
-                        <span className="font-bold text-zinc-700">${indirectCosts.reduce((a, b) => a + b.amount, 0).toFixed(2)}</span>
+
+                {/* Detailed breakdown */}
+                <div className="mt-3 pt-3 border-t border-zinc-50 space-y-1.5">
+                  <p className="text-[10px] text-zinc-400 font-bold uppercase mb-1">Desglose por Criterio</p>
+                  {proportionalCosts.breakdown.length > 0 ? (
+                    proportionalCosts.breakdown.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-[10px]">
+                        <span className="text-zinc-500">{item.name || `Costo ${idx + 1}`}</span>
+                        <span className="font-bold text-zinc-700">${item.perUnit.toFixed(2)}/u</span>
                       </div>
-                      <div className="flex justify-between text-[10px]">
-                        <span className="text-zinc-500">Cobertura por Venta:</span>
-                        <span className="font-bold text-emerald-600">
-                          {((results.totalIndirectCostPerUnit / (indirectCosts.reduce((a, b) => a + b.amount, 0) || 1)) * 100).toFixed(2)}%
-                        </span>
-                      </div>
-                    </div>
+                    ))
                   ) : (
                     <p className="text-[10px] text-zinc-300 italic">Sin costos indirectos aplicados</p>
                   )}
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-zinc-50">
+                  <p className="text-[9px] text-zinc-400 italic">
+                    * Calculado proporcionalmente considerando {inventory.length + 1} {inventory.length + 1 === 1 ? 'producto activo' : 'productos activos'}
+                  </p>
                 </div>
               </div>
 
@@ -309,7 +449,7 @@ export default function CostCalculator({ onSave, globalIndirectCosts }: CostCalc
           </div>
 
           <div className="mt-8 p-4 bg-zinc-100 rounded-xl text-xs text-zinc-500 italic">
-            * El precio sugerido se calcula sumando el costo directo más el aporte proporcional de cada gasto indirecto (Monto / Unidades a distribuir). Esto permite cubrir tus gastos fijos gradualmente con cada venta sin cargar el costo total a un solo producto.
+            * El precio sugerido considera el prorrateo proporcional de costos indirectos entre TODOS los productos activos en inventario. Cada costo indirecto se distribuye según su criterio configurado (unidades totales, costo directo, peso, etc.). Esto asegura que la suma de todos los productos cubra exactamente los gastos fijos totales.
           </div>
         </section>
       </div>
