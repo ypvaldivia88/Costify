@@ -37,6 +37,7 @@ export default function Home() {
   });
 
   const [activeTab, setActiveTab] = useState<'calculator' | 'inventory' | 'settings'>('calculator');
+  const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
 
   // Save to localStorage when inventory changes
   useEffect(() => {
@@ -49,8 +50,20 @@ export default function Home() {
   }, [globalIndirectCosts]);
 
   const handleSaveProduct = (product: ProductCalculation) => {
-    setInventory([product, ...inventory]);
+    setInventory((prev) => {
+      const exists = prev.some((item) => item.id === product.id);
+      if (exists) {
+        return prev.map((item) => (item.id === product.id ? product : item));
+      }
+      return [product, ...prev];
+    });
+    setEditingProduct(null);
     setActiveTab('inventory');
+  };
+
+  const handleEditProduct = (product: ProductCalculation) => {
+    setEditingProduct(product);
+    setActiveTab('calculator');
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -166,9 +179,15 @@ export default function Home() {
           transition={{ duration: 0.2 }}
         >
           {activeTab === 'calculator' ? (
-            <CostCalculator onSave={handleSaveProduct} globalIndirectCosts={globalIndirectCosts} />
+            <CostCalculator
+              onSave={handleSaveProduct}
+              globalIndirectCosts={globalIndirectCosts}
+              inventory={editingProduct ? inventory.filter((i) => i.id !== editingProduct.id) : inventory}
+              editingProduct={editingProduct}
+              onCancelEdit={() => setEditingProduct(null)}
+            />
           ) : activeTab === 'inventory' ? (
-            <InventoryList items={inventory} onDelete={handleDeleteProduct} />
+            <InventoryList items={inventory} onDelete={handleDeleteProduct} onEdit={handleEditProduct} />
           ) : (
             <IndirectCostsSettings costs={globalIndirectCosts} onSave={handleSaveGlobalCosts} />
           )}

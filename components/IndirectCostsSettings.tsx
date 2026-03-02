@@ -15,6 +15,7 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editAmount, setEditAmount] = useState<number>(0);
+  const [editCriteria, setEditCriteria] = useState<'units' | 'direct-cost' | 'weight' | 'manual'>('units');
   const [editUnits, setEditUnits] = useState<number>(1);
 
   const handleAdd = () => {
@@ -23,7 +24,7 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
       id,
       name: 'Nuevo Costo',
       amount: 0,
-      distributionUnits: 1,
+      distributionCriteria: 'units',
     };
     const updated = [...localCosts, newCost];
     setLocalCosts(updated);
@@ -34,6 +35,7 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
     setEditingId(cost.id);
     setEditName(cost.name);
     setEditAmount(cost.amount);
+    setEditCriteria(cost.distributionCriteria || 'manual');
     setEditUnits(cost.distributionUnits || 1);
   };
 
@@ -44,7 +46,9 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
   const saveEditing = () => {
     if (!editingId) return;
     const updated = localCosts.map((c) =>
-      c.id === editingId ? { ...c, name: editName, amount: editAmount, distributionUnits: editUnits } : c
+      c.id === editingId
+        ? { ...c, name: editName, amount: editAmount, distributionCriteria: editCriteria, distributionUnits: editCriteria === 'manual' ? editUnits : undefined }
+        : c
     );
     setLocalCosts(updated);
     setEditingId(null);
@@ -110,14 +114,26 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
                         className="px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
                         placeholder="Monto Total"
                       />
-                      <input
-                        type="number"
-                        value={editUnits || ''}
-                        onChange={(e) => setEditUnits(Math.max(1, Number(e.target.value)))}
+                      <select
+                        value={editCriteria}
+                        onChange={(e) => setEditCriteria(e.target.value as 'units' | 'direct-cost' | 'weight' | 'manual')}
                         className="px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
-                        placeholder="Unidades"
-                        title="Unidades estimadas para cubrir este costo"
-                      />
+                      >
+                        <option value="units">Por Unidades Totales</option>
+                        <option value="direct-cost">Por Costo Directo</option>
+                        <option value="weight">Por Peso/Volumen</option>
+                        <option value="manual">Manual (valor fijo)</option>
+                      </select>
+                      {editCriteria === 'manual' && (
+                        <input
+                          type="number"
+                          value={editUnits || ''}
+                          onChange={(e) => setEditUnits(Math.max(1, Number(e.target.value)))}
+                          className="px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:border-emerald-500"
+                          placeholder="Unidades fijas"
+                          title="Unidades estimadas para cubrir este costo"
+                        />
+                      )}
                     </div>
                     <div className="flex gap-1">
                       <button
@@ -140,8 +156,14 @@ export default function IndirectCostsSettings({ costs, onSave }: IndirectCostsSe
                       <p className="font-semibold text-zinc-900">{cost.name}</p>
                       <div className="flex gap-4 mt-1">
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Total: ${cost.amount.toFixed(2)}</p>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Distribución: {cost.distributionUnits || 1}u</p>
-                        <p className="text-[10px] text-emerald-600 uppercase tracking-wider font-bold">Por Unidad: ${((cost.amount || 0) / (cost.distributionUnits || 1)).toFixed(2)}</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
+                          Criterio: {
+                            (cost.distributionCriteria || 'manual') === 'units' ? 'Por Unidades' :
+                            (cost.distributionCriteria || 'manual') === 'direct-cost' ? 'Por Costo Directo' :
+                            (cost.distributionCriteria || 'manual') === 'weight' ? 'Por Peso/Vol.' :
+                            `Manual (${cost.distributionUnits || 1}u)`
+                          }
+                        </p>
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
