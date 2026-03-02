@@ -167,6 +167,15 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory,
     profitPerUnit,
   };
 
+  // Monthly coverage metrics
+  const totalMonthlyIndirectCosts = indirectCosts.reduce((sum, c) => sum + c.amount, 0);
+  const monthlyIndirectBurden = totalIndirect * productionUnits;
+  const indirectCoveragePercent =
+    totalMonthlyIndirectCosts > 0
+      ? Math.min((monthlyIndirectBurden / totalMonthlyIndirectCosts) * 100, 100)
+      : 0;
+  const monthlyGap = Math.max(totalMonthlyIndirectCosts - monthlyIndirectBurden, 0);
+
   const addIndirectCost = () => {
     setIndirectCosts([
       ...indirectCosts,
@@ -470,6 +479,40 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory,
                     * Calculado proporcionalmente considerando {inventory.length + 1} {inventory.length + 1 === 1 ? 'producto activo' : 'productos activos'}
                   </p>
                 </div>
+
+                {/* Monthly fixed cost coverage */}
+                {totalMonthlyIndirectCosts > 0 && productionUnits > 0 && (
+                  <div className="mt-3 pt-3 border-t border-zinc-100 space-y-1.5">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Cobertura Mensual</p>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-zinc-500">Total costos del período</span>
+                      <span className="font-semibold text-zinc-700">${totalMonthlyIndirectCosts.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-zinc-500">Cubierto por este producto ({productionUnits}u)</span>
+                      <span className="font-semibold text-emerald-600">${monthlyIndirectBurden.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-400 rounded-full transition-all duration-300"
+                          style={{ width: `${indirectCoveragePercent}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-zinc-500">{indirectCoveragePercent.toFixed(0)}%</span>
+                    </div>
+                    {inventory.length > 0 && monthlyGap > 0 && (
+                      <p className="text-[9px] text-zinc-400 italic">
+                        El {(100 - indirectCoveragePercent).toFixed(0)}% restante (${monthlyGap.toFixed(2)}) lo cubren los otros {inventory.length} {inventory.length === 1 ? 'producto' : 'productos'} del inventario.
+                      </p>
+                    )}
+                    {inventory.length === 0 && monthlyGap > 0 && (
+                      <p className="text-[9px] text-amber-600 italic">
+                        Quedan ${monthlyGap.toFixed(2)}/mes sin cubrir. Agrega más productos para distribuir la carga.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="bg-white p-4 rounded-xl border border-zinc-100 shadow-sm">
@@ -488,6 +531,20 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory,
                 <p className="mt-2 text-sm text-emerald-600">
                   Ganancia neta por unidad: <span className="font-bold">${results.profitPerUnit.toFixed(2)}</span>
                 </p>
+                {productionUnits > 0 && (
+                  <div className="mt-4 pt-4 border-t border-emerald-100 grid grid-cols-2 gap-2 text-center">
+                    <div>
+                      <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wide">Ingresos mensuales</p>
+                      <p className="text-lg font-bold text-emerald-900">${(results.suggestedPrice * productionUnits).toFixed(2)}</p>
+                      <p className="text-[9px] text-emerald-600">{productionUnits}u × ${results.suggestedPrice.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wide">Ganancia mensual</p>
+                      <p className="text-lg font-bold text-emerald-700">+${(results.profitPerUnit * productionUnits).toFixed(2)}</p>
+                      <p className="text-[9px] text-emerald-600">{productionUnits}u × ${results.profitPerUnit.toFixed(2)}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

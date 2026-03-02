@@ -14,6 +14,17 @@ interface InventoryListProps {
 export default function InventoryList({ items, onDelete, onEdit }: InventoryListProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
+  const monthlySummary = React.useMemo(() => {
+    return items.reduce(
+      (acc, item) => ({
+        totalRevenue: acc.totalRevenue + item.suggestedPrice * item.productionUnits,
+        totalProfit: acc.totalProfit + item.profitPerUnit * item.productionUnits,
+        totalIndirectBurden: acc.totalIndirectBurden + (item.totalUnitCost - item.unitCost) * item.productionUnits,
+      }),
+      { totalRevenue: 0, totalProfit: 0, totalIndirectBurden: 0 }
+    );
+  }, [items]);
+
   if (items.length === 0) {
     return (
       <div className="text-center py-12 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200">
@@ -33,6 +44,34 @@ export default function InventoryList({ items, onDelete, onEdit }: InventoryList
         <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
           {items.length} REGISTROS
         </span>
+      </div>
+
+      {/* Monthly business summary */}
+      <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-5 mb-6">
+        <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">Resumen Mensual del Negocio</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mb-0.5">Ingresos proyectados</p>
+            <p className="text-xl font-bold text-emerald-900">
+              ${monthlySummary.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mb-0.5">Costos fijos cubiertos</p>
+            <p className="text-xl font-bold text-amber-700">
+              ${monthlySummary.totalIndirectBurden.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wide font-semibold mb-0.5">Ganancia neta mensual</p>
+            <p className={`text-xl font-bold ${monthlySummary.totalProfit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+              {monthlySummary.totalProfit >= 0 ? '+' : ''}${monthlySummary.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+        <p className="text-[9px] text-zinc-400 italic mt-3">
+          * Proyección basada en las unidades de producción/venta configuradas en cada producto.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -57,6 +96,9 @@ export default function InventoryList({ items, onDelete, onEdit }: InventoryList
                   <div className="flex flex-wrap gap-4 text-sm text-zinc-500">
                     <p>Costo Directo: <span className="font-semibold text-zinc-700">${item.unitCost.toFixed(2)}</span></p>
                     <p>Margen: <span className="font-semibold text-emerald-600">{item.profitMargin}%</span></p>
+                    {item.productionUnits > 0 && (
+                      <p>Ingreso mensual: <span className="font-semibold text-zinc-700">${(item.suggestedPrice * item.productionUnits).toFixed(2)}</span></p>
+                    )}
                   </div>
                 </div>
 
@@ -147,6 +189,19 @@ export default function InventoryList({ items, onDelete, onEdit }: InventoryList
                             <span className="text-zinc-900">Ganancia Neta / Unidad</span>
                             <span className="text-emerald-600">+${item.profitPerUnit.toFixed(2)}</span>
                           </div>
+                          {item.productionUnits > 0 && (
+                            <div className="pt-2 mt-1 border-t border-zinc-100 space-y-1">
+                              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Proyección ({item.productionUnits}u/mes)</p>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-zinc-500">Ingresos mensuales</span>
+                                <span className="font-semibold text-emerald-700">${(item.suggestedPrice * item.productionUnits).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-zinc-500">Ganancia mensual neta</span>
+                                <span className="font-semibold text-emerald-600">+${(item.profitPerUnit * item.productionUnits).toFixed(2)}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="mt-4 p-3 bg-white rounded-xl border border-zinc-200 text-[10px] text-zinc-400 leading-relaxed italic">
                           * Este cálculo se realizó el {new Date(item.timestamp).toLocaleString()}. Los costos indirectos reflejan los valores configurados en ese momento.
