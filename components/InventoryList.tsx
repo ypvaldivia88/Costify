@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Package, Trash2, TrendingUp, Clock } from 'lucide-react';
+import { Package, Trash2, TrendingUp, Clock, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProductCalculation } from './CostCalculator';
 
 interface InventoryListProps {
   items: ProductCalculation[];
   onDelete: (id: string) => void;
+  onEdit: (item: ProductCalculation) => void;
 }
 
-export default function InventoryList({ items, onDelete }: InventoryListProps) {
+export default function InventoryList({ items, onDelete, onEdit }: InventoryListProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   if (items.length === 0) {
@@ -72,6 +73,13 @@ export default function InventoryList({ items, onDelete }: InventoryListProps) {
                       {expandedId === item.id ? 'Cerrar' : 'Detalles'}
                     </button>
                     <button
+                      onClick={() => onEdit(item)}
+                      className="p-2 text-zinc-300 hover:text-emerald-600 transition-colors"
+                      title="Editar cálculo"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => onDelete(item.id)}
                       className="p-2 text-zinc-300 hover:text-red-500 transition-colors"
                     >
@@ -97,12 +105,26 @@ export default function InventoryList({ items, onDelete }: InventoryListProps) {
                             <span className="text-zinc-500">Costo Directo (Compra)</span>
                             <span className="font-medium text-zinc-900">${item.unitCost.toFixed(2)}</span>
                           </div>
-                          {item.indirectCosts.map((ic) => (
-                            <div key={ic.id} className="flex justify-between text-sm">
-                              <span className="text-zinc-500">{ic.name} (${ic.amount.toFixed(2)} / {ic.distributionUnits || 1}u)</span>
-                              <span className="font-medium text-zinc-900">${(ic.amount / (ic.distributionUnits || 1)).toFixed(2)}</span>
-                            </div>
-                          ))}
+                          {item.indirectCosts.map((ic) => {
+                            const criteria = ic.distributionCriteria || 'manual';
+                            return (
+                              <div key={ic.id} className="flex justify-between text-sm">
+                                <span className="text-zinc-500">
+                                  {ic.name}
+                                  {' '}
+                                  <span className="text-[10px] text-zinc-400">
+                                    ({
+                                      criteria === 'units' ? 'por unidades' :
+                                      criteria === 'direct-cost' ? 'por costo directo' :
+                                      criteria === 'weight' ? 'por peso' :
+                                      `$${ic.amount.toFixed(2)} / ${ic.distributionUnits || 1}u`
+                                    })
+                                  </span>
+                                </span>
+                                <span className="font-medium text-zinc-900">${(ic.amount / (ic.distributionUnits || 1)).toFixed(2)}</span>
+                              </div>
+                            );
+                          })}
                           <div className="pt-2 border-t border-zinc-200 flex justify-between text-sm font-bold">
                             <span className="text-zinc-900">Costo Total Unitario</span>
                             <span className="text-zinc-900">${item.totalUnitCost.toFixed(2)}</span>

@@ -33,6 +33,8 @@ interface CostCalculatorProps {
   onSave: (calc: ProductCalculation) => void;
   globalIndirectCosts: IndirectCost[];
   inventory: ProductCalculation[];
+  editingProduct?: ProductCalculation | null;
+  onCancelEdit?: () => void;
 }
 
 /**
@@ -115,7 +117,7 @@ function calculateProportionalIndirectCosts(
   return { totalPerUnit, breakdown };
 }
 
-export default function CostCalculator({ onSave, globalIndirectCosts, inventory }: CostCalculatorProps) {
+export default function CostCalculator({ onSave, globalIndirectCosts, inventory, editingProduct, onCancelEdit }: CostCalculatorProps) {
   const [name, setName] = useState('');
   const [purchasePrice, setPurchasePrice] = useState<number>(0);
   const [unitsPerPackage, setUnitsPerPackage] = useState<number>(1);
@@ -123,6 +125,27 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory 
   const [productWeight, setProductWeight] = useState<number>(0);
   const [profitMargin, setProfitMargin] = useState<number>(30);
   const [indirectCosts, setIndirectCosts] = useState<IndirectCost[]>([]);
+
+  // Populate form when entering edit mode; reset when leaving
+  useEffect(() => {
+    if (editingProduct) {
+      setName(editingProduct.name);
+      setPurchasePrice(editingProduct.purchasePrice);
+      setUnitsPerPackage(editingProduct.unitsPerPackage);
+      setProductionUnits(editingProduct.productionUnits || 100);
+      setProductWeight(editingProduct.productWeight || 0);
+      setProfitMargin(editingProduct.profitMargin);
+      setIndirectCosts(editingProduct.indirectCosts);
+    } else {
+      setName('');
+      setPurchasePrice(0);
+      setUnitsPerPackage(1);
+      setProductionUnits(100);
+      setProductWeight(0);
+      setProfitMargin(30);
+      setIndirectCosts([]);
+    }
+  }, [editingProduct]);
 
   // Derived state
   const unitCost = purchasePrice / (unitsPerPackage || 1);
@@ -179,12 +202,23 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory 
     );
   };
 
+  const handleCancelEdit = () => {
+    setName('');
+    setPurchasePrice(0);
+    setUnitsPerPackage(1);
+    setProductionUnits(100);
+    setProductWeight(0);
+    setProfitMargin(30);
+    setIndirectCosts([]);
+    if (onCancelEdit) onCancelEdit();
+  };
+
   const handleSave = () => {
     if (!name) return alert('Por favor, ingresa un nombre para el producto');
     if (productionUnits <= 0) return alert('Por favor, ingresa las unidades de producción/venta');
     
     const calculation: ProductCalculation = {
-      id: window.crypto.randomUUID(),
+      id: editingProduct ? editingProduct.id : window.crypto.randomUUID(),
       name,
       purchasePrice,
       unitsPerPackage,
@@ -196,7 +230,7 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory 
       totalUnitCost: results.totalUnitCost,
       suggestedPrice: results.suggestedPrice,
       profitPerUnit: results.profitPerUnit,
-      timestamp: Date.now(),
+      timestamp: editingProduct ? editingProduct.timestamp : Date.now(),
     };
     
     onSave(calculation);
@@ -216,7 +250,9 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory 
         <section className="bg-white rounded-2xl p-6 shadow-sm border border-black/5 space-y-6">
           <div className="flex items-center gap-2 mb-2">
             <Calculator className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-xl font-semibold text-zinc-900">Datos del Producto</h2>
+            <h2 className="text-xl font-semibold text-zinc-900">
+              {editingProduct ? `Editando: ${editingProduct.name}` : 'Datos del Producto'}
+            </h2>
           </div>
 
           <div className="space-y-4">
@@ -379,12 +415,20 @@ export default function CostCalculator({ onSave, globalIndirectCosts, inventory 
             </div>
           </div>
 
+          {editingProduct && (
+            <button
+              onClick={handleCancelEdit}
+              className="w-full py-2 border border-zinc-300 text-zinc-600 rounded-xl font-medium hover:bg-zinc-50 transition-all text-sm"
+            >
+              Cancelar Edición
+            </button>
+          )}
           <button
             onClick={handleSave}
             disabled={!name || purchasePrice <= 0}
             className="w-full py-3 bg-zinc-900 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-zinc-900/10"
           >
-            <Save className="w-4 h-4" /> Guardar en Inventario
+            <Save className="w-4 h-4" /> {editingProduct ? 'Actualizar en Inventario' : 'Guardar en Inventario'}
           </button>
         </section>
 
