@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Package, Trash2, TrendingUp, Clock, Edit2 } from 'lucide-react';
+import { Package, Trash2, TrendingUp, Clock, Edit2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProductCalculation } from './CostCalculator';
 
@@ -9,9 +9,10 @@ interface InventoryListProps {
   items: ProductCalculation[];
   onDelete: (id: string) => void;
   onEdit: (item: ProductCalculation) => void;
+  onRecalculateAll: () => void;
 }
 
-export default function InventoryList({ items, onDelete, onEdit }: InventoryListProps) {
+export default function InventoryList({ items, onDelete, onEdit, onRecalculateAll }: InventoryListProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   const monthlySummary = React.useMemo(() => {
@@ -41,9 +42,18 @@ export default function InventoryList({ items, onDelete, onEdit }: InventoryList
         <h2 className="text-xl font-semibold text-zinc-900 flex items-center gap-2">
           <Clock className="w-5 h-5" /> Historial de Cálculos
         </h2>
-        <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
-          {items.length} REGISTROS
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onRecalculateAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm"
+            title="Recalcular costos de todos los productos con el inventario actual"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Recalcular Inventario
+          </button>
+          <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
+            {items.length} REGISTROS
+          </span>
+        </div>
       </div>
 
       {/* Monthly business summary */}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Calculator, LayoutDashboard, Settings, HelpCircle } from 'lucide-react';
-import CostCalculator, { ProductCalculation, IndirectCost } from '@/components/CostCalculator';
+import CostCalculator, { ProductCalculation, IndirectCost, calculateProportionalIndirectCosts } from '@/components/CostCalculator';
 import InventoryList from '@/components/InventoryList';
 import IndirectCostsSettings from '@/components/IndirectCostsSettings';
 
@@ -49,16 +49,35 @@ export default function Home() {
     localStorage.setItem('costify_global_costs', JSON.stringify(globalIndirectCosts));
   }, [globalIndirectCosts]);
 
+  const recalculateInventory = (products: ProductCalculation[]): ProductCalculation[] => {
+    return products.map((product) => {
+      const otherProducts = products.filter((p) => p.id !== product.id);
+      const { totalPerUnit } = calculateProportionalIndirectCosts(
+        { purchasePrice: product.purchasePrice, productionUnits: product.productionUnits, productWeight: product.productWeight },
+        otherProducts,
+        product.indirectCosts
+      );
+      const totalUnitCost = product.unitCost + totalPerUnit;
+      const suggestedPrice = totalUnitCost * (1 + product.profitMargin / 100);
+      const profitPerUnit = suggestedPrice - totalUnitCost;
+      return { ...product, totalUnitCost, suggestedPrice, profitPerUnit };
+    });
+  };
+
   const handleSaveProduct = (product: ProductCalculation) => {
     setInventory((prev) => {
       const exists = prev.some((item) => item.id === product.id);
-      if (exists) {
-        return prev.map((item) => (item.id === product.id ? product : item));
-      }
-      return [product, ...prev];
+      const updated = exists
+        ? prev.map((item) => (item.id === product.id ? product : item))
+        : [product, ...prev];
+      return recalculateInventory(updated);
     });
     setEditingProduct(null);
     setActiveTab('inventory');
+  };
+
+  const handleRecalculateAll = () => {
+    setInventory((prev) => recalculateInventory(prev));
   };
 
   const handleEditProduct = (product: ProductCalculation) => {
@@ -187,7 +206,7 @@ export default function Home() {
               onCancelEdit={() => setEditingProduct(null)}
             />
           ) : activeTab === 'inventory' ? (
-            <InventoryList items={inventory} onDelete={handleDeleteProduct} onEdit={handleEditProduct} />
+            <InventoryList items={inventory} onDelete={handleDeleteProduct} onEdit={handleEditProduct} onRecalculateAll={handleRecalculateAll} />
           ) : (
             <IndirectCostsSettings costs={globalIndirectCosts} onSave={handleSaveGlobalCosts} />
           )}

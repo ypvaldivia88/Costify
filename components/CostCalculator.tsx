@@ -41,7 +41,7 @@ interface CostCalculatorProps {
  * Calculates proportionally distributed indirect costs for a product,
  * taking into account ALL products in the inventory.
  */
-function calculateProportionalIndirectCosts(
+export function calculateProportionalIndirectCosts(
   currentProduct: {
     purchasePrice: number;
     productionUnits: number;
