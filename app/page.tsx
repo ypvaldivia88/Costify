@@ -1,83 +1,51 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Calculator, LayoutDashboard, Settings, HelpCircle } from 'lucide-react';
-import CostCalculator, { ProductCalculation, IndirectCost, calculateProportionalIndirectCosts } from '@/components/CostCalculator';
-import InventoryList from '@/components/InventoryList';
-import IndirectCostsSettings from '@/components/IndirectCostsSettings';
+import type { ProductCalculation } from '@/lib/domain/types';
+import { calculateBusinessSummary } from '@/lib/domain/calculations';
+import { formatCurrency, formatPercent } from '@/lib/format/currency';
+import { useInventory } from '@/hooks/use-inventory';
+import { useGlobalCosts } from '@/hooks/use-global-costs';
+import { useTaxSettings } from '@/hooks/use-tax-settings';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { BottomNav, type AppTab } from '@/components/ui/BottomNav';
+import { CostCalculator } from '@/components/calculator/CostCalculator';
+import { InventoryList } from '@/components/inventory/InventoryList';
+import { IndirectCostsSettings } from '@/components/settings/IndirectCostsSettings';
+import { TaxSettingsPanel } from '@/components/settings/TaxSettingsPanel';
+import { StatCard } from '@/components/ui/StatCard';
+
+const tabMeta: Record<AppTab, { title: string; description: string }> = {
+  calculator: {
+    title: 'Calculadora de costos',
+    description:
+      'Determina el precio de venta ideal considerando costos directos, gastos indirectos y tu margen de utilidad.',
+  },
+  inventory: {
+    title: 'Historial de productos',
+    description: 'Revisa y gestiona las fichas de costos guardadas de tu negocio.',
+  },
+  settings: {
+    title: 'Configuración',
+    description: 'Define gastos fijos recurrentes y estimaciones de impuestos MIPYME.',
+  },
+};
 
 export default function Home() {
-  const [inventory, setInventory] = useState<ProductCalculation[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('costify_inventory');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Failed to parse inventory', e);
-        }
-      }
-    }
-    return [];
-  });
-
-  const [globalIndirectCosts, setGlobalIndirectCosts] = useState<IndirectCost[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('costify_global_costs');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Failed to parse global costs', e);
-        }
-      }
-    }
-    return [];
-  });
-
-  const [activeTab, setActiveTab] = useState<'calculator' | 'inventory' | 'settings'>('calculator');
+  const { inventory, hydrated, saveProduct, deleteProduct, recalculateAll } = useInventory();
+  const { globalCosts, saveCosts } = useGlobalCosts();
+  const { taxSettings, updateTaxSettings } = useTaxSettings();
+  const [activeTab, setActiveTab] = useState<AppTab>('calculator');
   const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
 
-  // Save to localStorage when inventory changes
-  useEffect(() => {
-    localStorage.setItem('costify_inventory', JSON.stringify(inventory));
-  }, [inventory]);
-
-  // Save to localStorage when global costs change
-  useEffect(() => {
-    localStorage.setItem('costify_global_costs', JSON.stringify(globalIndirectCosts));
-  }, [globalIndirectCosts]);
-
-  const recalculateInventory = (products: ProductCalculation[]): ProductCalculation[] => {
-    return products.map((product) => {
-      const otherProducts = products.filter((p) => p.id !== product.id);
-      const { totalPerUnit } = calculateProportionalIndirectCosts(
-        { purchasePrice: product.purchasePrice, productionUnits: product.productionUnits, productWeight: product.productWeight },
-        otherProducts,
-        product.indirectCosts
-      );
-      const totalUnitCost = product.unitCost + totalPerUnit;
-      const suggestedPrice = totalUnitCost * (1 + product.profitMargin / 100);
-      const profitPerUnit = suggestedPrice - totalUnitCost;
-      return { ...product, totalUnitCost, suggestedPrice, profitPerUnit };
-    });
-  };
+  const summary = calculateBusinessSummary(inventory, taxSettings);
+  const meta = tabMeta[activeTab];
 
   const handleSaveProduct = (product: ProductCalculation) => {
-    setInventory((prev) => {
-      const exists = prev.some((item) => item.id === product.id);
-      const updated = exists
-        ? prev.map((item) => (item.id === product.id ? product : item))
-        : [product, ...prev];
-      return recalculateInventory(updated);
-    });
+    saveProduct(product);
     setEditingProduct(null);
     setActiveTab('inventory');
-  };
-
-  const handleRecalculateAll = () => {
-    setInventory((prev) => recalculateInventory(prev));
   };
 
   const handleEditProduct = (product: ProductCalculation) => {
@@ -85,157 +53,87 @@ export default function Home() {
     setActiveTab('calculator');
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setInventory(inventory.filter((item) => item.id !== id));
-  };
-
-  const handleSaveGlobalCosts = (costs: IndirectCost[]) => {
-    setGlobalIndirectCosts(costs);
-  };
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-[#F8F9FA] text-zinc-900 font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
-              <Calculator className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">Costify</h1>
-          </div>
-          
-          <nav className="hidden md:flex items-center gap-6">
-            <button 
-              onClick={() => setActiveTab('calculator')}
-              className={`text-sm font-medium transition-colors ${activeTab === 'calculator' ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'}`}
-            >
-              Calculadora
-            </button>
-            <button 
-              onClick={() => setActiveTab('inventory')}
-              className={`text-sm font-medium transition-colors ${activeTab === 'inventory' ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'}`}
-            >
-              Historial
-            </button>
-            <button 
-              onClick={() => setActiveTab('settings')}
-              className={`text-sm font-medium transition-colors ${activeTab === 'settings' ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'}`}
-            >
-              Configuración
-            </button>
-          </nav>
+    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+      <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setActiveTab('settings')}
-              className={`p-2 transition-colors ${activeTab === 'settings' ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'}`}
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-            <button className="p-2 text-zinc-400 hover:text-zinc-600 transition-colors">
-              <HelpCircle className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero / Title Section */}
-        <div className="mb-12">
-          <motion.h2 
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-extrabold tracking-tight text-zinc-900 mb-2"
-          >
-            {activeTab === 'calculator' ? 'Calculadora de Ficha de Costos' : 
-             activeTab === 'inventory' ? 'Historial de Cálculos' : 
-             'Configuración General'}
-          </motion.h2>
-          <motion.p 
-            key={`p-${activeTab}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-zinc-500 max-w-2xl"
-          >
-            {activeTab === 'calculator' 
-              ? 'Determina el precio de venta ideal para tus productos considerando costos directos, indirectos y margen de beneficio.'
-              : activeTab === 'inventory'
-              ? 'Revisa el registro detallado de todos los cálculos realizados para tus productos.'
-              : 'Configura los costos indirectos globales que se aplican recurrentemente en tu negocio.'}
-          </motion.p>
-        </div>
-
-        {/* Tab Switcher (Mobile) */}
-        <div className="flex md:hidden bg-zinc-200/50 p-1 rounded-xl mb-8">
-          <button
-            onClick={() => setActiveTab('calculator')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'calculator' ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500'}`}
-          >
-            Calc
-          </button>
-          <button
-            onClick={() => setActiveTab('inventory')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'inventory' ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500'}`}
-          >
-            Historial
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'settings' ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500'}`}
-          >
-            Config
-          </button>
-        </div>
-
-        {/* Main Content */}
+      <main className="max-w-5xl mx-auto px-4 pt-5 pb-28 md:pb-10">
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
         >
-          {activeTab === 'calculator' ? (
+          <div className="mb-5">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">
+              {meta.title}
+            </h2>
+            <p className="text-sm sm:text-base text-zinc-500 mt-1 max-w-2xl">{meta.description}</p>
+          </div>
+
+          {activeTab === 'calculator' && (
             <CostCalculator
-              onSave={handleSaveProduct}
-              globalIndirectCosts={globalIndirectCosts}
-              inventory={editingProduct ? inventory.filter((i) => i.id !== editingProduct.id) : inventory}
+              inventory={inventory}
+              globalIndirectCosts={globalCosts}
+              taxSettings={taxSettings}
               editingProduct={editingProduct}
+              onSave={handleSaveProduct}
               onCancelEdit={() => setEditingProduct(null)}
             />
-          ) : activeTab === 'inventory' ? (
-            <InventoryList items={inventory} onDelete={handleDeleteProduct} onEdit={handleEditProduct} onRecalculateAll={handleRecalculateAll} />
-          ) : (
-            <IndirectCostsSettings costs={globalIndirectCosts} onSave={handleSaveGlobalCosts} />
+          )}
+
+          {activeTab === 'inventory' && (
+            <InventoryList
+              items={inventory}
+              taxSettings={taxSettings}
+              onDelete={deleteProduct}
+              onEdit={handleEditProduct}
+              onRecalculateAll={recalculateAll}
+            />
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="space-y-4 max-w-2xl">
+              <IndirectCostsSettings costs={globalCosts} onSave={saveCosts} />
+              <TaxSettingsPanel settings={taxSettings} onChange={updateTaxSettings} />
+            </div>
           )}
         </motion.div>
-      </div>
 
-      {/* Footer Stats (Desktop) */}
-      <footer className="mt-20 border-t border-zinc-200 bg-white py-12">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Total Productos</p>
-            <p className="text-3xl font-light">{inventory.length}</p>
+        {inventory.length > 0 && activeTab !== 'inventory' && (
+          <div className="mt-8 grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-zinc-200 p-3">
+              <StatCard label="Productos" value={String(summary.productCount)} />
+            </div>
+            <div className="bg-white rounded-xl border border-zinc-200 p-3">
+              <StatCard
+                label="Margen prom."
+                value={formatPercent(summary.averageGrossMargin)}
+              />
+            </div>
+            <div className="bg-white rounded-xl border border-zinc-200 p-3">
+              <StatCard
+                label="Valor stock"
+                value={formatCurrency(summary.totalStockValue)}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Margen Promedio</p>
-            <p className="text-3xl font-light">
-              {inventory.length > 0 
-                ? (inventory.reduce((acc, item) => acc + item.profitMargin, 0) / inventory.length).toFixed(1)
-                : 0}%
-            </p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Valor de Inventario (Sugerido)</p>
-            <p className="text-3xl font-light">
-              ${inventory.reduce((acc, item) => acc + item.suggestedPrice, 0).toLocaleString()}
-            </p>
-          </div>
-        </div>
-      </footer>
-    </main>
+        )}
+      </main>
+
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        inventoryCount={inventory.length}
+      />
+    </div>
   );
 }
