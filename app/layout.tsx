@@ -1,15 +1,24 @@
-import type {Metadata} from 'next';
-import './globals.css'; // Global styles
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'My Google AI Studio App',
-  description: 'My Google AI Studio App',
+  title: 'Costify — Calculadora de Costos para MIPYME',
+  description:
+    'Calculadora de fichas de costos y precios de venta para micro y pequeñas empresas privadas en Cuba.',
+  applicationName: 'Costify',
 };
 
-export default function RootLayout({children}: {children: React.ReactNode}) {
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#059669',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+    <html lang="es">
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
