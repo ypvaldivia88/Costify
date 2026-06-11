@@ -60,7 +60,7 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
           <summary className="px-4 py-3 text-sm font-semibold text-foreground cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
             Ver desglose completo
           </summary>
-          <div className="px-4 pb-4 space-y-3 border-t border-border">
+          <div className="px-4 pt-4 pb-5 space-y-4 border-t border-border">
             {result.recipeBreakdown && result.recipeBreakdown.length > 0 && (
               <Card variant="muted" className="!p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
