@@ -2,6 +2,7 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import type { RawMaterial, RecipeItem } from '@/lib/domain/types';
+import { MATERIAL_UNIT_LABELS } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
 import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
@@ -69,10 +70,11 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
           {recipe.map((item, index) => {
             const material = rawMaterials.find((m) => m.id === item.rawMaterialId);
             const lineCost = material ? material.unitCost * item.quantity : 0;
+            const unitLabel = material ? MATERIAL_UNIT_LABELS[material.unitType] : '';
             const stockAfter =
               material && item.quantity > 0
-                ? material.stockUnits - item.quantity
-                : material?.stockUnits;
+                ? material.stockQuantity - item.quantity
+                : material?.stockQuantity;
 
             return (
               <div
@@ -86,7 +88,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                 >
                   {rawMaterials.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.name} ({formatCurrency(m.unitCost)}/u)
+                      {m.name} ({formatCurrency(m.unitCost)}/{MATERIAL_UNIT_LABELS[m.unitType]})
                     </option>
                   ))}
                 </select>
@@ -104,7 +106,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                     className="w-24 min-h-11 px-3 py-2 text-sm rounded-xl border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
                     aria-label="Cantidad"
                   />
-                  <span className="text-xs text-zinc-500 shrink-0">uds.</span>
+                  <span className="text-xs text-zinc-500 shrink-0">{unitLabel}</span>
                   <button
                     onClick={() => removeItem(index)}
                     className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
@@ -121,7 +123,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                   </p>
                   {material && (
                     <p className="text-[11px] text-zinc-400">
-                      Stock: {material.stockUnits} uds.
+                      Stock: {material.stockQuantity} {unitLabel}
                       {item.quantity > 0 && stockAfter !== undefined && (
                         <span className={stockAfter < 0 ? ' text-red-500' : ''}>
                           {' '}

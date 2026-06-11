@@ -2,6 +2,7 @@ export { calculateUnitDirectCost, calculateTotalDirectCost } from './direct-cost
 export {
   calculateRawMaterialUnitCost,
   buildRawMaterial,
+  migrateRawMaterialInput,
   recalculateRawMaterial,
 } from './raw-material';
 export { calculateRecipeUnitCost, estimateRecipeConsumption } from './recipe-cost';

@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { RawMaterial, RawMaterialInput } from '@/lib/domain/types';
-import { buildRawMaterial, recalculateRawMaterial } from '@/lib/domain/calculations';
+import {
+  buildRawMaterial,
+  migrateRawMaterialInput,
+  recalculateRawMaterial,
+} from '@/lib/domain/calculations';
 import { STORAGE_KEYS } from '@/lib/domain/constants';
 import { loadFromStorage, saveToStorage } from '@/lib/storage/local-storage';
 
@@ -11,8 +15,15 @@ export function useRawMaterials() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const saved = loadFromStorage<RawMaterial[]>(STORAGE_KEYS.rawMaterials, []);
-    setMaterials(saved.map(recalculateRawMaterial));
+    const saved = loadFromStorage<Array<RawMaterial & { unitsPerPackage?: number; stockUnits?: number }>>(
+      STORAGE_KEYS.rawMaterials,
+      []
+    );
+    setMaterials(
+      saved.map((material) =>
+        buildRawMaterial(migrateRawMaterialInput(material), material.id, material.timestamp)
+      )
+    );
     setHydrated(true);
   }, []);
 
@@ -36,9 +47,9 @@ export function useRawMaterials() {
     setMaterials((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
-  const updateStock = useCallback((id: string, stockUnits: number) => {
+  const updateStock = useCallback((id: string, stockQuantity: number) => {
     setMaterials((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, stockUnits: Math.max(0, stockUnits) } : m))
+      prev.map((m) => (m.id === id ? { ...m, stockQuantity: Math.max(0, stockQuantity) } : m))
     );
   }, []);
 

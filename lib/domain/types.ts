@@ -1,3 +1,5 @@
+export type MaterialUnitType = 'gr' | 'kg' | 'lt' | 'ml';
+
 export type DistributionCriteria = 'units' | 'direct-cost' | 'weight' | 'manual';
 
 export type MarginType = 'markup' | 'margin';
@@ -7,8 +9,9 @@ export type ProductType = 'simple' | 'elaborated';
 export interface RawMaterialInput {
   name: string;
   purchasePrice: number;
-  unitsPerPackage: number;
-  stockUnits: number;
+  unitType: MaterialUnitType;
+  packageQuantity: number;
+  stockQuantity: number;
 }
 
 export interface RawMaterial extends RawMaterialInput {

@@ -16,14 +16,15 @@ interface RawMaterialsManagerProps {
     data: {
       name: string;
       purchasePrice: number;
-      unitsPerPackage: number;
-      stockUnits: number;
+      unitType: RawMaterial['unitType'];
+      packageQuantity: number;
+      stockQuantity: number;
     },
     id?: string,
     timestamp?: number
   ) => void;
   onDelete: (id: string) => void;
-  onStockChange: (id: string, stockUnits: number) => void;
+  onStockChange: (id: string, stockQuantity: number) => void;
 }
 
 export function RawMaterialsManager({
@@ -35,7 +36,7 @@ export function RawMaterialsManager({
   const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
 
   const totalStockValue = materials.reduce(
-    (sum, m) => sum + m.unitCost * m.stockUnits,
+    (sum, m) => sum + m.unitCost * m.stockQuantity,
     0
   );
 

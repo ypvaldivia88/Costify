@@ -1,4 +1,13 @@
-import type { DistributionCriteria, GlobalFundSettings, TaxSettings } from './types';
+import type { DistributionCriteria, GlobalFundSettings, MaterialUnitType, TaxSettings } from './types';
+
+export const MATERIAL_UNIT_TYPES: MaterialUnitType[] = ['gr', 'kg', 'lt', 'ml'];
+
+export const MATERIAL_UNIT_LABELS: Record<MaterialUnitType, string> = {
+  gr: 'gr',
+  kg: 'kg',
+  lt: 'lt',
+  ml: 'ml',
+};
 
 /** Tasas según Resolución 306/2023 del MFP (MIPYMES Cuba, vigente desde 2024) */
 export const CUBAN_MIPYME_TAX_RATES = {
