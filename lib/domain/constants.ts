@@ -42,4 +42,10 @@ export const STORAGE_KEYS = {
   inventory: 'costify_inventory_v2',
   globalCosts: 'costify_global_costs_v2',
   taxSettings: 'costify_tax_settings_v2',
+  rawMaterials: 'costify_raw_materials_v2',
+} as const;
+
+export const PRODUCT_TYPE_LABELS = {
+  simple: 'Producto simple',
+  elaborated: 'Producto elaborado',
 } as const;

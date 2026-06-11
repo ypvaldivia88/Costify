@@ -2,6 +2,34 @@ export type DistributionCriteria = 'units' | 'direct-cost' | 'weight' | 'manual'
 
 export type MarginType = 'markup' | 'margin';
 
+export type ProductType = 'simple' | 'elaborated';
+
+export interface RawMaterialInput {
+  name: string;
+  purchasePrice: number;
+  unitsPerPackage: number;
+  stockUnits: number;
+}
+
+export interface RawMaterial extends RawMaterialInput {
+  id: string;
+  unitCost: number;
+  timestamp: number;
+}
+
+export interface RecipeItem {
+  rawMaterialId: string;
+  quantity: number;
+}
+
+export interface RecipeItemBreakdown {
+  rawMaterialId: string;
+  name: string;
+  quantity: number;
+  unitCost: number;
+  lineCost: number;
+}
+
 export interface IndirectCost {
   id: string;
   name: string;
@@ -12,8 +40,10 @@ export interface IndirectCost {
 
 export interface ProductInput {
   name: string;
+  productType: ProductType;
   purchasePrice: number;
   unitsPerPackage: number;
+  recipe?: RecipeItem[];
   productionUnits: number;
   productWeight?: number;
   indirectCosts: IndirectCost[];
@@ -37,6 +67,7 @@ export interface ProductCalculation extends ProductInput {
   profitPerUnit: number;
   grossMarginPercent: number;
   indirectBreakdown: IndirectCostBreakdown[];
+  recipeBreakdown?: RecipeItemBreakdown[];
   timestamp: number;
 }
 
@@ -81,4 +112,5 @@ export interface ProductAllocationContext {
   unitsPerPackage: number;
   productionUnits: number;
   productWeight?: number;
+  unitDirectCost?: number;
 }

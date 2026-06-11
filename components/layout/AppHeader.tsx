@@ -11,6 +11,7 @@ interface AppHeaderProps {
 
 const navItems: { id: AppTab; label: string }[] = [
   { id: 'calculator', label: 'Calculadora' },
+  { id: 'raw-materials', label: 'Materias primas' },
   { id: 'inventory', label: 'Historial' },
   { id: 'settings', label: 'Ajustes' },
 ];

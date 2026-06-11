@@ -10,9 +10,15 @@ export interface IndirectAllocationResult {
   breakdown: IndirectCostBreakdown[];
 }
 
+function getUnitDirectCost(product: ProductAllocationContext): number {
+  if (product.unitDirectCost !== undefined && product.unitDirectCost >= 0) {
+    return product.unitDirectCost;
+  }
+  return product.purchasePrice / (product.unitsPerPackage > 0 ? product.unitsPerPackage : 1);
+}
+
 function getProductDirectCostTotal(product: ProductAllocationContext): number {
-  const unitCost = product.purchasePrice / (product.unitsPerPackage > 0 ? product.unitsPerPackage : 1);
-  return unitCost * product.productionUnits;
+  return getUnitDirectCost(product) * product.productionUnits;
 }
 
 function allocateSingleCost(
@@ -76,6 +82,7 @@ export function allocateIndirectCosts(
       unitsPerPackage: p.unitsPerPackage,
       productionUnits: p.productionUnits,
       productWeight: p.productWeight,
+      unitDirectCost: p.unitCost,
     })),
     currentProduct,
   ];

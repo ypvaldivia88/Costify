@@ -4,7 +4,7 @@ import { Edit2, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ProductCalculation, TaxSettings } from '@/lib/domain/types';
 import { calculateMonthlyTaxProjection } from '@/lib/domain/calculations/taxes';
-import { DISTRIBUTION_CRITERIA_SHORT } from '@/lib/domain/constants';
+import { DISTRIBUTION_CRITERIA_SHORT, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
 
@@ -36,6 +36,9 @@ export function InventoryItem({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold text-zinc-900 truncate">{item.name}</h3>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">
+                {PRODUCT_TYPE_LABELS[item.productType ?? 'simple']}
+              </span>
               <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">
                 {new Date(item.timestamp).toLocaleDateString('es-CU')}
               </span>
@@ -95,6 +98,23 @@ export function InventoryItem({
                   Desglose de costos
                 </p>
                 <div className="space-y-1.5 text-sm">
+                  {item.recipeBreakdown && item.recipeBreakdown.length > 0 && (
+                    <>
+                      {item.recipeBreakdown.map((rm) => (
+                        <div key={rm.rawMaterialId} className="flex justify-between gap-2">
+                          <span className="text-zinc-600 truncate">
+                            {rm.name}{' '}
+                            <span className="text-xs text-zinc-400">
+                              ({rm.quantity} × {formatCurrency(rm.unitCost)})
+                            </span>
+                          </span>
+                          <span className="font-medium tabular-nums shrink-0">
+                            {formatCurrency(rm.lineCost)}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-zinc-600">Costo directo unitario</span>
                     <span className="font-medium">{formatCurrency(item.unitCost)}</span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { ProductCalculation } from '@/lib/domain/types';
+import type { ProductCalculation, RawMaterial } from '@/lib/domain/types';
 import { recalculateInventory } from '@/lib/domain/calculations';
 import { STORAGE_KEYS } from '@/lib/domain/constants';
 import {
@@ -26,25 +26,25 @@ export function useInventory() {
     saveToStorage(STORAGE_KEYS.inventory, inventory);
   }, [inventory, hydrated]);
 
-  const saveProduct = useCallback((product: ProductCalculation) => {
+  const saveProduct = useCallback((product: ProductCalculation, rawMaterials: RawMaterial[] = []) => {
     setInventory((prev) => {
       const exists = prev.some((item) => item.id === product.id);
       const updated = exists
         ? prev.map((item) => (item.id === product.id ? product : item))
         : [product, ...prev];
-      return recalculateInventory(updated);
+      return recalculateInventory(updated, rawMaterials);
     });
   }, []);
 
-  const deleteProduct = useCallback((id: string) => {
+  const deleteProduct = useCallback((id: string, rawMaterials: RawMaterial[] = []) => {
     setInventory((prev) => {
       const filtered = prev.filter((item) => item.id !== id);
-      return recalculateInventory(filtered);
+      return recalculateInventory(filtered, rawMaterials);
     });
   }, []);
 
-  const recalculateAll = useCallback(() => {
-    setInventory((prev) => recalculateInventory(prev));
+  const recalculateAll = useCallback((rawMaterials: RawMaterial[] = []) => {
+    setInventory((prev) => recalculateInventory(prev, rawMaterials));
   }, []);
 
   return {

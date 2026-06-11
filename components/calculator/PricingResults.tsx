@@ -52,6 +52,29 @@ export function PricingResults({ result, inventoryCount, taxSettings }: PricingR
         </p>
       </Card>
 
+      {result.recipeBreakdown && result.recipeBreakdown.length > 0 && (
+        <Card variant="muted">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 mb-2">
+            Desglose de materias primas
+          </p>
+          <div className="space-y-1.5">
+            {result.recipeBreakdown.map((item) => (
+              <div key={item.rawMaterialId} className="flex justify-between text-sm gap-2">
+                <span className="text-zinc-600 truncate">
+                  {item.name}
+                  <span className="text-zinc-400 text-xs ml-1">
+                    ({item.quantity} × {formatCurrency(item.unitCost)})
+                  </span>
+                </span>
+                <span className="font-semibold text-zinc-800 tabular-nums shrink-0">
+                  {formatCurrency(item.lineCost)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         <Card className="!p-3">
           <StatCard label="Costo directo" value={formatCurrency(result.unitCost)} />

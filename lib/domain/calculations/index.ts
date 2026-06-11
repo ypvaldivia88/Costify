@@ -1,5 +1,11 @@
 export { calculateUnitDirectCost, calculateTotalDirectCost } from './direct-cost';
 export {
+  calculateRawMaterialUnitCost,
+  buildRawMaterial,
+  recalculateRawMaterial,
+} from './raw-material';
+export { calculateRecipeUnitCost, estimateRecipeConsumption } from './recipe-cost';
+export {
   allocateIndirectCosts,
   getTotalMonthlyIndirectCosts,
   getIndirectCoverage,

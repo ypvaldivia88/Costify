@@ -26,6 +26,7 @@ export function migrateLegacyInventory(): unknown[] {
     const parsed = JSON.parse(legacy) as Array<Record<string, unknown>>;
     return parsed.map((item) => ({
       ...item,
+      productType: item.productType ?? 'simple',
       marginType: item.marginType ?? 'markup',
       totalIndirectPerUnit: item.totalIndirectPerUnit ?? item.totalUnitCost
         ? (item.totalUnitCost as number) - (item.unitCost as number)

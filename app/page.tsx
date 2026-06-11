@@ -6,12 +6,14 @@ import type { ProductCalculation } from '@/lib/domain/types';
 import { calculateBusinessSummary } from '@/lib/domain/calculations';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { useInventory } from '@/hooks/use-inventory';
+import { useRawMaterials } from '@/hooks/use-raw-materials';
 import { useGlobalCosts } from '@/hooks/use-global-costs';
 import { useTaxSettings } from '@/hooks/use-tax-settings';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNav, type AppTab } from '@/components/ui/BottomNav';
 import { CostCalculator } from '@/components/calculator/CostCalculator';
 import { InventoryList } from '@/components/inventory/InventoryList';
+import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsManager';
 import { IndirectCostsSettings } from '@/components/settings/IndirectCostsSettings';
 import { TaxSettingsPanel } from '@/components/settings/TaxSettingsPanel';
 import { StatCard } from '@/components/ui/StatCard';
@@ -21,6 +23,11 @@ const tabMeta: Record<AppTab, { title: string; description: string }> = {
     title: 'Calculadora de costos',
     description:
       'Determina el precio de venta ideal considerando costos directos, gastos indirectos y tu margen de utilidad.',
+  },
+  'raw-materials': {
+    title: 'Materias primas',
+    description:
+      'Registra tus insumos con costo unitario y stock. Úsalos para confeccionar productos elaborados.',
   },
   inventory: {
     title: 'Historial de productos',
@@ -33,17 +40,26 @@ const tabMeta: Record<AppTab, { title: string; description: string }> = {
 };
 
 export default function Home() {
-  const { inventory, hydrated, saveProduct, deleteProduct, recalculateAll } = useInventory();
+  const { inventory, hydrated: inventoryHydrated, saveProduct, deleteProduct, recalculateAll } =
+    useInventory();
+  const {
+    materials,
+    hydrated: materialsHydrated,
+    saveMaterial,
+    deleteMaterial,
+    updateStock,
+  } = useRawMaterials();
   const { globalCosts, saveCosts } = useGlobalCosts();
   const { taxSettings, updateTaxSettings } = useTaxSettings();
   const [activeTab, setActiveTab] = useState<AppTab>('calculator');
   const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
 
+  const hydrated = inventoryHydrated && materialsHydrated;
   const summary = calculateBusinessSummary(inventory, taxSettings);
   const meta = tabMeta[activeTab];
 
   const handleSaveProduct = (product: ProductCalculation) => {
-    saveProduct(product);
+    saveProduct(product, materials);
     setEditingProduct(null);
     setActiveTab('inventory');
   };
@@ -82,6 +98,7 @@ export default function Home() {
           {activeTab === 'calculator' && (
             <CostCalculator
               inventory={inventory}
+              rawMaterials={materials}
               globalIndirectCosts={globalCosts}
               taxSettings={taxSettings}
               editingProduct={editingProduct}
@@ -90,13 +107,22 @@ export default function Home() {
             />
           )}
 
+          {activeTab === 'raw-materials' && (
+            <RawMaterialsManager
+              materials={materials}
+              onSave={saveMaterial}
+              onDelete={deleteMaterial}
+              onStockChange={updateStock}
+            />
+          )}
+
           {activeTab === 'inventory' && (
             <InventoryList
               items={inventory}
               taxSettings={taxSettings}
-              onDelete={deleteProduct}
+              onDelete={(id) => deleteProduct(id, materials)}
               onEdit={handleEditProduct}
-              onRecalculateAll={recalculateAll}
+              onRecalculateAll={() => recalculateAll(materials)}
             />
           )}
 
@@ -133,6 +159,7 @@ export default function Home() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         inventoryCount={inventory.length}
+        rawMaterialsCount={materials.length}
       />
     </div>
   );
