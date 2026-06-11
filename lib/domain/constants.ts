@@ -19,6 +19,22 @@ export const UNIT_SHORT_LABELS: Record<UnitType, string> = {
   ml: 'ml',
 };
 
+/** Sugerencias para la unidad de compra de productos simples */
+export const PRODUCT_PURCHASE_UNIT_SUGGESTIONS = [
+  'unidad',
+  'caja',
+  'bolsa',
+  'saco',
+  'paquete',
+  'docena',
+  'par',
+  'kg',
+  'gr',
+  'lt',
+  'ml',
+  'rollo',
+] as const;
+
 /** Tasas según Resolución 306/2023 del MFP (MIPYMES Cuba, vigente desde 2024) */
 export const CUBAN_MIPYME_TAX_RATES = {
   /** Impuesto sobre Ventas y Servicios */

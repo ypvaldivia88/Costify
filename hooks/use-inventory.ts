@@ -15,7 +15,9 @@ export function useInventory() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const saved = loadFromStorage<Array<ProductCalculation & { unitsPerPackage?: number }>>(
+    const saved = loadFromStorage<
+      Array<ProductCalculation & { unitsPerPackage?: number; unitType?: string }>
+    >(
       STORAGE_KEYS.inventory,
       []
     );

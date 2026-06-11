@@ -9,14 +9,32 @@ import {
 } from './pricing';
 import { calculateRecipeUnitCost } from './recipe-cost';
 
-type LegacyProductInput = Partial<ProductInput> & { unitsPerPackage?: number };
+type LegacyProductInput = Partial<ProductInput> & {
+  unitsPerPackage?: number;
+  unitType?: UnitType;
+};
+
+const LEGACY_UNIT_LABELS: Record<UnitType, string> = {
+  ud: 'unidad',
+  gr: 'gr',
+  kg: 'kg',
+  lt: 'lt',
+  ml: 'ml',
+};
+
+function normalizePurchaseUnit(value: string | undefined, legacyUnitType?: UnitType): string {
+  const trimmed = value?.trim();
+  if (trimmed) return trimmed;
+  if (legacyUnitType) return LEGACY_UNIT_LABELS[legacyUnitType];
+  return 'unidad';
+}
 
 export function migrateProductInput(product: LegacyProductInput): ProductInput {
   return {
     name: product.name ?? '',
     productType: product.productType ?? 'simple',
     purchasePrice: product.purchasePrice ?? 0,
-    unitType: product.unitType ?? 'ud',
+    purchaseUnit: normalizePurchaseUnit(product.purchaseUnit, product.unitType),
     packageQuantity: product.packageQuantity ?? product.unitsPerPackage ?? 1,
     recipe: product.recipe,
     productionUnits: product.productionUnits ?? 1,
@@ -33,7 +51,7 @@ function resolveDirectCost(
 ): {
   unitCost: number;
   purchasePrice: number;
-  unitType: UnitType;
+  purchaseUnit: string;
   packageQuantity: number;
   recipeBreakdown?: ProductCalculation['recipeBreakdown'];
 } {
@@ -42,7 +60,7 @@ function resolveDirectCost(
     return {
       unitCost,
       purchasePrice: unitCost,
-      unitType: input.unitType ?? 'ud',
+      purchaseUnit: normalizePurchaseUnit(input.purchaseUnit),
       packageQuantity: 1,
       recipeBreakdown: breakdown,
     };
@@ -52,7 +70,7 @@ function resolveDirectCost(
   return {
     unitCost,
     purchasePrice: input.purchasePrice,
-    unitType: input.unitType,
+    purchaseUnit: normalizePurchaseUnit(input.purchaseUnit),
     packageQuantity: input.packageQuantity,
   };
 }
@@ -93,7 +111,7 @@ export function calculateProduct(
     ...input,
     productType: input.productType ?? 'simple',
     purchasePrice: direct.purchasePrice,
-    unitType: direct.unitType,
+    purchaseUnit: direct.purchaseUnit,
     packageQuantity: direct.packageQuantity,
     id: id ?? crypto.randomUUID(),
     unitCost: direct.unitCost,

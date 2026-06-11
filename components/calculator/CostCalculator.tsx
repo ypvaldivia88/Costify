@@ -11,9 +11,9 @@ import type {
   RawMaterial,
   RecipeItem,
 } from '@/lib/domain/types';
-import { calculateProduct } from '@/lib/domain/calculations';
-import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS, UNIT_LABELS, UNIT_TYPES } from '@/lib/domain/constants';
-import type { UnitType } from '@/lib/domain/types';
+import { calculateProduct, migrateProductInput } from '@/lib/domain/calculations';
+import { MARGIN_TYPE_LABELS, PRODUCT_PURCHASE_UNIT_SUGGESTIONS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
+import { formatCurrency } from '@/lib/format/currency';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -45,7 +45,7 @@ const defaultForm = {
   name: '',
   productType: 'simple' as ProductType,
   purchasePrice: 0,
-  unitType: 'ud' as UnitType,
+  purchaseUnit: 'unidad',
   packageQuantity: 1,
   recipe: [] as RecipeItem[],
   productionUnits: 100,
@@ -69,15 +69,13 @@ export function CostCalculator({
 
   useEffect(() => {
     if (editingProduct) {
+      const migrated = migrateProductInput(editingProduct);
       setForm({
         name: editingProduct.name,
         productType: editingProduct.productType ?? 'simple',
         purchasePrice: editingProduct.purchasePrice,
-        unitType: editingProduct.unitType ?? 'ud',
-        packageQuantity:
-          editingProduct.packageQuantity ??
-          (editingProduct as { unitsPerPackage?: number }).unitsPerPackage ??
-          1,
+        purchaseUnit: migrated.purchaseUnit,
+        packageQuantity: migrated.packageQuantity,
         recipe: editingProduct.recipe ?? [],
         productionUnits: editingProduct.productionUnits,
         productWeight: editingProduct.productWeight ?? 0,
@@ -101,7 +99,7 @@ export function CostCalculator({
           name: form.name || 'Producto',
           productType: form.productType,
           purchasePrice: form.purchasePrice,
-          unitType: form.unitType,
+          purchaseUnit: form.purchaseUnit,
           packageQuantity: form.packageQuantity,
           recipe: form.recipe,
           productionUnits: form.productionUnits,
@@ -161,7 +159,11 @@ export function CostCalculator({
         return;
       }
       if (form.packageQuantity <= 0) {
-        alert('Ingresa la cantidad comprada.');
+        alert('Ingresa cuántas unidades incluye la compra.');
+        return;
+      }
+      if (!form.purchaseUnit.trim()) {
+        alert('Indica qué estás contando (unidad, caja, bolsa, kg, etc.).');
         return;
       }
     }
@@ -175,7 +177,7 @@ export function CostCalculator({
         name: form.name.trim(),
         productType: form.productType,
         purchasePrice: form.purchasePrice,
-        unitType: form.unitType,
+        purchaseUnit: form.purchaseUnit.trim(),
         packageQuantity: form.packageQuantity,
         recipe: isElaborated ? form.recipe : undefined,
         productionUnits: form.productionUnits,
@@ -246,7 +248,7 @@ export function CostCalculator({
             <p className="text-xs text-zinc-500 mt-1.5">
               {isElaborated
                 ? 'Confecciona el producto seleccionando materias primas de tu inventario.'
-                : 'Costo directo basado en precio de compra y cantidad de la unidad seleccionada.'}
+                : 'Divide el precio de compra entre la cantidad que incluye el lote.'}
             </p>
           </div>
 
@@ -258,6 +260,27 @@ export function CostCalculator({
             />
           ) : (
             <div className="space-y-4">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600 space-y-2">
+                <p className="font-medium text-zinc-800">¿Cómo repartir el costo?</p>
+                <p>
+                  Indica cuánto pagaste y en cuántas partes divides ese precio para vender.
+                </p>
+                <ul className="text-xs space-y-1 list-disc pl-4 text-zinc-500">
+                  <li>
+                    Caja de 24 refrescos a 1&nbsp;200 CUP → cantidad <strong>24</strong>, unidad{' '}
+                    <strong>unidades</strong>
+                  </li>
+                  <li>
+                    2 cajas a 2&nbsp;000 CUP → cantidad <strong>2</strong>, unidad{' '}
+                    <strong>cajas</strong>
+                  </li>
+                  <li>
+                    Bolsa de 5&nbsp;kg a 500 CUP → cantidad <strong>5</strong>, unidad{' '}
+                    <strong>kg</strong>
+                  </li>
+                </ul>
+              </div>
+
               <Input
                 label="Precio de compra (CUP)"
                 type="number"
@@ -266,41 +289,58 @@ export function CostCalculator({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, purchasePrice: parseNumericInput(e.target.value) }))
                 }
-                hint="Costo del paquete o lote"
+                hint="Lo que pagaste por el lote, caja, bolsa, etc."
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="product-unit-type" className="block text-sm font-medium text-zinc-700">
-                    Tipo de unidad
-                  </label>
-                  <select
-                    id="product-unit-type"
-                    value={form.unitType}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, unitType: e.target.value as UnitType }))
-                    }
-                    className={selectClassName}
-                  >
-                    {UNIT_TYPES.map((unit) => (
-                      <option key={unit} value={unit}>
-                        {UNIT_LABELS[unit]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 <Input
-                  label="Cantidad comprada"
+                  label="Cantidad en la compra"
                   type="number"
                   inputMode="decimal"
                   value={formatNumericInput(form.packageQuantity)}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, packageQuantity: parseNumericInput(e.target.value) }))
                   }
-                  hint={`Cantidad en ${UNIT_LABELS[form.unitType]} incluida en el precio de compra`}
+                  hint="Cuántas piezas, cajas, kg, etc. incluye lo que compraste"
                 />
+
+                <div className="space-y-1.5">
+                  <label htmlFor="product-purchase-unit" className="block text-sm font-medium text-zinc-700">
+                    ¿Qué estás contando?
+                  </label>
+                  <input
+                    id="product-purchase-unit"
+                    list="product-purchase-unit-suggestions"
+                    value={form.purchaseUnit}
+                    onChange={(e) => setForm((p) => ({ ...p, purchaseUnit: e.target.value }))}
+                    placeholder="Ej. unidad, caja, bolsa, kg"
+                    className={selectClassName}
+                  />
+                  <datalist id="product-purchase-unit-suggestions">
+                    {PRODUCT_PURCHASE_UNIT_SUGGESTIONS.map((unit) => (
+                      <option key={unit} value={unit} />
+                    ))}
+                  </datalist>
+                  <p className="text-xs text-zinc-500">
+                    Escribe libremente o elige una sugerencia
+                  </p>
+                </div>
               </div>
+
+              {form.purchasePrice > 0 && form.packageQuantity > 0 && form.purchaseUnit.trim() && (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200/80 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                    Costo por {form.purchaseUnit.trim()}
+                  </p>
+                  <p className="text-2xl font-black text-emerald-900 tabular-nums mt-1">
+                    {formatCurrency(result.unitCost)}
+                  </p>
+                  <p className="text-xs text-emerald-600 mt-1">
+                    {formatCurrency(form.purchasePrice)} ÷ {form.packageQuantity}{' '}
+                    {form.purchaseUnit.trim()}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

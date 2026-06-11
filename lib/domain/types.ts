@@ -45,7 +45,8 @@ export interface ProductInput {
   name: string;
   productType: ProductType;
   purchasePrice: number;
-  unitType: UnitType;
+  /** Etiqueta libre: unidad, caja, bolsa, kg, par, etc. */
+  purchaseUnit: string;
   packageQuantity: number;
   recipe?: RecipeItem[];
   productionUnits: number;
