@@ -49,7 +49,6 @@ const defaultForm = {
   packageQuantity: 1,
   recipe: [] as RecipeItem[],
   productionUnits: 100,
-  productWeight: 0,
   profitMargin: 30,
   marginType: 'markup' as MarginType,
   indirectCosts: [] as IndirectCost[],
@@ -78,7 +77,6 @@ export function CostCalculator({
         packageQuantity: migrated.packageQuantity,
         recipe: editingProduct.recipe ?? [],
         productionUnits: editingProduct.productionUnits,
-        productWeight: editingProduct.productWeight ?? 0,
         profitMargin: editingProduct.profitMargin,
         marginType: editingProduct.marginType ?? 'markup',
         indirectCosts: editingProduct.indirectCosts,
@@ -103,7 +101,6 @@ export function CostCalculator({
           packageQuantity: form.packageQuantity,
           recipe: form.recipe,
           productionUnits: form.productionUnits,
-          productWeight: form.productWeight || undefined,
           indirectCosts: form.indirectCosts,
           profitMargin: form.profitMargin,
           marginType: form.marginType,
@@ -181,7 +178,6 @@ export function CostCalculator({
         packageQuantity: form.packageQuantity,
         recipe: isElaborated ? form.recipe : undefined,
         productionUnits: form.productionUnits,
-        productWeight: form.productWeight || undefined,
         indirectCosts: form.indirectCosts,
         profitMargin: form.profitMargin,
         marginType: form.marginType,
@@ -344,28 +340,16 @@ export function CostCalculator({
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Unidades a vender (mensual)"
-              type="number"
-              inputMode="numeric"
-              value={formatNumericInput(form.productionUnits)}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, productionUnits: parseNumericInput(e.target.value) }))
-              }
-              hint="Volumen estimado de ventas del mes"
-            />
-            <Input
-              label="Peso/volumen por unidad (opcional)"
-              type="number"
-              inputMode="decimal"
-              value={formatNumericInput(form.productWeight)}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, productWeight: parseNumericInput(e.target.value) }))
-              }
-              hint="Para distribuir transporte o almacenamiento"
-            />
-          </div>
+          <Input
+            label="Unidades a vender (mensual)"
+            type="number"
+            inputMode="numeric"
+            value={formatNumericInput(form.productionUnits)}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, productionUnits: parseNumericInput(e.target.value) }))
+            }
+            hint="Volumen estimado de ventas del mes"
+          />
 
           <IndirectCostsEditor
             costs={form.indirectCosts}
