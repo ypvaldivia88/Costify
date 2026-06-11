@@ -4,14 +4,20 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { RawMaterial, RecipeItem } from '@/lib/domain/types';
 import { UNIT_SHORT_LABELS } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
-import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
+import { NumericField } from '@/components/ui/NumericField';
+import { cn } from '@/lib/utils';
 
 interface RecipeEditorProps {
   recipe: RecipeItem[];
   rawMaterials: RawMaterial[];
   onChange: (recipe: RecipeItem[]) => void;
 }
+
+const fieldClass = cn(
+  'min-h-11 px-3 py-2 text-sm rounded-xl border border-border bg-surface text-foreground',
+  'focus:outline-none focus:border-brand'
+);
 
 export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorProps) {
   const usedIds = new Set(recipe.map((r) => r.rawMaterialId));
@@ -38,9 +44,8 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
 
   if (rawMaterials.length === 0) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        No hay materias primas registradas. Ve a la pestaña &quot;Materias primas&quot; para
-        agregarlas antes de confeccionar un producto elaborado.
+      <div className="rounded-xl border border-amber-300/50 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+        Registra materias primas primero para confeccionar un producto elaborado.
       </div>
     );
   }
@@ -48,7 +53,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-zinc-700">Receta (materias primas)</label>
+        <label className="text-sm font-medium text-foreground">Receta</label>
         <Button
           variant="outline"
           size="sm"
@@ -62,29 +67,23 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
       </div>
 
       {recipe.length === 0 ? (
-        <p className="text-sm text-zinc-500 py-2">
-          Selecciona las materias primas y cantidades necesarias para una unidad del producto.
-        </p>
+        <p className="text-sm text-muted py-2">Agrega materias primas y cantidades por unidad.</p>
       ) : (
         <div className="space-y-2">
           {recipe.map((item, index) => {
             const material = rawMaterials.find((m) => m.id === item.rawMaterialId);
             const lineCost = material ? material.unitCost * item.quantity : 0;
             const unitLabel = material ? UNIT_SHORT_LABELS[material.unitType] : '';
-            const stockAfter =
-              material && item.quantity > 0
-                ? material.stockQuantity - item.quantity
-                : material?.stockQuantity;
 
             return (
               <div
                 key={`${item.rawMaterialId}-${index}`}
-                className="flex flex-col sm:flex-row gap-2 p-3 rounded-xl border border-zinc-200 bg-zinc-50/50"
+                className="flex flex-col sm:flex-row gap-2 p-3 rounded-xl border border-border bg-surface-muted/50"
               >
                 <select
                   value={item.rawMaterialId}
                   onChange={(e) => updateItem(index, { rawMaterialId: e.target.value })}
-                  className="flex-1 min-h-11 px-3 py-2 text-sm rounded-xl border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
+                  className={cn('flex-1', fieldClass)}
                 >
                   {rawMaterials.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -94,22 +93,16 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                 </select>
 
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    value={formatNumericInput(item.quantity)}
-                    onChange={(e) =>
-                      updateItem(index, { quantity: parseNumericInput(e.target.value) })
-                    }
-                    className="w-24 min-h-11 px-3 py-2 text-sm rounded-xl border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
+                  <NumericField
+                    value={item.quantity}
+                    onChange={(quantity) => updateItem(index, { quantity })}
+                    className="w-24"
                     aria-label="Cantidad"
                   />
-                  <span className="text-xs text-zinc-500 shrink-0">{unitLabel}</span>
+                  <span className="text-xs text-muted shrink-0">{unitLabel}</span>
                   <button
                     onClick={() => removeItem(index)}
-                    className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-muted hover:text-red-500 rounded-xl transition-colors"
                     aria-label="Eliminar"
                     type="button"
                   >
@@ -118,20 +111,9 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                 </div>
 
                 <div className="sm:text-right sm:min-w-28">
-                  <p className="text-sm font-semibold text-zinc-800 tabular-nums">
+                  <p className="text-sm font-semibold text-foreground tabular-nums">
                     {formatCurrency(lineCost)}
                   </p>
-                  {material && (
-                    <p className="text-[11px] text-zinc-400">
-                      Stock: {material.stockQuantity} {unitLabel}
-                      {item.quantity > 0 && stockAfter !== undefined && (
-                        <span className={stockAfter < 0 ? ' text-red-500' : ''}>
-                          {' '}
-                          (queda {stockAfter.toFixed(2)})
-                        </span>
-                      )}
-                    </p>
-                  )}
                 </div>
               </div>
             );
@@ -140,11 +122,9 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
       )}
 
       {recipe.length > 0 && (
-        <div className="flex justify-between items-center pt-2 border-t border-zinc-200">
-          <span className="text-sm font-medium text-zinc-700">Costo directo por unidad</span>
-          <span className="text-lg font-bold text-emerald-700 tabular-nums">
-            {formatCurrency(totalCost)}
-          </span>
+        <div className="flex justify-between items-center pt-2 border-t border-border">
+          <span className="text-sm font-medium text-foreground">Costo directo por unidad</span>
+          <span className="text-lg font-bold text-brand tabular-nums">{formatCurrency(totalCost)}</span>
         </div>
       )}
     </div>

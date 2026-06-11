@@ -7,11 +7,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-sm',
-  secondary: 'bg-zinc-900 text-white hover:bg-zinc-800 active:bg-zinc-700',
-  ghost: 'text-zinc-600 hover:bg-zinc-100 active:bg-zinc-200',
-  danger: 'text-red-600 hover:bg-red-50 active:bg-red-100',
-  outline: 'border border-zinc-200 text-zinc-700 hover:bg-zinc-50 active:bg-zinc-100',
+  primary: 'bg-brand text-white hover:opacity-90 active:opacity-80 shadow-sm',
+  secondary: 'bg-foreground text-background hover:opacity-90 active:opacity-80',
+  ghost: 'text-muted hover:bg-surface-muted hover:text-foreground',
+  danger: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40',
+  outline: 'border border-border text-foreground hover:bg-surface-muted',
 };
 
 const sizes = {

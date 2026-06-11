@@ -86,6 +86,7 @@ export const STORAGE_KEYS = {
   taxSettings: 'costify_tax_settings_v2',
   rawMaterials: 'costify_raw_materials_v2',
   globalFund: 'costify_global_fund_v2',
+  theme: 'costify_theme_v1',
 } as const;
 
 export const PRODUCT_TYPE_LABELS = {

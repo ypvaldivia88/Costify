@@ -82,7 +82,7 @@ export function RawMaterialsManager({
         {materials.length === 0 ? (
           <Card variant="muted" className="text-center py-8">
             <Boxes className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted">
               Aún no hay materias primas registradas.
               <br />
               Agrega la primera para confeccionar productos elaborados.

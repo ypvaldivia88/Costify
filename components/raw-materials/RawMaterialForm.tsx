@@ -6,9 +6,9 @@ import type { RawMaterial, UnitType } from '@/lib/domain/types';
 import { calculateRawMaterialUnitCost } from '@/lib/domain/calculations';
 import { UNIT_LABELS, UNIT_SHORT_LABELS, UNIT_TYPES } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
-import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { NumericInput } from '@/components/ui/NumericInput';
 import { cn } from '@/lib/utils';
 
 interface RawMaterialFormProps {
@@ -32,8 +32,8 @@ const defaultForm = {
 };
 
 const selectClassName = cn(
-  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900',
-  'focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition-all'
+  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground',
+  'focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition-all'
 );
 
 export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMaterialFormProps) {
@@ -90,20 +90,16 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
         onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
       />
 
-      <Input
+      <NumericInput
         label="Precio de compra (CUP)"
-        type="number"
-        inputMode="decimal"
-        value={formatNumericInput(form.purchasePrice)}
-        onChange={(e) =>
-          setForm((p) => ({ ...p, purchasePrice: parseNumericInput(e.target.value) }))
-        }
+        value={form.purchasePrice}
+        onChange={(purchasePrice) => setForm((p) => ({ ...p, purchasePrice }))}
         hint="Costo del paquete o lote"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label htmlFor="unit-type" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="unit-type" className="block text-sm font-medium text-foreground">
             Tipo de unidad
           </label>
           <select
@@ -122,40 +118,28 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
           </select>
         </div>
 
-        <Input
+        <NumericInput
           label="Cantidad comprada"
-          type="number"
-          inputMode="decimal"
-          value={formatNumericInput(form.packageQuantity)}
-          onChange={(e) =>
-            setForm((p) => ({ ...p, packageQuantity: parseNumericInput(e.target.value) }))
-          }
-          hint={`Cantidad en ${UNIT_LABELS[form.unitType]} incluida en el precio de compra`}
+          value={form.packageQuantity}
+          onChange={(packageQuantity) => setForm((p) => ({ ...p, packageQuantity }))}
+          hint={`En ${UNIT_LABELS[form.unitType]} incluidos en el precio`}
         />
       </div>
 
-      <Input
+      <NumericInput
         label={`Stock disponible (${unitLabel})`}
-        type="number"
-        inputMode="decimal"
-        value={formatNumericInput(form.stockQuantity)}
-        onChange={(e) =>
-          setForm((p) => ({ ...p, stockQuantity: parseNumericInput(e.target.value) }))
-        }
-        hint="Cantidad en inventario de esta materia prima"
+        value={form.stockQuantity}
+        onChange={(stockQuantity) => setForm((p) => ({ ...p, stockQuantity }))}
       />
 
       {form.purchasePrice > 0 && form.packageQuantity > 0 && (
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200/80 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Costo unitario calculado
+        <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand">
+            Costo unitario
           </p>
-          <p className="text-2xl font-black text-emerald-900 tabular-nums mt-1">
+          <p className="text-2xl font-black text-foreground tabular-nums mt-1">
             {formatCurrency(unitCost)}
-            <span className="text-sm font-semibold text-emerald-700"> / {unitLabel}</span>
-          </p>
-          <p className="text-xs text-emerald-600 mt-1">
-            {formatCurrency(form.purchasePrice)} ÷ {form.packageQuantity} {unitLabel}
+            <span className="text-sm font-semibold text-brand"> / {unitLabel}</span>
           </p>
         </div>
       )}

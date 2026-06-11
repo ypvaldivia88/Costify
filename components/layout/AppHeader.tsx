@@ -2,6 +2,7 @@
 
 import { Calculator } from 'lucide-react';
 import type { AppTab } from '@/components/ui/BottomNav';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 interface AppHeaderProps {
@@ -18,36 +19,34 @@ const navItems: { id: AppTab; label: string }[] = [
 
 export function AppHeader({ activeTab, onTabChange }: AppHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200/80">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-border">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center shadow-sm shrink-0">
             <Calculator className="w-4.5 h-4.5 text-white" />
           </div>
-          <div>
-            <h1 className="text-base font-bold text-zinc-900 leading-tight">Costify</h1>
-            <p className="text-[10px] text-zinc-400 font-medium hidden sm:block">
-              Ficha de costos para MIPYME
-            </p>
-          </div>
+          <h1 className="text-base font-bold text-foreground leading-tight truncate">Costify</h1>
         </div>
 
-        <nav className="hidden md:flex items-center gap-1">
-          {navItems.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => onTabChange(id)}
-              className={cn(
-                'px-4 py-2 rounded-lg text-sm font-semibold transition-colors',
-                activeTab === id
-                  ? 'bg-emerald-50 text-emerald-800'
-                  : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50'
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
+        <div className="flex items-center gap-1 shrink-0">
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => onTabChange(id)}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm font-semibold transition-colors',
+                  activeTab === id
+                    ? 'bg-brand-muted text-brand-foreground'
+                    : 'text-muted hover:text-foreground hover:bg-surface-muted'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

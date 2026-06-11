@@ -35,26 +35,26 @@ export function InventoryItem({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-bold text-zinc-900 truncate">{item.name}</h3>
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">
+              <h3 className="font-bold text-foreground truncate">{item.name}</h3>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted bg-surface-muted px-2 py-0.5 rounded-full">
                 {PRODUCT_TYPE_LABELS[item.productType ?? 'simple']}
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted bg-surface-muted px-2 py-0.5 rounded-full">
                 {new Date(item.timestamp).toLocaleDateString('es-CU')}
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-zinc-500">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted">
               <span>
-                Costo: <strong className="text-zinc-700">{formatCurrency(item.totalUnitCost)}</strong>
+                Costo: <strong className="text-foreground">{formatCurrency(item.totalUnitCost)}</strong>
               </span>
               <span>
-                Margen: <strong className="text-emerald-700">{formatPercent(item.grossMarginPercent)}</strong>
+                Margen: <strong className="text-brand">{formatPercent(item.grossMarginPercent)}</strong>
               </span>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[10px] font-semibold uppercase text-zinc-400">Precio</p>
-            <p className="text-xl font-black text-emerald-700 tabular-nums">
+            <p className="text-[10px] font-semibold uppercase text-muted">Precio</p>
+            <p className="text-xl font-black text-brand tabular-nums">
               {formatCurrency(item.suggestedPrice)}
             </p>
           </div>
@@ -63,20 +63,20 @@ export function InventoryItem({
         <div className="flex items-center gap-2">
           <button
             onClick={onToggle}
-            className="flex-1 py-2.5 bg-zinc-100 text-zinc-700 rounded-xl text-sm font-semibold hover:bg-zinc-200 transition-colors min-h-11"
+            className="flex-1 py-2.5 bg-surface-muted text-foreground rounded-xl text-sm font-semibold hover:bg-surface-muted transition-colors min-h-11"
           >
             {expanded ? 'Ocultar detalles' : 'Ver detalles'}
           </button>
           <button
             onClick={onEdit}
-            className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
+            className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-muted hover:text-brand hover:bg-brand-muted rounded-xl transition-colors"
             aria-label="Editar"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={onDelete}
-            className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+            className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-muted hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
             aria-label="Eliminar"
           >
             <Trash2 className="w-4 h-4" />
@@ -90,11 +90,11 @@ export function InventoryItem({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-zinc-100 bg-zinc-50/80"
+            className="border-t border-border bg-surface-muted/80"
           >
             <div className="p-4 space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
                   Desglose de costos
                 </p>
                 <div className="space-y-1.5 text-sm">
@@ -102,9 +102,9 @@ export function InventoryItem({
                     <>
                       {item.recipeBreakdown.map((rm) => (
                         <div key={rm.rawMaterialId} className="flex justify-between gap-2">
-                          <span className="text-zinc-600 truncate">
+                          <span className="text-muted truncate">
                             {rm.name}{' '}
-                            <span className="text-xs text-zinc-400">
+                            <span className="text-xs text-muted">
                               ({rm.quantity} × {formatCurrency(rm.unitCost)})
                             </span>
                           </span>
@@ -116,14 +116,14 @@ export function InventoryItem({
                     </>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-zinc-600">Costo directo unitario</span>
+                    <span className="text-muted">Costo directo unitario</span>
                     <span className="font-medium">{formatCurrency(item.unitCost)}</span>
                   </div>
                   {item.indirectBreakdown.map((ic, idx) => (
                     <div key={idx} className="flex justify-between gap-2">
-                      <span className="text-zinc-600 truncate">
+                      <span className="text-muted truncate">
                         {ic.name}{' '}
-                        <span className="text-xs text-zinc-400">
+                        <span className="text-xs text-muted">
                           ({DISTRIBUTION_CRITERIA_SHORT[ic.criteria]})
                         </span>
                       </span>
@@ -132,7 +132,7 @@ export function InventoryItem({
                       </span>
                     </div>
                   ))}
-                  <div className="flex justify-between font-semibold pt-2 border-t border-zinc-200">
+                  <div className="flex justify-between font-semibold pt-2 border-t border-border">
                     <span>Costo total unitario</span>
                     <span>{formatCurrency(item.totalUnitCost)}</span>
                   </div>
@@ -141,20 +141,20 @@ export function InventoryItem({
 
               {item.productionUnits > 0 && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
                     Proyección mensual ({item.productionUnits} uds.)
                   </p>
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-zinc-600">Ingresos</span>
-                      <span className="font-medium text-emerald-700">{formatCurrency(monthlyRevenue)}</span>
+                      <span className="text-muted">Ingresos</span>
+                      <span className="font-medium text-brand">{formatCurrency(monthlyRevenue)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-zinc-600">Utilidad bruta</span>
-                      <span className="font-medium text-emerald-600">{formatCurrency(monthlyGross)}</span>
+                      <span className="text-muted">Utilidad bruta</span>
+                      <span className="font-medium text-brand">{formatCurrency(monthlyGross)}</span>
                     </div>
                     {(taxSettings.includeSalesTax || taxSettings.includeTerritorialContribution) && (
-                      <div className="flex justify-between text-zinc-500">
+                      <div className="flex justify-between text-muted">
                         <span>Después de impuestos estimados</span>
                         <span className="font-medium">{formatCurrency(taxes.netProfit)}</span>
                       </div>

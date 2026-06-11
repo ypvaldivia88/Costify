@@ -6,9 +6,9 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variants = {
-  default: 'bg-white border-zinc-200/80 shadow-sm',
-  muted: 'bg-zinc-50 border-zinc-200/60',
-  accent: 'bg-emerald-50 border-emerald-200/80',
+  default: 'bg-surface border-border shadow-sm',
+  muted: 'bg-surface-muted border-border/80',
+  accent: 'bg-accent-surface border-accent-border',
 };
 
 export function Card({ className, variant = 'default', children, ...props }: CardProps) {

@@ -9,19 +9,19 @@ interface StatCardProps {
 }
 
 const valueVariants = {
-  default: 'text-zinc-900',
-  accent: 'text-emerald-700',
-  warning: 'text-amber-700',
+  default: 'text-foreground',
+  accent: 'text-brand',
+  warning: 'text-amber-600 dark:text-amber-400',
 };
 
 export function StatCard({ label, value, subtext, variant = 'default', className }: StatCardProps) {
   return (
     <div className={cn('space-y-1', className)}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</p>
       <p className={cn('text-xl sm:text-2xl font-bold tabular-nums', valueVariants[variant])}>
         {value}
       </p>
-      {subtext && <p className="text-xs text-zinc-500">{subtext}</p>}
+      {subtext && <p className="text-xs text-muted">{subtext}</p>}
     </div>
   );
 }

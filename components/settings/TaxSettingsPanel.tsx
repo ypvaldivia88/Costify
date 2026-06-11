@@ -28,11 +28,11 @@ function Toggle({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-1 w-5 h-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+        className="mt-1 w-5 h-5 rounded border-zinc-300 text-brand focus:ring-emerald-500"
       />
       <div>
-        <p className="text-sm font-medium text-zinc-800">{label}</p>
-        <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted mt-0.5">{description}</p>
       </div>
     </label>
   );
@@ -69,8 +69,8 @@ export function TaxSettingsPanel({ settings, onChange }: TaxSettingsPanelProps) 
       </div>
 
       {settings.includeProfitTaxEstimate && (
-        <div className="mt-4 pt-4 border-t border-zinc-100">
-          <label className="text-sm font-medium text-zinc-700">
+        <div className="mt-4 pt-4 border-t border-border">
+          <label className="text-sm font-medium text-foreground">
             Reserva para contingencias: {settings.contingencyReservePercent}%
           </label>
           <input
@@ -84,13 +84,13 @@ export function TaxSettingsPanel({ settings, onChange }: TaxSettingsPanelProps) 
             }
             className="w-full h-2 mt-2 bg-zinc-200 rounded-full appearance-none cursor-pointer accent-emerald-600"
           />
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className="text-xs text-muted mt-1">
             Mínimo 2% y máximo 10% de gastos totales según normativa MIPYME.
           </p>
         </div>
       )}
 
-      <p className="text-xs text-zinc-400 mt-4 leading-relaxed">
+      <p className="text-xs text-muted mt-4 leading-relaxed">
         Estas estimaciones son orientativas para fijar precios. Consulta con tu contador para
         declaraciones oficiales.
       </p>

@@ -29,10 +29,10 @@ export function InventoryList({
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-16 px-6 bg-white rounded-2xl border-2 border-dashed border-zinc-200">
+      <div className="text-center py-16 px-6 bg-surface rounded-2xl border-2 border-dashed border-border">
         <Package className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-        <p className="text-zinc-600 font-semibold">Sin productos guardados</p>
-        <p className="text-zinc-400 text-sm mt-1">
+        <p className="text-muted font-semibold">Sin productos guardados</p>
+        <p className="text-muted text-sm mt-1">
           Usa la calculadora para crear tu primera ficha de costos.
         </p>
       </div>
@@ -42,7 +42,7 @@ export function InventoryList({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-zinc-500">
+        <p className="text-sm font-semibold text-muted">
           {items.length} producto{items.length !== 1 ? 's' : ''}
         </p>
         <Button variant="outline" size="sm" onClick={onRecalculateAll}>

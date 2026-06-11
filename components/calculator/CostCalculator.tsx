@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Calculator, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -10,19 +10,18 @@ import type {
   ProductType,
   RawMaterial,
   RecipeItem,
+  TaxSettings,
 } from '@/lib/domain/types';
 import { calculateProduct, migrateProductInput } from '@/lib/domain/calculations';
 import { MARGIN_TYPE_LABELS, PRODUCT_PURCHASE_UNIT_SUGGESTIONS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
-import { formatCurrency } from '@/lib/format/currency';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 import { Input } from '@/components/ui/Input';
-import { SectionHeader } from '@/components/ui/SectionHeader';
+import { NumericInput } from '@/components/ui/NumericInput';
 import { IndirectCostsEditor } from './IndirectCostsEditor';
 import { PricingResults } from './PricingResults';
 import { RecipeEditor } from './RecipeEditor';
-import type { TaxSettings } from '@/lib/domain/types';
-import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { cn } from '@/lib/utils';
 
 interface CostCalculatorProps {
@@ -36,9 +35,9 @@ interface CostCalculatorProps {
   onCancelEdit?: () => void;
 }
 
-const selectClassName = cn(
-  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900',
-  'focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition-all'
+const fieldClassName = cn(
+  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground',
+  'focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition-all'
 );
 
 const defaultForm = {
@@ -194,58 +193,44 @@ export function CostCalculator({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
-      <div className="order-1 lg:order-2 lg:sticky lg:top-20 lg:self-start">
-        <PricingResults
-          result={result}
-          inventoryCount={otherProducts.length}
-          taxSettings={taxSettings}
-        />
-      </div>
+    <div className="space-y-4 pb-4">
+      <PricingResults
+        result={result}
+        inventoryCount={otherProducts.length}
+        taxSettings={taxSettings}
+      />
 
-      <Card className="order-2 lg:order-1">
-        <SectionHeader
-          icon={Calculator}
-          title={editingProduct ? `Editando: ${editingProduct.name}` : 'Datos del producto'}
-          description="Elige el tipo de producto y configura sus costos directos"
-        />
+      <Card>
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-foreground">
+            {editingProduct ? `Editando: ${editingProduct.name}` : 'Nuevo producto'}
+          </h2>
+        </div>
 
         <div className="space-y-4">
           <Input
-            label="Nombre del producto"
+            label="Nombre"
             placeholder="Ej. Pan de guayaba"
             value={form.name}
             onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
           />
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-2">
-              Tipo de producto
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {(Object.entries(PRODUCT_TYPE_LABELS) as [ProductType, string][]).map(
-                ([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setForm((p) => ({ ...p, productType: value }))}
-                    className={cn(
-                      'min-h-11 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-colors',
-                      form.productType === value
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                        : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300'
-                    )}
-                  >
-                    {label}
-                  </button>
-                )
-              )}
-            </div>
-            <p className="text-xs text-zinc-500 mt-1.5">
-              {isElaborated
-                ? 'Confecciona el producto seleccionando materias primas de tu inventario.'
-                : 'Divide el precio de compra entre la cantidad que incluye el lote.'}
-            </p>
+          <div className="grid grid-cols-2 gap-2">
+            {(Object.entries(PRODUCT_TYPE_LABELS) as [ProductType, string][]).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setForm((p) => ({ ...p, productType: value }))}
+                className={cn(
+                  'min-h-11 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-colors',
+                  form.productType === value
+                    ? 'border-brand bg-brand-muted text-brand-foreground'
+                    : 'border-border bg-surface text-muted hover:border-brand/40'
+                )}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           {isElaborated ? (
@@ -256,117 +241,71 @@ export function CostCalculator({
             />
           ) : (
             <div className="space-y-4">
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600 space-y-2">
-                <p className="font-medium text-zinc-800">¿Cómo repartir el costo?</p>
-                <p>
-                  Indica cuánto pagaste y en cuántas partes divides ese precio para vender.
-                </p>
-                <ul className="text-xs space-y-1 list-disc pl-4 text-zinc-500">
-                  <li>
-                    Caja de 24 refrescos a 1&nbsp;200 CUP → cantidad <strong>24</strong>, unidad{' '}
-                    <strong>unidades</strong>
-                  </li>
-                  <li>
-                    2 cajas a 2&nbsp;000 CUP → cantidad <strong>2</strong>, unidad{' '}
-                    <strong>cajas</strong>
-                  </li>
-                  <li>
-                    Bolsa de 5&nbsp;kg a 500 CUP → cantidad <strong>5</strong>, unidad{' '}
-                    <strong>kg</strong>
-                  </li>
-                </ul>
-              </div>
-
-              <Input
+              <NumericInput
                 label="Precio de compra (CUP)"
-                type="number"
-                inputMode="decimal"
-                value={formatNumericInput(form.purchasePrice)}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, purchasePrice: parseNumericInput(e.target.value) }))
-                }
-                hint="Lo que pagaste por el lote, caja, bolsa, etc."
+                value={form.purchasePrice}
+                onChange={(purchasePrice) => setForm((p) => ({ ...p, purchasePrice }))}
+                hint="Lo que pagaste por el lote"
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
+                <NumericInput
                   label="Cantidad en la compra"
-                  type="number"
-                  inputMode="decimal"
-                  value={formatNumericInput(form.packageQuantity)}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, packageQuantity: parseNumericInput(e.target.value) }))
-                  }
-                  hint="Cuántas piezas, cajas, kg, etc. incluye lo que compraste"
+                  value={form.packageQuantity}
+                  onChange={(packageQuantity) => setForm((p) => ({ ...p, packageQuantity }))}
                 />
 
                 <div className="space-y-1.5">
-                  <label htmlFor="product-purchase-unit" className="block text-sm font-medium text-zinc-700">
-                    ¿Qué estás contando?
+                  <label htmlFor="product-purchase-unit" className="block text-sm font-medium text-foreground">
+                    Unidad
                   </label>
                   <input
                     id="product-purchase-unit"
                     list="product-purchase-unit-suggestions"
                     value={form.purchaseUnit}
                     onChange={(e) => setForm((p) => ({ ...p, purchaseUnit: e.target.value }))}
-                    placeholder="Ej. unidad, caja, bolsa, kg"
-                    className={selectClassName}
+                    placeholder="unidad, caja, bolsa, kg…"
+                    className={fieldClassName}
                   />
                   <datalist id="product-purchase-unit-suggestions">
                     {PRODUCT_PURCHASE_UNIT_SUGGESTIONS.map((unit) => (
                       <option key={unit} value={unit} />
                     ))}
                   </datalist>
-                  <p className="text-xs text-zinc-500">
-                    Escribe libremente o elige una sugerencia
-                  </p>
                 </div>
               </div>
 
-              {form.purchasePrice > 0 && form.packageQuantity > 0 && form.purchaseUnit.trim() && (
-                <div className="rounded-xl bg-emerald-50 border border-emerald-200/80 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                    Costo por {form.purchaseUnit.trim()}
-                  </p>
-                  <p className="text-2xl font-black text-emerald-900 tabular-nums mt-1">
-                    {formatCurrency(result.unitCost)}
-                  </p>
-                  <p className="text-xs text-emerald-600 mt-1">
-                    {formatCurrency(form.purchasePrice)} ÷ {form.packageQuantity}{' '}
-                    {form.purchaseUnit.trim()}
-                  </p>
-                </div>
-              )}
+              <CollapsibleSection
+                title="¿Cómo funciona?"
+                summary="Ejemplos para repartir el costo de compra"
+              >
+                <ul className="text-sm text-muted space-y-2 list-disc pl-4">
+                  <li>Caja de 24 a 1&nbsp;200 CUP → cantidad 24, unidad &quot;unidades&quot;</li>
+                  <li>2 cajas a 2&nbsp;000 CUP → cantidad 2, unidad &quot;cajas&quot;</li>
+                  <li>Bolsa de 5&nbsp;kg a 500 CUP → cantidad 5, unidad &quot;kg&quot;</li>
+                </ul>
+              </CollapsibleSection>
             </div>
           )}
 
-          <Input
-            label="Unidades a vender (mensual)"
-            type="number"
-            inputMode="numeric"
-            value={formatNumericInput(form.productionUnits)}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, productionUnits: parseNumericInput(e.target.value) }))
-            }
-            hint="Volumen estimado de ventas del mes"
+          <NumericInput
+            label="Unidades a vender al mes"
+            value={form.productionUnits}
+            onChange={(productionUnits) => setForm((p) => ({ ...p, productionUnits }))}
           />
 
-          <IndirectCostsEditor
-            costs={form.indirectCosts}
-            onChange={(indirectCosts) => setForm((p) => ({ ...p, indirectCosts }))}
-            onImportGlobal={importGlobalCosts}
-            showImport={globalIndirectCosts.length > 0}
-          />
-
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <label className="text-sm font-medium text-zinc-700">Tipo de margen</label>
+          <CollapsibleSection
+            title="Margen de utilidad"
+            summary={`${form.profitMargin}% · ${MARGIN_TYPE_LABELS[form.marginType]}`}
+            defaultOpen
+          >
+            <div className="space-y-3 pt-3">
               <select
                 value={form.marginType}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, marginType: e.target.value as MarginType }))
                 }
-                className="px-3 py-2.5 text-sm rounded-xl border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500 min-h-11"
+                className={fieldClassName}
               >
                 {Object.entries(MARGIN_TYPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -374,33 +313,46 @@ export function CostCalculator({
                   </option>
                 ))}
               </select>
-            </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-zinc-700">
-                  {form.marginType === 'markup' ? 'Recargo sobre costo' : 'Margen bruto deseado'}
-                </label>
-                <span className="text-sm font-bold text-emerald-700">{form.profitMargin}%</span>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {form.marginType === 'markup' ? 'Recargo' : 'Margen bruto'}
+                  </span>
+                  <span className="text-sm font-bold text-brand">{form.profitMargin}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max={form.marginType === 'margin' ? 90 : 200}
+                  step="5"
+                  value={form.profitMargin}
+                  onChange={(e) => setForm((p) => ({ ...p, profitMargin: Number(e.target.value) }))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                />
               </div>
-              <input
-                type="range"
-                min="0"
-                max={form.marginType === 'margin' ? 90 : 200}
-                step="5"
-                value={form.profitMargin}
-                onChange={(e) => setForm((p) => ({ ...p, profitMargin: Number(e.target.value) }))}
-                className="w-full h-2 bg-zinc-200 rounded-full appearance-none cursor-pointer accent-emerald-600"
-              />
-              <p className="text-xs text-zinc-500 mt-1">
-                {form.marginType === 'markup'
-                  ? 'Porcentaje añadido sobre el costo total unitario.'
-                  : 'Porcentaje de ganancia sobre el precio de venta (margen bruto).'}
-              </p>
             </div>
-          </div>
+          </CollapsibleSection>
 
-          <div className="flex flex-col gap-2 pt-2">
+          <CollapsibleSection
+            title="Gastos indirectos"
+            summary={
+              form.indirectCosts.length > 0
+                ? `${form.indirectCosts.length} gasto(s) configurado(s)`
+                : 'Opcional — alquiler, servicios, etc.'
+            }
+          >
+            <div className="pt-3">
+              <IndirectCostsEditor
+                costs={form.indirectCosts}
+                onChange={(indirectCosts) => setForm((p) => ({ ...p, indirectCosts }))}
+                onImportGlobal={importGlobalCosts}
+                showImport={globalIndirectCosts.length > 0}
+              />
+            </div>
+          </CollapsibleSection>
+
+          <div className="flex flex-col gap-2 pt-1">
             {editingProduct && (
               <Button variant="outline" onClick={onCancelEdit} type="button">
                 Cancelar edición

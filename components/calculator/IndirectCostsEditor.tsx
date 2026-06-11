@@ -4,8 +4,9 @@ import { Plus, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { DistributionCriteria, IndirectCost } from '@/lib/domain/types';
 import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
-import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
+import { NumericField } from '@/components/ui/NumericField';
+import { cn } from '@/lib/utils';
 
 interface IndirectCostsEditorProps {
   costs: IndirectCost[];
@@ -13,6 +14,11 @@ interface IndirectCostsEditorProps {
   onImportGlobal?: () => void;
   showImport?: boolean;
 }
+
+const fieldClass = cn(
+  'px-3 py-2 text-sm rounded-lg border border-border bg-surface text-foreground',
+  'focus:outline-none focus:border-brand'
+);
 
 export function IndirectCostsEditor({
   costs,
@@ -43,21 +49,15 @@ export function IndirectCostsEditor({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-sm font-medium text-zinc-700">Gastos indirectos del período</p>
-          <p className="text-xs text-zinc-500">Alquiler, transporte, servicios, etc.</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          {showImport && onImportGlobal && (
-            <Button variant="outline" size="sm" onClick={onImportGlobal} type="button">
-              Importar
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={addCost} type="button">
-            <Plus className="w-3.5 h-3.5" /> Añadir
+      <div className="flex items-center justify-end gap-2">
+        {showImport && onImportGlobal && (
+          <Button variant="outline" size="sm" onClick={onImportGlobal} type="button">
+            Importar
           </Button>
-        </div>
+        )}
+        <Button variant="outline" size="sm" onClick={addCost} type="button">
+          <Plus className="w-3.5 h-3.5" /> Añadir
+        </Button>
       </div>
 
       <div className="space-y-2">
@@ -66,9 +66,9 @@ export function IndirectCostsEditor({
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-sm text-zinc-400 italic py-4 text-center border border-dashed border-zinc-200 rounded-xl"
+              className="text-sm text-muted italic py-4 text-center border border-dashed border-border rounded-xl"
             >
-              Sin gastos indirectos. Añade los costos fijos mensuales de tu negocio.
+              Sin gastos indirectos añadidos.
             </motion.p>
           ) : (
             costs.map((cost) => (
@@ -78,32 +78,28 @@ export function IndirectCostsEditor({
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/50 space-y-2"
+                className="p-3 rounded-xl border border-border bg-surface-muted/50 space-y-2"
               >
                 <input
                   type="text"
-                  placeholder="Nombre (ej. Alquiler local)"
+                  placeholder="Nombre (ej. Alquiler)"
                   value={cost.name}
                   onChange={(e) => updateCost(cost.id, 'name', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
+                  className={cn('w-full', fieldClass)}
                 />
                 <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    inputMode="decimal"
+                  <NumericField
+                    value={cost.amount}
+                    onChange={(amount) => updateCost(cost.id, 'amount', amount)}
                     placeholder="Monto mensual"
-                    value={formatNumericInput(cost.amount)}
-                    onChange={(e) =>
-                      updateCost(cost.id, 'amount', parseNumericInput(e.target.value))
-                    }
-                    className="px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
+                    className={fieldClass}
                   />
                   <select
                     value={cost.distributionCriteria}
                     onChange={(e) =>
                       updateCost(cost.id, 'distributionCriteria', e.target.value as DistributionCriteria)
                     }
-                    className="px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
+                    className={fieldClass}
                   >
                     {Object.entries(DISTRIBUTION_CRITERIA_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
@@ -113,22 +109,20 @@ export function IndirectCostsEditor({
                   </select>
                 </div>
                 {cost.distributionCriteria === 'manual' && (
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="Unidades para distribuir"
-                    value={formatNumericInput(cost.distributionUnits ?? 0)}
-                    onChange={(e) =>
-                      updateCost(cost.id, 'distributionUnits', parseNumericInput(e.target.value))
+                  <NumericField
+                    value={cost.distributionUnits ?? 0}
+                    onChange={(distributionUnits) =>
+                      updateCost(cost.id, 'distributionUnits', distributionUnits)
                     }
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
+                    placeholder="Unidades para distribuir"
+                    className={cn('w-full', fieldClass)}
                   />
                 )}
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={() => removeCost(cost.id)}
-                    className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-muted hover:text-red-500 transition-colors"
                     aria-label="Eliminar gasto"
                   >
                     <Trash2 className="w-4 h-4" />

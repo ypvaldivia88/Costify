@@ -6,10 +6,16 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { DistributionCriteria, IndirectCost } from '@/lib/domain/types';
 import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
-import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
+import { NumericField } from '@/components/ui/NumericField';
+import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+
+const fieldClass = cn(
+  'px-3 py-2.5 text-sm rounded-lg border border-border bg-surface text-foreground min-h-11',
+  'focus:outline-none focus:border-brand'
+);
 
 interface IndirectCostsSettingsProps {
   costs: IndirectCost[];
@@ -101,7 +107,7 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-8 text-zinc-400 text-sm italic"
+              className="text-center py-8 text-muted text-sm italic"
             >
               No hay gastos configurados. Añade alquiler, servicios, transporte, etc.
             </motion.p>
@@ -113,7 +119,7 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/50"
+                className="p-3 rounded-xl border border-border bg-surface-muted/50"
               >
                 {editingId === cost.id ? (
                   <div className="space-y-2">
@@ -121,20 +127,16 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                       type="text"
                       value={draft.name ?? ''}
                       onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500 min-h-11"
+                      className={cn('w-full', fieldClass)}
                       placeholder="Nombre del gasto"
                       autoFocus
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={formatNumericInput(draft.amount ?? 0)}
-                        onChange={(e) =>
-                          setDraft((d) => ({ ...d, amount: parseNumericInput(e.target.value) }))
-                        }
-                        className="px-3 py-2.5 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500 min-h-11"
+                      <NumericField
+                        value={draft.amount ?? 0}
+                        onChange={(amount) => setDraft((d) => ({ ...d, amount }))}
                         placeholder="Monto mensual"
+                        className={fieldClass}
                       />
                       <select
                         value={draft.distributionCriteria ?? 'units'}
@@ -144,7 +146,7 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                             distributionCriteria: e.target.value as DistributionCriteria,
                           }))
                         }
-                        className="px-3 py-2.5 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500 min-h-11"
+                        className={fieldClass}
                       >
                         {Object.entries(DISTRIBUTION_CRITERIA_LABELS).map(([value, label]) => (
                           <option key={value} value={value}>
@@ -154,23 +156,19 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                       </select>
                     </div>
                     {draft.distributionCriteria === 'manual' && (
-                      <input
-                        type="number"
-                        value={formatNumericInput(draft.distributionUnits ?? 0)}
-                        onChange={(e) =>
-                          setDraft((d) => ({
-                            ...d,
-                            distributionUnits: parseNumericInput(e.target.value),
-                          }))
+                      <NumericField
+                        value={draft.distributionUnits ?? 0}
+                        onChange={(distributionUnits) =>
+                          setDraft((d) => ({ ...d, distributionUnits }))
                         }
-                        className="w-full px-3 py-2.5 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500 min-h-11"
                         placeholder="Unidades para distribuir"
+                        className={cn('w-full', fieldClass)}
                       />
                     )}
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={saveEdit}
-                        className="p-2.5 min-w-11 min-h-11 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                        className="p-2.5 min-w-11 min-h-11 text-brand hover:bg-brand-muted rounded-lg"
                         aria-label="Guardar"
                       >
                         <Check className="w-4 h-4" />
@@ -187,8 +185,8 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                 ) : (
                   <div className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-zinc-900 truncate">{cost.name}</p>
-                      <p className="text-xs text-zinc-500 mt-0.5">
+                      <p className="font-semibold text-foreground truncate">{cost.name}</p>
+                      <p className="text-xs text-muted mt-0.5">
                         {formatCurrency(cost.amount)}/mes ·{' '}
                         {DISTRIBUTION_CRITERIA_LABELS[cost.distributionCriteria ?? 'manual']}
                       </p>
@@ -196,14 +194,14 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                     <div className="flex gap-1 shrink-0">
                       <button
                         onClick={() => startEdit(cost)}
-                        className="p-2.5 min-w-11 min-h-11 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg"
+                        className="p-2.5 min-w-11 min-h-11 text-muted hover:text-foreground hover:bg-surface-muted rounded-lg"
                         aria-label="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => deleteCost(cost.id)}
-                        className="p-2.5 min-w-11 min-h-11 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        className="p-2.5 min-w-11 min-h-11 text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg"
                         aria-label="Eliminar"
                       >
                         <Trash2 className="w-4 h-4" />
