@@ -14,9 +14,6 @@ import { saveToStorage } from '@/lib/storage/local-storage';
 
 export const BACKUP_PREFIX = 'costify1:';
 
-/** Límite conservador para que el QR sea legible en móviles */
-export const MAX_QR_PAYLOAD_CHARS = 1800;
-
 export interface AppBackupV1 {
   v: 1;
   at: number;
@@ -58,10 +55,6 @@ export function createBackupPayload(input: AppBackupInput): string {
     taxSettings: input.taxSettings,
   };
   return BACKUP_PREFIX + toBase64Url(JSON.stringify(backup));
-}
-
-export function backupFitsQr(payload: string): boolean {
-  return payload.length <= MAX_QR_PAYLOAD_CHARS;
 }
 
 export function parseBackupPayload(raw: string): AppBackupV1 {
