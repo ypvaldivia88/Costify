@@ -16,6 +16,7 @@ import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsMana
 import { IndirectCostsSettings } from '@/components/settings/IndirectCostsSettings';
 import { GlobalFundSettingsPanel } from '@/components/settings/GlobalFundSettings';
 import { TaxSettingsPanel } from '@/components/settings/TaxSettingsPanel';
+import { DataSyncPanel } from '@/components/settings/DataSyncPanel';
 
 const tabTitles: Record<AppTab, string> = {
   calculator: 'Calcular precio',
@@ -121,6 +122,13 @@ export default function Home() {
 
           {activeTab === 'settings' && (
             <div className="space-y-4 max-w-2xl">
+              <DataSyncPanel
+                inventory={inventory}
+                rawMaterials={materials}
+                globalCosts={globalCosts}
+                globalFund={globalFund}
+                taxSettings={taxSettings}
+              />
               <IndirectCostsSettings costs={globalCosts} onSave={saveCosts} />
               <GlobalFundSettingsPanel settings={globalFund} onChange={updateGlobalFund} />
               <TaxSettingsPanel settings={taxSettings} onChange={updateTaxSettings} />
