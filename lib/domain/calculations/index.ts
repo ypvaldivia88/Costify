@@ -18,5 +18,5 @@ export {
   calculateProfitPerUnit,
 } from './pricing';
 export { calculateMonthlyTaxProjection } from './taxes';
-export { calculateProduct, recalculateInventory } from './product';
+export { calculateProduct, migrateProductInput, recalculateInventory } from './product';
 export { calculateBusinessSummary } from './business-summary';

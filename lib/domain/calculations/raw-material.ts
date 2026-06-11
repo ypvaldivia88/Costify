@@ -1,4 +1,4 @@
-import type { MaterialUnitType, RawMaterial, RawMaterialInput } from '../types';
+import type { RawMaterial, RawMaterialInput, UnitType } from '../types';
 import { calculateUnitDirectCost } from './direct-cost';
 
 type LegacyRawMaterial = Partial<RawMaterialInput> & {
@@ -16,8 +16,8 @@ export function migrateRawMaterialInput(material: LegacyRawMaterial): RawMateria
   };
 }
 
-export function isValidMaterialUnitType(value: unknown): value is MaterialUnitType {
-  return value === 'gr' || value === 'kg' || value === 'lt' || value === 'ml';
+export function isValidUnitType(value: unknown): value is UnitType {
+  return value === 'ud' || value === 'gr' || value === 'kg' || value === 'lt' || value === 'ml';
 }
 
 export function calculateRawMaterialUnitCost(

@@ -12,7 +12,8 @@ import type {
   RecipeItem,
 } from '@/lib/domain/types';
 import { calculateProduct } from '@/lib/domain/calculations';
-import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
+import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS, UNIT_LABELS, UNIT_TYPES } from '@/lib/domain/constants';
+import type { UnitType } from '@/lib/domain/types';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -35,11 +36,17 @@ interface CostCalculatorProps {
   onCancelEdit?: () => void;
 }
 
+const selectClassName = cn(
+  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900',
+  'focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition-all'
+);
+
 const defaultForm = {
   name: '',
   productType: 'simple' as ProductType,
   purchasePrice: 0,
-  unitsPerPackage: 1,
+  unitType: 'ud' as UnitType,
+  packageQuantity: 1,
   recipe: [] as RecipeItem[],
   productionUnits: 100,
   productWeight: 0,
@@ -66,7 +73,11 @@ export function CostCalculator({
         name: editingProduct.name,
         productType: editingProduct.productType ?? 'simple',
         purchasePrice: editingProduct.purchasePrice,
-        unitsPerPackage: editingProduct.unitsPerPackage,
+        unitType: editingProduct.unitType ?? 'ud',
+        packageQuantity:
+          editingProduct.packageQuantity ??
+          (editingProduct as { unitsPerPackage?: number }).unitsPerPackage ??
+          1,
         recipe: editingProduct.recipe ?? [],
         productionUnits: editingProduct.productionUnits,
         productWeight: editingProduct.productWeight ?? 0,
@@ -90,7 +101,8 @@ export function CostCalculator({
           name: form.name || 'Producto',
           productType: form.productType,
           purchasePrice: form.purchasePrice,
-          unitsPerPackage: form.unitsPerPackage,
+          unitType: form.unitType,
+          packageQuantity: form.packageQuantity,
           recipe: form.recipe,
           productionUnits: form.productionUnits,
           productWeight: form.productWeight || undefined,
@@ -148,8 +160,8 @@ export function CostCalculator({
         alert('Ingresa un precio de compra válido.');
         return;
       }
-      if (form.unitsPerPackage <= 0) {
-        alert('Ingresa las unidades por paquete.');
+      if (form.packageQuantity <= 0) {
+        alert('Ingresa la cantidad comprada.');
         return;
       }
     }
@@ -163,7 +175,8 @@ export function CostCalculator({
         name: form.name.trim(),
         productType: form.productType,
         purchasePrice: form.purchasePrice,
-        unitsPerPackage: form.unitsPerPackage,
+        unitType: form.unitType,
+        packageQuantity: form.packageQuantity,
         recipe: isElaborated ? form.recipe : undefined,
         productionUnits: form.productionUnits,
         productWeight: form.productWeight || undefined,
@@ -233,7 +246,7 @@ export function CostCalculator({
             <p className="text-xs text-zinc-500 mt-1.5">
               {isElaborated
                 ? 'Confecciona el producto seleccionando materias primas de tu inventario.'
-                : 'Costo directo basado en precio de compra y unidades por paquete.'}
+                : 'Costo directo basado en precio de compra y cantidad de la unidad seleccionada.'}
             </p>
           </div>
 
@@ -244,7 +257,7 @@ export function CostCalculator({
               onChange={(recipe) => setForm((p) => ({ ...p, recipe }))}
             />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <Input
                 label="Precio de compra (CUP)"
                 type="number"
@@ -253,17 +266,41 @@ export function CostCalculator({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, purchasePrice: parseNumericInput(e.target.value) }))
                 }
-                hint="Costo del paquete o lote de materia prima"
+                hint="Costo del paquete o lote"
               />
-              <Input
-                label="Unidades por paquete"
-                type="number"
-                inputMode="numeric"
-                value={formatNumericInput(form.unitsPerPackage)}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, unitsPerPackage: parseNumericInput(e.target.value) }))
-                }
-              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="product-unit-type" className="block text-sm font-medium text-zinc-700">
+                    Tipo de unidad
+                  </label>
+                  <select
+                    id="product-unit-type"
+                    value={form.unitType}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, unitType: e.target.value as UnitType }))
+                    }
+                    className={selectClassName}
+                  >
+                    {UNIT_TYPES.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {UNIT_LABELS[unit]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <Input
+                  label="Cantidad comprada"
+                  type="number"
+                  inputMode="decimal"
+                  value={formatNumericInput(form.packageQuantity)}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, packageQuantity: parseNumericInput(e.target.value) }))
+                  }
+                  hint={`Cantidad en ${UNIT_LABELS[form.unitType]} incluida en el precio de compra`}
+                />
+              </div>
             </div>
           )}
 

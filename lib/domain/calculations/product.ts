@@ -1,4 +1,4 @@
-import type { GlobalFundSettings, ProductCalculation, ProductInput, RawMaterial } from '../types';
+import type { GlobalFundSettings, ProductCalculation, ProductInput, RawMaterial, UnitType } from '../types';
 import { calculateUnitDirectCost } from './direct-cost';
 import { applyGlobalFund } from './global-fund';
 import { allocateIndirectCosts } from './indirect-allocation';
@@ -9,25 +9,51 @@ import {
 } from './pricing';
 import { calculateRecipeUnitCost } from './recipe-cost';
 
+type LegacyProductInput = Partial<ProductInput> & { unitsPerPackage?: number };
+
+export function migrateProductInput(product: LegacyProductInput): ProductInput {
+  return {
+    name: product.name ?? '',
+    productType: product.productType ?? 'simple',
+    purchasePrice: product.purchasePrice ?? 0,
+    unitType: product.unitType ?? 'ud',
+    packageQuantity: product.packageQuantity ?? product.unitsPerPackage ?? 1,
+    recipe: product.recipe,
+    productionUnits: product.productionUnits ?? 1,
+    productWeight: product.productWeight,
+    indirectCosts: product.indirectCosts ?? [],
+    profitMargin: product.profitMargin ?? 0,
+    marginType: product.marginType ?? 'markup',
+  };
+}
+
 function resolveDirectCost(
   input: ProductInput,
   rawMaterials: RawMaterial[]
-): { unitCost: number; purchasePrice: number; unitsPerPackage: number; recipeBreakdown?: ProductCalculation['recipeBreakdown'] } {
+): {
+  unitCost: number;
+  purchasePrice: number;
+  unitType: UnitType;
+  packageQuantity: number;
+  recipeBreakdown?: ProductCalculation['recipeBreakdown'];
+} {
   if (input.productType === 'elaborated' && input.recipe && input.recipe.length > 0) {
     const { unitCost, breakdown } = calculateRecipeUnitCost(input.recipe, rawMaterials);
     return {
       unitCost,
       purchasePrice: unitCost,
-      unitsPerPackage: 1,
+      unitType: input.unitType ?? 'ud',
+      packageQuantity: 1,
       recipeBreakdown: breakdown,
     };
   }
 
-  const unitCost = calculateUnitDirectCost(input.purchasePrice, input.unitsPerPackage);
+  const unitCost = calculateUnitDirectCost(input.purchasePrice, input.packageQuantity);
   return {
     unitCost,
     purchasePrice: input.purchasePrice,
-    unitsPerPackage: input.unitsPerPackage,
+    unitType: input.unitType,
+    packageQuantity: input.packageQuantity,
   };
 }
 
@@ -45,7 +71,7 @@ export function calculateProduct(
   const allocation = allocateIndirectCosts(
     {
       purchasePrice: direct.purchasePrice,
-      unitsPerPackage: direct.unitsPerPackage,
+      packageQuantity: direct.packageQuantity,
       productionUnits: input.productionUnits,
       productWeight: input.productWeight,
       unitDirectCost: direct.unitCost,
@@ -67,7 +93,8 @@ export function calculateProduct(
     ...input,
     productType: input.productType ?? 'simple',
     purchasePrice: direct.purchasePrice,
-    unitsPerPackage: direct.unitsPerPackage,
+    unitType: direct.unitType,
+    packageQuantity: direct.packageQuantity,
     id: id ?? crypto.randomUUID(),
     unitCost: direct.unitCost,
     totalIndirectPerUnit: allocation.totalPerUnit,
@@ -89,18 +116,7 @@ export function recalculateInventory(
   return products.map((product) => {
     const others = products.filter((p) => p.id !== product.id);
     return calculateProduct(
-      {
-        name: product.name,
-        productType: product.productType ?? 'simple',
-        purchasePrice: product.purchasePrice,
-        unitsPerPackage: product.unitsPerPackage,
-        recipe: product.recipe,
-        productionUnits: product.productionUnits,
-        productWeight: product.productWeight,
-        indirectCosts: product.indirectCosts,
-        profitMargin: product.profitMargin,
-        marginType: product.marginType ?? 'markup',
-      },
+      migrateProductInput(product),
       others,
       rawMaterials,
       globalFund,

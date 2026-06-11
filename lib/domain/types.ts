@@ -1,4 +1,4 @@
-export type MaterialUnitType = 'gr' | 'kg' | 'lt' | 'ml';
+export type UnitType = 'gr' | 'kg' | 'lt' | 'ml' | 'ud';
 
 export type DistributionCriteria = 'units' | 'direct-cost' | 'weight' | 'manual';
 
@@ -9,7 +9,7 @@ export type ProductType = 'simple' | 'elaborated';
 export interface RawMaterialInput {
   name: string;
   purchasePrice: number;
-  unitType: MaterialUnitType;
+  unitType: UnitType;
   packageQuantity: number;
   stockQuantity: number;
 }
@@ -45,7 +45,8 @@ export interface ProductInput {
   name: string;
   productType: ProductType;
   purchasePrice: number;
-  unitsPerPackage: number;
+  unitType: UnitType;
+  packageQuantity: number;
   recipe?: RecipeItem[];
   productionUnits: number;
   productWeight?: number;
@@ -120,7 +121,7 @@ export interface BusinessSummary {
 
 export interface ProductAllocationContext {
   purchasePrice: number;
-  unitsPerPackage: number;
+  packageQuantity: number;
   productionUnits: number;
   productWeight?: number;
   unitDirectCost?: number;

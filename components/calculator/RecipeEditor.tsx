@@ -2,7 +2,7 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import type { RawMaterial, RecipeItem } from '@/lib/domain/types';
-import { MATERIAL_UNIT_LABELS } from '@/lib/domain/constants';
+import { UNIT_SHORT_LABELS } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
 import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
@@ -70,7 +70,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
           {recipe.map((item, index) => {
             const material = rawMaterials.find((m) => m.id === item.rawMaterialId);
             const lineCost = material ? material.unitCost * item.quantity : 0;
-            const unitLabel = material ? MATERIAL_UNIT_LABELS[material.unitType] : '';
+            const unitLabel = material ? UNIT_SHORT_LABELS[material.unitType] : '';
             const stockAfter =
               material && item.quantity > 0
                 ? material.stockQuantity - item.quantity
@@ -88,7 +88,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                 >
                   {rawMaterials.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.name} ({formatCurrency(m.unitCost)}/{MATERIAL_UNIT_LABELS[m.unitType]})
+                      {m.name} ({formatCurrency(m.unitCost)}/{UNIT_SHORT_LABELS[m.unitType]})
                     </option>
                   ))}
                 </select>

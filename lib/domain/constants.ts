@@ -1,8 +1,18 @@
-import type { DistributionCriteria, GlobalFundSettings, MaterialUnitType, TaxSettings } from './types';
+import type { DistributionCriteria, GlobalFundSettings, UnitType, TaxSettings } from './types';
 
-export const MATERIAL_UNIT_TYPES: MaterialUnitType[] = ['gr', 'kg', 'lt', 'ml'];
+export const UNIT_TYPES: UnitType[] = ['ud', 'gr', 'kg', 'lt', 'ml'];
 
-export const MATERIAL_UNIT_LABELS: Record<MaterialUnitType, string> = {
+export const UNIT_LABELS: Record<UnitType, string> = {
+  ud: 'Unidad básica',
+  gr: 'gr',
+  kg: 'kg',
+  lt: 'lt',
+  ml: 'ml',
+};
+
+/** Etiqueta corta para listas y costos unitarios */
+export const UNIT_SHORT_LABELS: Record<UnitType, string> = {
+  ud: 'ud',
   gr: 'gr',
   kg: 'kg',
   lt: 'lt',

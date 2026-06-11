@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Save } from 'lucide-react';
-import type { MaterialUnitType, RawMaterial } from '@/lib/domain/types';
+import type { RawMaterial, UnitType } from '@/lib/domain/types';
 import { calculateRawMaterialUnitCost } from '@/lib/domain/calculations';
-import { MATERIAL_UNIT_LABELS, MATERIAL_UNIT_TYPES } from '@/lib/domain/constants';
+import { UNIT_LABELS, UNIT_SHORT_LABELS, UNIT_TYPES } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
 import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
@@ -16,7 +16,7 @@ interface RawMaterialFormProps {
   onSave: (data: {
     name: string;
     purchasePrice: number;
-    unitType: MaterialUnitType;
+    unitType: UnitType;
     packageQuantity: number;
     stockQuantity: number;
   }) => void;
@@ -26,7 +26,7 @@ interface RawMaterialFormProps {
 const defaultForm = {
   name: '',
   purchasePrice: 0,
-  unitType: 'kg' as MaterialUnitType,
+  unitType: 'kg' as UnitType,
   packageQuantity: 1,
   stockQuantity: 0,
 };
@@ -54,7 +54,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
   }, [editingMaterial]);
 
   const unitCost = calculateRawMaterialUnitCost(form.purchasePrice, form.packageQuantity);
-  const unitLabel = MATERIAL_UNIT_LABELS[form.unitType];
+  const unitLabel = UNIT_SHORT_LABELS[form.unitType];
 
   const handleSubmit = () => {
     if (!form.name.trim()) {
@@ -110,13 +110,13 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
             id="unit-type"
             value={form.unitType}
             onChange={(e) =>
-              setForm((p) => ({ ...p, unitType: e.target.value as MaterialUnitType }))
+              setForm((p) => ({ ...p, unitType: e.target.value as UnitType }))
             }
             className={selectClassName}
           >
-            {MATERIAL_UNIT_TYPES.map((unit) => (
+            {UNIT_TYPES.map((unit) => (
               <option key={unit} value={unit}>
-                {MATERIAL_UNIT_LABELS[unit]}
+                {UNIT_LABELS[unit]}
               </option>
             ))}
           </select>
@@ -130,7 +130,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
           onChange={(e) =>
             setForm((p) => ({ ...p, packageQuantity: parseNumericInput(e.target.value) }))
           }
-          hint={`Cantidad en ${unitLabel} incluida en el precio de compra`}
+          hint={`Cantidad en ${UNIT_LABELS[form.unitType]} incluida en el precio de compra`}
         />
       </div>
 

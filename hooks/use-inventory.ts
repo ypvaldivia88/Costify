@@ -15,9 +15,12 @@ export function useInventory() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const saved = loadFromStorage<ProductCalculation[]>(STORAGE_KEYS.inventory, []);
-    const migrated = saved.length > 0 ? saved : (migrateLegacyInventory() as ProductCalculation[]);
-    setInventory(migrated);
+    const saved = loadFromStorage<Array<ProductCalculation & { unitsPerPackage?: number }>>(
+      STORAGE_KEYS.inventory,
+      []
+    );
+    const legacy = saved.length > 0 ? saved : (migrateLegacyInventory() as ProductCalculation[]);
+    setInventory(recalculateInventory(legacy));
     setHydrated(true);
   }, []);
 
