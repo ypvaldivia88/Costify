@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import type { ProductCalculation } from '@/lib/domain/types';
 import { calculateBusinessSummary } from '@/lib/domain/calculations';
@@ -8,6 +8,7 @@ import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { useInventory } from '@/hooks/use-inventory';
 import { useRawMaterials } from '@/hooks/use-raw-materials';
 import { useGlobalCosts } from '@/hooks/use-global-costs';
+import { useGlobalFund } from '@/hooks/use-global-fund';
 import { useTaxSettings } from '@/hooks/use-tax-settings';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNav, type AppTab } from '@/components/ui/BottomNav';
@@ -15,6 +16,7 @@ import { CostCalculator } from '@/components/calculator/CostCalculator';
 import { InventoryList } from '@/components/inventory/InventoryList';
 import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsManager';
 import { IndirectCostsSettings } from '@/components/settings/IndirectCostsSettings';
+import { GlobalFundSettingsPanel } from '@/components/settings/GlobalFundSettings';
 import { TaxSettingsPanel } from '@/components/settings/TaxSettingsPanel';
 import { StatCard } from '@/components/ui/StatCard';
 
@@ -35,7 +37,8 @@ const tabMeta: Record<AppTab, { title: string; description: string }> = {
   },
   settings: {
     title: 'Configuración',
-    description: 'Define gastos fijos recurrentes y estimaciones de impuestos MIPYME.',
+    description:
+      'Define gastos fijos, fondo global opcional y estimaciones de impuestos MIPYME.',
   },
 };
 
@@ -50,16 +53,28 @@ export default function Home() {
     updateStock,
   } = useRawMaterials();
   const { globalCosts, saveCosts } = useGlobalCosts();
+  const { globalFund, hydrated: globalFundHydrated, updateGlobalFund } = useGlobalFund();
   const { taxSettings, updateTaxSettings } = useTaxSettings();
   const [activeTab, setActiveTab] = useState<AppTab>('calculator');
   const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
 
-  const hydrated = inventoryHydrated && materialsHydrated;
+  const hydrated = inventoryHydrated && materialsHydrated && globalFundHydrated;
   const summary = calculateBusinessSummary(inventory, taxSettings);
+
+  useEffect(() => {
+    if (!hydrated || inventory.length === 0) return;
+    recalculateAll(materials, globalFund);
+  }, [
+    globalFund.enabled,
+    globalFund.amount,
+    globalFund.distributionCriteria,
+    globalFund.distributionUnits,
+    hydrated,
+  ]);
   const meta = tabMeta[activeTab];
 
   const handleSaveProduct = (product: ProductCalculation) => {
-    saveProduct(product, materials);
+    saveProduct(product, materials, globalFund);
     setEditingProduct(null);
     setActiveTab('inventory');
   };
@@ -100,6 +115,7 @@ export default function Home() {
               inventory={inventory}
               rawMaterials={materials}
               globalIndirectCosts={globalCosts}
+              globalFund={globalFund}
               taxSettings={taxSettings}
               editingProduct={editingProduct}
               onSave={handleSaveProduct}
@@ -120,15 +136,16 @@ export default function Home() {
             <InventoryList
               items={inventory}
               taxSettings={taxSettings}
-              onDelete={(id) => deleteProduct(id, materials)}
+              onDelete={(id) => deleteProduct(id, materials, globalFund)}
               onEdit={handleEditProduct}
-              onRecalculateAll={() => recalculateAll(materials)}
+              onRecalculateAll={() => recalculateAll(materials, globalFund)}
             />
           )}
 
           {activeTab === 'settings' && (
             <div className="space-y-4 max-w-2xl">
               <IndirectCostsSettings costs={globalCosts} onSave={saveCosts} />
+              <GlobalFundSettingsPanel settings={globalFund} onChange={updateGlobalFund} />
               <TaxSettingsPanel settings={taxSettings} onChange={updateTaxSettings} />
             </div>
           )}

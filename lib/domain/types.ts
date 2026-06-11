@@ -78,6 +78,14 @@ export interface TaxSettings {
   contingencyReservePercent: number;
 }
 
+export interface GlobalFundSettings {
+  enabled: boolean;
+  name: string;
+  amount: number;
+  distributionCriteria: DistributionCriteria;
+  distributionUnits?: number;
+}
+
 export interface MonthlyProductProjection {
   revenue: number;
   directCost: number;

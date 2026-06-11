@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { ProductCalculation, RawMaterial } from '@/lib/domain/types';
+import type { GlobalFundSettings, ProductCalculation, RawMaterial } from '@/lib/domain/types';
 import { recalculateInventory } from '@/lib/domain/calculations';
 import { STORAGE_KEYS } from '@/lib/domain/constants';
 import {
@@ -26,26 +26,39 @@ export function useInventory() {
     saveToStorage(STORAGE_KEYS.inventory, inventory);
   }, [inventory, hydrated]);
 
-  const saveProduct = useCallback((product: ProductCalculation, rawMaterials: RawMaterial[] = []) => {
-    setInventory((prev) => {
-      const exists = prev.some((item) => item.id === product.id);
-      const updated = exists
-        ? prev.map((item) => (item.id === product.id ? product : item))
-        : [product, ...prev];
-      return recalculateInventory(updated, rawMaterials);
-    });
-  }, []);
+  const saveProduct = useCallback(
+    (
+      product: ProductCalculation,
+      rawMaterials: RawMaterial[] = [],
+      globalFund?: GlobalFundSettings
+    ) => {
+      setInventory((prev) => {
+        const exists = prev.some((item) => item.id === product.id);
+        const updated = exists
+          ? prev.map((item) => (item.id === product.id ? product : item))
+          : [product, ...prev];
+        return recalculateInventory(updated, rawMaterials, globalFund);
+      });
+    },
+    []
+  );
 
-  const deleteProduct = useCallback((id: string, rawMaterials: RawMaterial[] = []) => {
-    setInventory((prev) => {
-      const filtered = prev.filter((item) => item.id !== id);
-      return recalculateInventory(filtered, rawMaterials);
-    });
-  }, []);
+  const deleteProduct = useCallback(
+    (id: string, rawMaterials: RawMaterial[] = [], globalFund?: GlobalFundSettings) => {
+      setInventory((prev) => {
+        const filtered = prev.filter((item) => item.id !== id);
+        return recalculateInventory(filtered, rawMaterials, globalFund);
+      });
+    },
+    []
+  );
 
-  const recalculateAll = useCallback((rawMaterials: RawMaterial[] = []) => {
-    setInventory((prev) => recalculateInventory(prev, rawMaterials));
-  }, []);
+  const recalculateAll = useCallback(
+    (rawMaterials: RawMaterial[] = [], globalFund?: GlobalFundSettings) => {
+      setInventory((prev) => recalculateInventory(prev, rawMaterials, globalFund));
+    },
+    []
+  );
 
   return {
     inventory,

@@ -1,5 +1,6 @@
-import type { ProductCalculation, ProductInput, RawMaterial } from '../types';
+import type { GlobalFundSettings, ProductCalculation, ProductInput, RawMaterial } from '../types';
 import { calculateUnitDirectCost } from './direct-cost';
+import { applyGlobalFund } from './global-fund';
 import { allocateIndirectCosts } from './indirect-allocation';
 import {
   calculateGrossMarginPercent,
@@ -34,10 +35,12 @@ export function calculateProduct(
   input: ProductInput,
   otherProducts: ProductCalculation[],
   rawMaterials: RawMaterial[] = [],
+  globalFund?: GlobalFundSettings,
   id?: string,
   timestamp?: number
 ): ProductCalculation {
   const direct = resolveDirectCost(input, rawMaterials);
+  const effectiveIndirectCosts = applyGlobalFund(input.indirectCosts, globalFund);
 
   const allocation = allocateIndirectCosts(
     {
@@ -48,7 +51,7 @@ export function calculateProduct(
       unitDirectCost: direct.unitCost,
     },
     otherProducts,
-    input.indirectCosts
+    effectiveIndirectCosts
   );
 
   const totalUnitCost = direct.unitCost + allocation.totalPerUnit;
@@ -80,7 +83,8 @@ export function calculateProduct(
 
 export function recalculateInventory(
   products: ProductCalculation[],
-  rawMaterials: RawMaterial[] = []
+  rawMaterials: RawMaterial[] = [],
+  globalFund?: GlobalFundSettings
 ): ProductCalculation[] {
   return products.map((product) => {
     const others = products.filter((p) => p.id !== product.id);
@@ -99,6 +103,7 @@ export function recalculateInventory(
       },
       others,
       rawMaterials,
+      globalFund,
       product.id,
       product.timestamp
     );

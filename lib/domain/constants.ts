@@ -1,4 +1,4 @@
-import type { DistributionCriteria, TaxSettings } from './types';
+import type { DistributionCriteria, GlobalFundSettings, TaxSettings } from './types';
 
 /** Tasas según Resolución 306/2023 del MFP (MIPYMES Cuba, vigente desde 2024) */
 export const CUBAN_MIPYME_TAX_RATES = {
@@ -17,6 +17,13 @@ export const DEFAULT_TAX_SETTINGS: TaxSettings = {
   includeTerritorialContribution: true,
   includeProfitTaxEstimate: false,
   contingencyReservePercent: 10,
+};
+
+export const DEFAULT_GLOBAL_FUND_SETTINGS: GlobalFundSettings = {
+  enabled: false,
+  name: 'Fondo global',
+  amount: 0,
+  distributionCriteria: 'units',
 };
 
 export const DISTRIBUTION_CRITERIA_LABELS: Record<DistributionCriteria, string> = {
@@ -43,6 +50,7 @@ export const STORAGE_KEYS = {
   globalCosts: 'costify_global_costs_v2',
   taxSettings: 'costify_tax_settings_v2',
   rawMaterials: 'costify_raw_materials_v2',
+  globalFund: 'costify_global_fund_v2',
 } as const;
 
 export const PRODUCT_TYPE_LABELS = {

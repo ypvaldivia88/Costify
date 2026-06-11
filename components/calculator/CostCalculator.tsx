@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Calculator, Save } from 'lucide-react';
 import type {
+  GlobalFundSettings,
   IndirectCost,
   MarginType,
   ProductCalculation,
@@ -27,6 +28,7 @@ interface CostCalculatorProps {
   inventory: ProductCalculation[];
   rawMaterials: RawMaterial[];
   globalIndirectCosts: IndirectCost[];
+  globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   editingProduct?: ProductCalculation | null;
   onSave: (product: ProductCalculation) => void;
@@ -50,6 +52,7 @@ export function CostCalculator({
   inventory,
   rawMaterials,
   globalIndirectCosts,
+  globalFund,
   taxSettings,
   editingProduct,
   onSave,
@@ -96,9 +99,10 @@ export function CostCalculator({
           marginType: form.marginType,
         },
         otherProducts,
-        rawMaterials
+        rawMaterials,
+        globalFund
       ),
-    [form, otherProducts, rawMaterials]
+    [form, otherProducts, rawMaterials, globalFund]
   );
 
   const importGlobalCosts = () => {
@@ -169,6 +173,7 @@ export function CostCalculator({
       },
       otherProducts,
       rawMaterials,
+      globalFund,
       editingProduct?.id,
       editingProduct?.timestamp
     );
