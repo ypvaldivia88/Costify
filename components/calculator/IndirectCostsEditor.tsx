@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { DistributionCriteria, IndirectCost } from '@/lib/domain/types';
 import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
+import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
 
 interface IndirectCostsEditorProps {
@@ -91,8 +92,10 @@ export function IndirectCostsEditor({
                     type="number"
                     inputMode="decimal"
                     placeholder="Monto mensual"
-                    value={cost.amount || ''}
-                    onChange={(e) => updateCost(cost.id, 'amount', Number(e.target.value))}
+                    value={formatNumericInput(cost.amount)}
+                    onChange={(e) =>
+                      updateCost(cost.id, 'amount', parseNumericInput(e.target.value))
+                    }
                     className="px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
                   />
                   <select
@@ -114,9 +117,9 @@ export function IndirectCostsEditor({
                     type="number"
                     inputMode="numeric"
                     placeholder="Unidades para distribuir"
-                    value={cost.distributionUnits || ''}
+                    value={formatNumericInput(cost.distributionUnits ?? 0)}
                     onChange={(e) =>
-                      updateCost(cost.id, 'distributionUnits', Math.max(1, Number(e.target.value)))
+                      updateCost(cost.id, 'distributionUnits', parseNumericInput(e.target.value))
                     }
                     className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500"
                   />

@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { DistributionCriteria, IndirectCost } from '@/lib/domain/types';
 import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
+import { formatNumericInput, parseNumericInput } from '@/lib/format/numeric-input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -36,6 +37,13 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
 
   const saveEdit = () => {
     if (!editingId) return;
+    if (
+      draft.distributionCriteria === 'manual' &&
+      (draft.distributionUnits ?? 0) <= 0
+    ) {
+      alert('Ingresa las unidades para distribuir el gasto.');
+      return;
+    }
     const updated = localCosts.map((c) =>
       c.id === editingId
         ? {
@@ -121,8 +129,10 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                       <input
                         type="number"
                         inputMode="decimal"
-                        value={draft.amount ?? ''}
-                        onChange={(e) => setDraft((d) => ({ ...d, amount: Number(e.target.value) }))}
+                        value={formatNumericInput(draft.amount ?? 0)}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, amount: parseNumericInput(e.target.value) }))
+                        }
                         className="px-3 py-2.5 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500 min-h-11"
                         placeholder="Monto mensual"
                       />
@@ -146,11 +156,11 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                     {draft.distributionCriteria === 'manual' && (
                       <input
                         type="number"
-                        value={draft.distributionUnits ?? ''}
+                        value={formatNumericInput(draft.distributionUnits ?? 0)}
                         onChange={(e) =>
                           setDraft((d) => ({
                             ...d,
-                            distributionUnits: Math.max(1, Number(e.target.value)),
+                            distributionUnits: parseNumericInput(e.target.value),
                           }))
                         }
                         className="w-full px-3 py-2.5 text-sm rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-emerald-500 min-h-11"
