@@ -48,9 +48,7 @@ export default function Home() {
     recalculateAll(materials, globalFund);
   }, [
     globalFund.enabled,
-    globalFund.amount,
-    globalFund.distributionCriteria,
-    globalFund.distributionUnits,
+    globalFund.percent,
     hydrated,
   ]);
 

@@ -57,8 +57,7 @@ export const DEFAULT_TAX_SETTINGS: TaxSettings = {
 export const DEFAULT_GLOBAL_FUND_SETTINGS: GlobalFundSettings = {
   enabled: false,
   name: 'Fondo global',
-  amount: 0,
-  distributionCriteria: 'units',
+  percent: 0,
 };
 
 export const DISTRIBUTION_CRITERIA_LABELS: Record<DistributionCriteria, string> = {

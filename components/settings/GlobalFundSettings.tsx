@@ -1,24 +1,15 @@
 'use client';
 
 import { PiggyBank } from 'lucide-react';
-import type { DistributionCriteria, GlobalFundSettings } from '@/lib/domain/types';
-import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
-import { formatCurrency } from '@/lib/format/currency';
+import type { GlobalFundSettings } from '@/lib/domain/types';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { NumericInput } from '@/components/ui/NumericInput';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { cn } from '@/lib/utils';
 
 interface GlobalFundSettingsProps {
   settings: GlobalFundSettings;
   onChange: (updates: Partial<GlobalFundSettings>) => void;
 }
-
-const selectClass = cn(
-  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-border bg-surface text-sm text-foreground',
-  'focus:outline-none focus:border-brand'
-);
 
 export function GlobalFundSettingsPanel({ settings, onChange }: GlobalFundSettingsProps) {
   return (
@@ -26,7 +17,7 @@ export function GlobalFundSettingsPanel({ settings, onChange }: GlobalFundSettin
       <SectionHeader
         icon={PiggyBank}
         title="Fondo global opcional"
-        description="Monto mensual repartido automáticamente en todos los productos"
+        description="Porcentaje del costo directo reservado en cada producto"
       />
 
       <label className="flex items-start gap-3 cursor-pointer py-2 mb-4">
@@ -39,7 +30,7 @@ export function GlobalFundSettingsPanel({ settings, onChange }: GlobalFundSettin
         <div>
           <p className="text-sm font-medium text-foreground">Activar fondo global</p>
           <p className="text-xs text-muted mt-0.5">
-            Se aplica a todos los productos sin importarlo en cada ficha.
+            Se suma automáticamente al costo de todos los productos.
           </p>
         </div>
       </label>
@@ -53,44 +44,31 @@ export function GlobalFundSettingsPanel({ settings, onChange }: GlobalFundSettin
             onChange={(e) => onChange({ name: e.target.value })}
           />
 
-          <NumericInput
-            label="Monto mensual (CUP)"
-            value={settings.amount}
-            onChange={(amount) => onChange({ amount })}
-            hint="Importe total del período a repartir"
-          />
-
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Criterio de distribución
-            </label>
-            <select
-              value={settings.distributionCriteria}
-              onChange={(e) =>
-                onChange({ distributionCriteria: e.target.value as DistributionCriteria })
-              }
-              className={selectClass}
-            >
-              {Object.entries(DISTRIBUTION_CRITERIA_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-medium text-foreground">
+                Porcentaje sobre costo directo
+              </label>
+              <span className="text-sm font-bold text-brand">{settings.percent}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="50"
+              step="1"
+              value={settings.percent}
+              onChange={(e) => onChange({ percent: Number(e.target.value) })}
+              className="w-full h-2 rounded-full appearance-none cursor-pointer"
+            />
+            <p className="text-xs text-muted mt-1.5">
+              Ej: 5% sobre un costo directo de 100 CUP añade 5 CUP al costo unitario.
+            </p>
           </div>
 
-          {settings.distributionCriteria === 'manual' && (
-            <NumericInput
-              label="Unidades para distribuir"
-              value={settings.distributionUnits ?? 0}
-              onChange={(distributionUnits) => onChange({ distributionUnits })}
-            />
-          )}
-
-          {settings.amount > 0 && (
+          {settings.percent > 0 && (
             <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3 text-sm text-brand-foreground">
-              El fondo de <strong>{formatCurrency(settings.amount)}</strong> se incluirá en cada
-              cálculo según el criterio seleccionado.
+              Cada producto incluirá un <strong>{settings.percent}%</strong> adicional sobre su
+              costo directo como <strong>{settings.name.trim() || 'Fondo global'}</strong>.
             </div>
           )}
         </div>

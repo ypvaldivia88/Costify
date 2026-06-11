@@ -1,25 +1,22 @@
-import type { GlobalFundSettings, IndirectCost } from '../types';
+import type { GlobalFundSettings } from '../types';
 
-export const GLOBAL_FUND_ID = 'costify-global-fund';
-
-export function applyGlobalFund(
-  indirectCosts: IndirectCost[],
-  globalFund?: GlobalFundSettings
-): IndirectCost[] {
-  const withoutFund = indirectCosts.filter((cost) => cost.id !== GLOBAL_FUND_ID);
-
-  if (!globalFund?.enabled || globalFund.amount <= 0) {
-    return withoutFund;
-  }
-
-  const fundEntry: IndirectCost = {
-    id: GLOBAL_FUND_ID,
-    name: globalFund.name.trim() || 'Fondo global',
-    amount: globalFund.amount,
-    distributionCriteria: globalFund.distributionCriteria,
-    distributionUnits:
-      globalFund.distributionCriteria === 'manual' ? globalFund.distributionUnits : undefined,
+export function migrateGlobalFundSettings(
+  stored: Partial<GlobalFundSettings> & { amount?: number }
+): GlobalFundSettings {
+  return {
+    enabled: stored.enabled ?? false,
+    name: stored.name?.trim() || 'Fondo global',
+    percent: stored.percent ?? 0,
   };
+}
 
-  return [fundEntry, ...withoutFund];
+/** Porcentaje del costo directo unitario reservado para el fondo global */
+export function calculateGlobalFundPerUnit(
+  unitDirectCost: number,
+  globalFund?: GlobalFundSettings
+): number {
+  if (!globalFund?.enabled || globalFund.percent <= 0 || unitDirectCost <= 0) {
+    return 0;
+  }
+  return unitDirectCost * (globalFund.percent / 100);
 }

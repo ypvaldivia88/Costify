@@ -5,6 +5,7 @@ import type {
   RawMaterial,
   TaxSettings,
 } from '@/lib/domain/types';
+import { migrateGlobalFundSettings } from '@/lib/domain/calculations/global-fund';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
   DEFAULT_TAX_SETTINGS,
@@ -85,7 +86,7 @@ export function parseBackupPayload(raw: string): AppBackupV1 {
     inventory: backup.inventory,
     rawMaterials: backup.rawMaterials,
     globalCosts: Array.isArray(backup.globalCosts) ? backup.globalCosts : [],
-    globalFund: backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS,
+    globalFund: migrateGlobalFundSettings(backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
     taxSettings: backup.taxSettings ?? DEFAULT_TAX_SETTINGS,
   };
 }
@@ -120,7 +121,9 @@ export function readBackupFromFile(file: File): Promise<string> {
               inventory: backup.inventory,
               rawMaterials: backup.rawMaterials,
               globalCosts: backup.globalCosts ?? [],
-              globalFund: backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS,
+              globalFund: migrateGlobalFundSettings(
+                backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS
+              ),
               taxSettings: backup.taxSettings ?? DEFAULT_TAX_SETTINGS,
             })
           );

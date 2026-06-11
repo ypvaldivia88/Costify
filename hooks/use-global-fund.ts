@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { GlobalFundSettings } from '@/lib/domain/types';
+import { migrateGlobalFundSettings } from '@/lib/domain/calculations';
 import { DEFAULT_GLOBAL_FUND_SETTINGS, STORAGE_KEYS } from '@/lib/domain/constants';
 import { loadFromStorage, saveToStorage } from '@/lib/storage/local-storage';
 
@@ -10,7 +11,10 @@ export function useGlobalFund() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setGlobalFund(loadFromStorage(STORAGE_KEYS.globalFund, DEFAULT_GLOBAL_FUND_SETTINGS));
+    const saved = loadFromStorage<
+      Partial<GlobalFundSettings> & { amount?: number; distributionCriteria?: string }
+    >(STORAGE_KEYS.globalFund, DEFAULT_GLOBAL_FUND_SETTINGS);
+    setGlobalFund(migrateGlobalFundSettings(saved));
     setHydrated(true);
   }, []);
 

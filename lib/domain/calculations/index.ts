@@ -13,7 +13,7 @@ export {
   recipeQuantityInMaterialUnit,
   resolveRecipeUnit,
 } from '../units';
-export { applyGlobalFund, GLOBAL_FUND_ID } from './global-fund';
+export { calculateGlobalFundPerUnit, migrateGlobalFundSettings } from './global-fund';
 export {
   allocateIndirectCosts,
   getTotalMonthlyIndirectCosts,

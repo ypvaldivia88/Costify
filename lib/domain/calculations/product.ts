@@ -1,6 +1,6 @@
 import type { GlobalFundSettings, ProductCalculation, ProductInput, RawMaterial, UnitType } from '../types';
 import { calculateUnitDirectCost } from './direct-cost';
-import { applyGlobalFund } from './global-fund';
+import { calculateGlobalFundPerUnit } from './global-fund';
 import { allocateIndirectCosts } from './indirect-allocation';
 import {
   calculateGrossMarginPercent,
@@ -84,7 +84,6 @@ export function calculateProduct(
   timestamp?: number
 ): ProductCalculation {
   const direct = resolveDirectCost(input, rawMaterials);
-  const effectiveIndirectCosts = applyGlobalFund(input.indirectCosts, globalFund);
 
   const allocation = allocateIndirectCosts(
     {
@@ -95,10 +94,23 @@ export function calculateProduct(
       unitDirectCost: direct.unitCost,
     },
     otherProducts,
-    effectiveIndirectCosts
+    input.indirectCosts
   );
 
-  const totalUnitCost = direct.unitCost + allocation.totalPerUnit;
+  const globalFundPerUnit = calculateGlobalFundPerUnit(direct.unitCost, globalFund);
+  const totalIndirectPerUnit = allocation.totalPerUnit + globalFundPerUnit;
+
+  const indirectBreakdown = [...allocation.breakdown];
+  if (globalFundPerUnit > 0 && globalFund?.enabled) {
+    indirectBreakdown.unshift({
+      name: globalFund.name.trim() || 'Fondo global',
+      assigned: globalFundPerUnit * input.productionUnits,
+      perUnit: globalFundPerUnit,
+      criteria: 'direct-cost',
+    });
+  }
+
+  const totalUnitCost = direct.unitCost + totalIndirectPerUnit;
   const suggestedPrice = calculateSuggestedPrice(
     totalUnitCost,
     input.profitMargin,
@@ -115,12 +127,12 @@ export function calculateProduct(
     packageQuantity: direct.packageQuantity,
     id: id ?? crypto.randomUUID(),
     unitCost: direct.unitCost,
-    totalIndirectPerUnit: allocation.totalPerUnit,
+    totalIndirectPerUnit,
     totalUnitCost,
     suggestedPrice,
     profitPerUnit,
     grossMarginPercent,
-    indirectBreakdown: allocation.breakdown,
+    indirectBreakdown,
     recipeBreakdown: direct.recipeBreakdown,
     timestamp: timestamp ?? Date.now(),
   };

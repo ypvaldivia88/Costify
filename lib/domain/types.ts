@@ -89,9 +89,8 @@ export interface TaxSettings {
 export interface GlobalFundSettings {
   enabled: boolean;
   name: string;
-  amount: number;
-  distributionCriteria: DistributionCriteria;
-  distributionUnits?: number;
+  /** Porcentaje del costo directo unitario */
+  percent: number;
 }
 
 export interface MonthlyProductProjection {
