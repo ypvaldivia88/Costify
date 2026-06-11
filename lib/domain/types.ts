@@ -23,12 +23,15 @@ export interface RawMaterial extends RawMaterialInput {
 export interface RecipeItem {
   rawMaterialId: string;
   quantity: number;
+  /** Unidad en que se ingresa la cantidad en la receta (ej. gr aunque la compra sea en kg) */
+  unitType?: UnitType;
 }
 
 export interface RecipeItemBreakdown {
   rawMaterialId: string;
   name: string;
   quantity: number;
+  unitType: UnitType;
   unitCost: number;
   lineCost: number;
 }

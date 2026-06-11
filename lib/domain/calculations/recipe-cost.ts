@@ -1,4 +1,19 @@
-import type { RawMaterial, RecipeItem, RecipeItemBreakdown } from '../types';
+import type { RawMaterial, RecipeItem, RecipeItemBreakdown, UnitType } from '../types';
+import {
+  materialUnitCostInRecipeUnit,
+  recipeQuantityInMaterialUnit,
+  resolveRecipeUnit,
+} from '../units';
+
+function lineCostForRecipeItem(item: RecipeItem, material: RawMaterial): number {
+  const recipeUnit = resolveRecipeUnit(item, material.unitType);
+  const quantityInMaterialUnit = recipeQuantityInMaterialUnit(
+    item.quantity,
+    recipeUnit,
+    material.unitType
+  );
+  return material.unitCost * quantityInMaterialUnit;
+}
 
 export function calculateRecipeUnitCost(
   recipe: RecipeItem[],
@@ -13,13 +28,15 @@ export function calculateRecipeUnitCost(
     const material = rawMaterials.find((m) => m.id === item.rawMaterialId);
     if (!material) continue;
 
-    const lineCost = material.unitCost * item.quantity;
+    const recipeUnit = resolveRecipeUnit(item, material.unitType);
+    const lineCost = lineCostForRecipeItem(item, material);
     unitCost += lineCost;
     breakdown.push({
       rawMaterialId: material.id,
       name: material.name,
       quantity: item.quantity,
-      unitCost: material.unitCost,
+      unitType: recipeUnit,
+      unitCost: materialUnitCostInRecipeUnit(material.unitCost, material.unitType, recipeUnit),
       lineCost,
     });
   }
@@ -29,12 +46,24 @@ export function calculateRecipeUnitCost(
 
 export function estimateRecipeConsumption(
   recipe: RecipeItem[],
+  rawMaterials: RawMaterial[],
   productionUnits: number
 ): Array<{ rawMaterialId: string; quantity: number }> {
   return recipe
     .filter((item) => item.quantity > 0)
-    .map((item) => ({
-      rawMaterialId: item.rawMaterialId,
-      quantity: item.quantity * productionUnits,
-    }));
+    .map((item) => {
+      const material = rawMaterials.find((m) => m.id === item.rawMaterialId);
+      const perUnit =
+        material != null
+          ? recipeQuantityInMaterialUnit(
+              item.quantity,
+              resolveRecipeUnit(item, material.unitType),
+              material.unitType
+            )
+          : item.quantity;
+      return {
+        rawMaterialId: item.rawMaterialId,
+        quantity: perUnit * productionUnits,
+      };
+    });
 }

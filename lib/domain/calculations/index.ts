@@ -6,6 +6,13 @@ export {
   recalculateRawMaterial,
 } from './raw-material';
 export { calculateRecipeUnitCost, estimateRecipeConsumption } from './recipe-cost';
+export {
+  areUnitsCompatible,
+  convertQuantity,
+  getRecipeUnitOptions,
+  recipeQuantityInMaterialUnit,
+  resolveRecipeUnit,
+} from '../units';
 export { applyGlobalFund, GLOBAL_FUND_ID } from './global-fund';
 export {
   allocateIndirectCosts,

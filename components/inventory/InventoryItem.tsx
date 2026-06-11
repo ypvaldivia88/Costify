@@ -4,7 +4,7 @@ import { Edit2, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ProductCalculation, TaxSettings } from '@/lib/domain/types';
 import { calculateMonthlyTaxProjection } from '@/lib/domain/calculations/taxes';
-import { DISTRIBUTION_CRITERIA_SHORT, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
+import { DISTRIBUTION_CRITERIA_SHORT, PRODUCT_TYPE_LABELS, UNIT_SHORT_LABELS } from '@/lib/domain/constants';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
 
@@ -105,7 +105,9 @@ export function InventoryItem({
                           <span className="text-muted truncate">
                             {rm.name}{' '}
                             <span className="text-xs text-muted">
-                              ({rm.quantity} × {formatCurrency(rm.unitCost)})
+                              ({rm.quantity}{' '}
+                              {rm.unitType ? UNIT_SHORT_LABELS[rm.unitType] : ''} ×{' '}
+                              {formatCurrency(rm.unitCost)})
                             </span>
                           </span>
                           <span className="font-medium tabular-nums shrink-0">

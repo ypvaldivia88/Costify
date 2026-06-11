@@ -1,8 +1,14 @@
 'use client';
 
 import { Plus, Trash2 } from 'lucide-react';
-import type { RawMaterial, RecipeItem } from '@/lib/domain/types';
-import { UNIT_SHORT_LABELS } from '@/lib/domain/constants';
+import type { RawMaterial, RecipeItem, UnitType } from '@/lib/domain/types';
+import { UNIT_LABELS, UNIT_SHORT_LABELS } from '@/lib/domain/constants';
+import {
+  getRecipeUnitOptions,
+  materialUnitCostInRecipeUnit,
+  recipeQuantityInMaterialUnit,
+  resolveRecipeUnit,
+} from '@/lib/domain/units';
 import { formatCurrency } from '@/lib/format/currency';
 import { Button } from '@/components/ui/Button';
 import { NumericField } from '@/components/ui/NumericField';
@@ -19,17 +25,41 @@ const fieldClass = cn(
   'focus:outline-none focus:border-brand'
 );
 
+function lineCost(item: RecipeItem, material: RawMaterial): number {
+  const recipeUnit = resolveRecipeUnit(item, material.unitType);
+  const qty = recipeQuantityInMaterialUnit(item.quantity, recipeUnit, material.unitType);
+  return material.unitCost * qty;
+}
+
 export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorProps) {
   const usedIds = new Set(recipe.map((r) => r.rawMaterialId));
   const availableMaterials = rawMaterials.filter((m) => !usedIds.has(m.id));
 
   const addItem = () => {
     if (availableMaterials.length === 0) return;
-    onChange([...recipe, { rawMaterialId: availableMaterials[0].id, quantity: 1 }]);
+    const material = availableMaterials[0];
+    onChange([
+      ...recipe,
+      { rawMaterialId: material.id, quantity: 1, unitType: material.unitType },
+    ]);
   };
 
   const updateItem = (index: number, updates: Partial<RecipeItem>) => {
     onChange(recipe.map((item, i) => (i === index ? { ...item, ...updates } : item)));
+  };
+
+  const changeMaterial = (index: number, rawMaterialId: string) => {
+    const material = rawMaterials.find((m) => m.id === rawMaterialId);
+    const item = recipe[index];
+    const updates: Partial<RecipeItem> = { rawMaterialId };
+    if (material) {
+      const currentUnit = resolveRecipeUnit(item, material.unitType);
+      const options = getRecipeUnitOptions(material.unitType);
+      if (!options.includes(currentUnit)) {
+        updates.unitType = material.unitType;
+      }
+    }
+    updateItem(index, updates);
   };
 
   const removeItem = (index: number) => {
@@ -39,7 +69,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
   const totalCost = recipe.reduce((sum, item) => {
     const material = rawMaterials.find((m) => m.id === item.rawMaterialId);
     if (!material || item.quantity <= 0) return sum;
-    return sum + material.unitCost * item.quantity;
+    return sum + lineCost(item, material);
   }, 0);
 
   if (rawMaterials.length === 0) {
@@ -52,7 +82,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <label className="text-sm font-medium text-foreground">Receta</label>
         <Button
           variant="outline"
@@ -66,24 +96,36 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
         </Button>
       </div>
 
+      <p className="text-xs text-muted">
+        Puedes usar otra unidad que la de compra (ej. gramos si compraste en kg).
+      </p>
+
       {recipe.length === 0 ? (
-        <p className="text-sm text-muted py-2">Agrega materias primas y cantidades por unidad.</p>
+        <p className="text-sm text-muted py-2">Agrega materias primas y cantidades por unidad de producto.</p>
       ) : (
         <div className="space-y-2">
           {recipe.map((item, index) => {
             const material = rawMaterials.find((m) => m.id === item.rawMaterialId);
-            const lineCost = material ? material.unitCost * item.quantity : 0;
-            const unitLabel = material ? UNIT_SHORT_LABELS[material.unitType] : '';
+            if (!material) return null;
+
+            const recipeUnit = resolveRecipeUnit(item, material.unitType);
+            const unitOptions = getRecipeUnitOptions(material.unitType);
+            const cost = lineCost(item, material);
+            const displayUnitCost = materialUnitCostInRecipeUnit(
+              material.unitCost,
+              material.unitType,
+              recipeUnit
+            );
 
             return (
               <div
                 key={`${item.rawMaterialId}-${index}`}
-                className="flex flex-col sm:flex-row gap-2 p-3 rounded-xl border border-border bg-surface-muted/50"
+                className="p-3 rounded-xl border border-border bg-surface-muted/50 space-y-2"
               >
                 <select
                   value={item.rawMaterialId}
-                  onChange={(e) => updateItem(index, { rawMaterialId: e.target.value })}
-                  className={cn('flex-1', fieldClass)}
+                  onChange={(e) => changeMaterial(index, e.target.value)}
+                  className={cn('w-full', fieldClass)}
                 >
                   {rawMaterials.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -92,17 +134,30 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                   ))}
                 </select>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <NumericField
                     value={item.quantity}
                     onChange={(quantity) => updateItem(index, { quantity })}
                     className="w-24"
                     aria-label="Cantidad"
                   />
-                  <span className="text-xs text-muted shrink-0">{unitLabel}</span>
+                  <select
+                    value={recipeUnit}
+                    onChange={(e) =>
+                      updateItem(index, { unitType: e.target.value as UnitType })
+                    }
+                    className={cn('w-28', fieldClass)}
+                    aria-label="Unidad de medida"
+                  >
+                    {unitOptions.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {UNIT_LABELS[unit]}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => removeItem(index)}
-                    className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-muted hover:text-red-500 rounded-xl transition-colors"
+                    className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-muted hover:text-red-500 rounded-xl transition-colors ml-auto"
                     aria-label="Eliminar"
                     type="button"
                   >
@@ -110,10 +165,18 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                   </button>
                 </div>
 
-                <div className="sm:text-right sm:min-w-28">
-                  <p className="text-sm font-semibold text-foreground tabular-nums">
-                    {formatCurrency(lineCost)}
-                  </p>
+                <div className="flex justify-between items-baseline text-sm gap-2">
+                  <span className="text-muted text-xs">
+                    {formatCurrency(displayUnitCost)}/{UNIT_SHORT_LABELS[recipeUnit]}
+                    {recipeUnit !== material.unitType && (
+                      <span className="ml-1 opacity-70">
+                        (compra en {UNIT_SHORT_LABELS[material.unitType]})
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-semibold text-foreground tabular-nums">
+                    {formatCurrency(cost)}
+                  </span>
                 </div>
               </div>
             );
