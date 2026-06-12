@@ -213,7 +213,7 @@ export function CostCalculator({
         <div className="space-y-4">
           <Input
             label="Nombre"
-            placeholder="Ej. Pan de guayaba"
+            placeholder="Ej. Croqueta de jamón"
             value={form.name}
             error={errors.name}
             onChange={(e) => {
