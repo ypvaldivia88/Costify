@@ -1,6 +1,7 @@
 'use client';
 
 import type { BusinessSummary, TaxSettings } from '@/lib/domain/types';
+import { hasActiveTaxes } from '@/lib/domain/calculations/taxes';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
@@ -11,10 +12,7 @@ interface BusinessSummaryCardProps {
 }
 
 export function BusinessSummaryCard({ summary, taxSettings }: BusinessSummaryCardProps) {
-  const showTaxes =
-    taxSettings.includeSalesTax ||
-    taxSettings.includeTerritorialContribution ||
-    taxSettings.includeProfitTaxEstimate;
+  const showTaxes = hasActiveTaxes(taxSettings) && summary.taxLineTotals.length > 0;
 
   return (
     <Card variant="accent">
@@ -41,30 +39,12 @@ export function BusinessSummaryCard({ summary, taxSettings }: BusinessSummaryCar
 
       {showTaxes && (
         <div className="mt-4 pt-4 border-t border-emerald-200/60 space-y-1.5 text-sm">
-          {taxSettings.includeSalesTax && (
-            <div className="flex justify-between text-brand-foreground/80">
-              <span>IVSS (10% ingresos)</span>
-              <span>-{formatCurrency(summary.totalSalesTax)}</span>
+          {summary.taxLineTotals.map((line) => (
+            <div key={line.id} className="flex justify-between text-brand-foreground/80">
+              <span>{line.name}</span>
+              <span>-{formatCurrency(line.amount)}</span>
             </div>
-          )}
-          {taxSettings.includeTerritorialContribution && (
-            <div className="flex justify-between text-brand-foreground/80">
-              <span>Contrib. territorial (1%)</span>
-              <span>-{formatCurrency(summary.totalTerritorialContribution)}</span>
-            </div>
-          )}
-          {taxSettings.includeProfitTaxEstimate && (
-            <>
-              <div className="flex justify-between text-brand-foreground/80">
-                <span>Reserva contingencias</span>
-                <span>-{formatCurrency(summary.totalContingencyReserve)}</span>
-              </div>
-              <div className="flex justify-between text-brand-foreground/80">
-                <span>Imp. utilidades (35%)</span>
-                <span>-{formatCurrency(summary.totalEstimatedProfitTax)}</span>
-              </div>
-            </>
-          )}
+          ))}
           <div className="flex justify-between font-bold text-foreground pt-1">
             <span>Utilidad neta estimada</span>
             <span>{formatCurrency(summary.totalNetProfit)}</span>

@@ -5,7 +5,7 @@ import {
   getIndirectCoverage,
   getTotalMonthlyIndirectCosts,
 } from '@/lib/domain/calculations';
-import { calculateMonthlyTaxProjection } from '@/lib/domain/calculations/taxes';
+import { calculateMonthlyTaxProjection, hasActiveTaxes } from '@/lib/domain/calculations/taxes';
 import { DISTRIBUTION_CRITERIA_SHORT, MARGIN_TYPE_LABELS, UNIT_SHORT_LABELS } from '@/lib/domain/constants';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
@@ -150,7 +150,7 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
                     variant="accent"
                   />
                 </div>
-                {(taxSettings.includeSalesTax || taxSettings.includeTerritorialContribution) && (
+                {hasActiveTaxes(taxSettings) && taxes.totalTaxes > 0 && (
                   <p className="text-xs text-muted mt-2">
                     Utilidad estimada después de impuestos:{' '}
                     <strong className="text-brand">{formatCurrency(taxes.netProfit)}</strong>

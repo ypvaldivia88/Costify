@@ -1,10 +1,12 @@
 import type { BusinessSummary, ProductCalculation, TaxSettings } from '../types';
-import { calculateMonthlyTaxProjection } from './taxes';
+import { calculateMonthlyTaxProjection, mergeTaxLineTotals } from './taxes';
 
 export function calculateBusinessSummary(
   products: ProductCalculation[],
   taxSettings: TaxSettings
 ): BusinessSummary {
+  const taxTotalsMap = new Map<string, { id: string; name: string; amount: number }>();
+
   const base = products.reduce(
     (acc, product) => {
       const revenue = product.suggestedPrice * product.productionUnits;
@@ -13,17 +15,14 @@ export function calculateBusinessSummary(
       const grossProfit = product.profitPerUnit * product.productionUnits;
       const taxes = calculateMonthlyTaxProjection(revenue, grossProfit, taxSettings);
 
+      mergeTaxLineTotals(taxTotalsMap, taxes.taxLines);
+
       return {
         totalRevenue: acc.totalRevenue + revenue,
         totalDirectCost: acc.totalDirectCost + directCost,
         totalIndirectCost: acc.totalIndirectCost + indirectCost,
         totalGrossProfit: acc.totalGrossProfit + grossProfit,
-        totalSalesTax: acc.totalSalesTax + taxes.salesTax,
-        totalTerritorialContribution:
-          acc.totalTerritorialContribution + taxes.territorialContribution,
-        totalProfitBeforeTax: acc.totalProfitBeforeTax + taxes.profitBeforeTax,
-        totalContingencyReserve: acc.totalContingencyReserve + taxes.contingencyReserve,
-        totalEstimatedProfitTax: acc.totalEstimatedProfitTax + taxes.estimatedProfitTax,
+        totalTaxes: acc.totalTaxes + taxes.totalTaxes,
         totalNetProfit: acc.totalNetProfit + taxes.netProfit,
         totalStockValue: acc.totalStockValue + product.suggestedPrice * product.productionUnits,
         grossMarginSum: acc.grossMarginSum + product.grossMarginPercent,
@@ -34,11 +33,7 @@ export function calculateBusinessSummary(
       totalDirectCost: 0,
       totalIndirectCost: 0,
       totalGrossProfit: 0,
-      totalSalesTax: 0,
-      totalTerritorialContribution: 0,
-      totalProfitBeforeTax: 0,
-      totalContingencyReserve: 0,
-      totalEstimatedProfitTax: 0,
+      totalTaxes: 0,
       totalNetProfit: 0,
       totalStockValue: 0,
       grossMarginSum: 0,
@@ -50,11 +45,8 @@ export function calculateBusinessSummary(
     totalDirectCost: base.totalDirectCost,
     totalIndirectCost: base.totalIndirectCost,
     totalGrossProfit: base.totalGrossProfit,
-    totalSalesTax: base.totalSalesTax,
-    totalTerritorialContribution: base.totalTerritorialContribution,
-    totalProfitBeforeTax: base.totalProfitBeforeTax,
-    totalContingencyReserve: base.totalContingencyReserve,
-    totalEstimatedProfitTax: base.totalEstimatedProfitTax,
+    taxLineTotals: Array.from(taxTotalsMap.values()),
+    totalTaxes: base.totalTaxes,
     totalNetProfit: base.totalNetProfit,
     totalStockValue: base.totalStockValue,
     productCount: products.length,

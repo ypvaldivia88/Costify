@@ -79,11 +79,40 @@ export interface ProductCalculation extends ProductInput {
   timestamp: number;
 }
 
+/** Sector tributario en Cuba (referencia normativa; tasas editables en la app) */
+export type TaxSector = 'none' | 'tcp' | 'mipyme' | 'cna' | 'custom';
+
+/** Base sobre la que se aplica cada línea de impuesto */
+export type TaxLineBase = 'revenue' | 'revenueExcess' | 'remainingProfit';
+
+export interface TaxLine {
+  id: string;
+  name: string;
+  enabled: boolean;
+  /** Porcentaje (ej. 10 = 10%) */
+  ratePercent: number;
+  base: TaxLineBase;
+  /** Umbral mensual en CUP (p. ej. TCP: ingresos exentos hasta ~3 270 CUP/mes) */
+  monthlyThresholdCup?: number;
+}
+
 export interface TaxSettings {
-  includeSalesTax: boolean;
-  includeTerritorialContribution: boolean;
-  includeProfitTaxEstimate: boolean;
-  contingencyReservePercent: number;
+  /** Si false, no se aplican impuestos en proyecciones */
+  enabled: boolean;
+  sector: TaxSector;
+  lines: TaxLine[];
+}
+
+export interface TaxLineAmount {
+  id: string;
+  name: string;
+  amount: number;
+}
+
+export interface TaxProjection {
+  taxLines: TaxLineAmount[];
+  totalTaxes: number;
+  netProfit: number;
 }
 
 export interface GlobalFundSettings {
@@ -98,11 +127,8 @@ export interface MonthlyProductProjection {
   directCost: number;
   indirectCost: number;
   grossProfit: number;
-  salesTax: number;
-  territorialContribution: number;
-  profitBeforeTax: number;
-  contingencyReserve: number;
-  estimatedProfitTax: number;
+  taxLines: TaxLineAmount[];
+  totalTaxes: number;
   netProfit: number;
 }
 
@@ -111,11 +137,8 @@ export interface BusinessSummary {
   totalDirectCost: number;
   totalIndirectCost: number;
   totalGrossProfit: number;
-  totalSalesTax: number;
-  totalTerritorialContribution: number;
-  totalProfitBeforeTax: number;
-  totalContingencyReserve: number;
-  totalEstimatedProfitTax: number;
+  taxLineTotals: TaxLineAmount[];
+  totalTaxes: number;
   totalNetProfit: number;
   productCount: number;
   averageGrossMargin: number;

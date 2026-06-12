@@ -6,6 +6,7 @@ import type {
   TaxSettings,
 } from '@/lib/domain/types';
 import { migrateGlobalFundSettings } from '@/lib/domain/calculations/global-fund';
+import { migrateTaxSettings } from '@/lib/domain/migrate-tax-settings';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
   DEFAULT_TAX_SETTINGS,
@@ -87,7 +88,7 @@ export function parseBackupPayload(raw: string): AppBackupV1 {
     rawMaterials: backup.rawMaterials,
     globalCosts: Array.isArray(backup.globalCosts) ? backup.globalCosts : [],
     globalFund: migrateGlobalFundSettings(backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
-    taxSettings: backup.taxSettings ?? DEFAULT_TAX_SETTINGS,
+    taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
   };
 }
 
@@ -96,7 +97,7 @@ export function applyBackupToStorage(backup: AppBackupV1): void {
   saveToStorage(STORAGE_KEYS.rawMaterials, backup.rawMaterials);
   saveToStorage(STORAGE_KEYS.globalCosts, backup.globalCosts);
   saveToStorage(STORAGE_KEYS.globalFund, backup.globalFund);
-  saveToStorage(STORAGE_KEYS.taxSettings, backup.taxSettings);
+  saveToStorage(STORAGE_KEYS.taxSettings, migrateTaxSettings(backup.taxSettings));
 }
 
 export function readBackupFromFile(file: File): Promise<string> {
@@ -124,7 +125,7 @@ export function readBackupFromFile(file: File): Promise<string> {
               globalFund: migrateGlobalFundSettings(
                 backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS
               ),
-              taxSettings: backup.taxSettings ?? DEFAULT_TAX_SETTINGS,
+              taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
             })
           );
           return;

@@ -1,4 +1,5 @@
 import type { DistributionCriteria, GlobalFundSettings, UnitType, TaxSettings } from './types';
+import { getPresetLines } from './tax-presets';
 
 export const UNIT_TYPES: UnitType[] = ['ud', 'gr', 'kg', 'lt', 'ml'];
 
@@ -35,23 +36,10 @@ export const PRODUCT_PURCHASE_UNIT_SUGGESTIONS = [
   'rollo',
 ] as const;
 
-/** Tasas según Resolución 306/2023 del MFP (MIPYMES Cuba, vigente desde 2024) */
-export const CUBAN_MIPYME_TAX_RATES = {
-  /** Impuesto sobre Ventas y Servicios */
-  salesTax: 0.1,
-  /** Contribución Territorial para el Desarrollo Local */
-  territorialContribution: 0.01,
-  /** Impuesto sobre Utilidades */
-  profitTax: 0.35,
-  /** Reserva para pérdidas y contingencias (mín 2%, máx 10% de gastos; usamos 10% de utilidad) */
-  defaultContingencyReserve: 0.1,
-} as const;
-
 export const DEFAULT_TAX_SETTINGS: TaxSettings = {
-  includeSalesTax: true,
-  includeTerritorialContribution: true,
-  includeProfitTaxEstimate: false,
-  contingencyReservePercent: 10,
+  enabled: true,
+  sector: 'mipyme',
+  lines: getPresetLines('mipyme'),
 };
 
 export const DEFAULT_GLOBAL_FUND_SETTINGS: GlobalFundSettings = {
@@ -82,7 +70,7 @@ export const MARGIN_TYPE_LABELS = {
 export const STORAGE_KEYS = {
   inventory: 'costify_inventory_v2',
   globalCosts: 'costify_global_costs_v2',
-  taxSettings: 'costify_tax_settings_v2',
+  taxSettings: 'costify_tax_settings_v3',
   rawMaterials: 'costify_raw_materials_v2',
   globalFund: 'costify_global_fund_v2',
   theme: 'costify_theme_v1',

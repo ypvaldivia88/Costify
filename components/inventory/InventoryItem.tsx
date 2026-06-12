@@ -3,7 +3,7 @@
 import { Edit2, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ProductCalculation, TaxSettings } from '@/lib/domain/types';
-import { calculateMonthlyTaxProjection } from '@/lib/domain/calculations/taxes';
+import { calculateMonthlyTaxProjection, hasActiveTaxes } from '@/lib/domain/calculations/taxes';
 import { DISTRIBUTION_CRITERIA_SHORT, PRODUCT_TYPE_LABELS, UNIT_SHORT_LABELS } from '@/lib/domain/constants';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
@@ -155,7 +155,7 @@ export function InventoryItem({
                       <span className="text-muted">Utilidad bruta</span>
                       <span className="font-medium text-brand">{formatCurrency(monthlyGross)}</span>
                     </div>
-                    {(taxSettings.includeSalesTax || taxSettings.includeTerritorialContribution) && (
+                    {hasActiveTaxes(taxSettings) && taxes.totalTaxes > 0 && (
                       <div className="flex justify-between text-muted">
                         <span>Después de impuestos estimados</span>
                         <span className="font-medium">{formatCurrency(taxes.netProfit)}</span>
