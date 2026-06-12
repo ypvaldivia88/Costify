@@ -14,15 +14,18 @@ import type {
 } from '@/lib/domain/types';
 import { calculateProduct, migrateProductInput } from '@/lib/domain/calculations';
 import { MARGIN_TYPE_LABELS, PRODUCT_PURCHASE_UNIT_SUGGESTIONS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
+import { fieldClassName } from '@/lib/ui/field-styles';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 import { Input } from '@/components/ui/Input';
 import { NumericInput } from '@/components/ui/NumericInput';
+import { Select } from '@/components/ui/Select';
+import { useToast } from '@/components/ui/Toast';
+import { cn } from '@/lib/utils';
 import { IndirectCostsEditor } from './IndirectCostsEditor';
 import { PricingResults } from './PricingResults';
 import { RecipeEditor } from './RecipeEditor';
-import { cn } from '@/lib/utils';
 
 interface CostCalculatorProps {
   inventory: ProductCalculation[];
@@ -35,10 +38,7 @@ interface CostCalculatorProps {
   onCancelEdit?: () => void;
 }
 
-const fieldClassName = cn(
-  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground',
-  'focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition-all'
-);
+type FormErrors = Partial<Record<'name' | 'purchasePrice' | 'packageQuantity' | 'purchaseUnit' | 'recipe' | 'productionUnits', string>>;
 
 const defaultForm = {
   name: '',
@@ -63,7 +63,9 @@ export function CostCalculator({
   onSave,
   onCancelEdit,
 }: CostCalculatorProps) {
+  const { showToast } = useToast();
   const [form, setForm] = useState(defaultForm);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (editingProduct) {
@@ -83,6 +85,7 @@ export function CostCalculator({
     } else {
       setForm(defaultForm);
     }
+    setErrors({});
   }, [editingProduct]);
 
   const otherProducts = editingProduct
@@ -116,7 +119,7 @@ export function CostCalculator({
     const newCosts = globalIndirectCosts.filter((c) => !currentNames.has(c.name.toLowerCase()));
 
     if (newCosts.length === 0) {
-      alert('No hay costos nuevos para importar.');
+      showToast('No hay costos nuevos para importar', 'info');
       return;
     }
 
@@ -132,6 +135,7 @@ export function CostCalculator({
         })),
       ],
     }));
+    showToast(`${newCosts.length} gasto(s) importado(s)`, 'success');
   };
 
   const isElaborated = form.productType === 'elaborated';
@@ -139,34 +143,32 @@ export function CostCalculator({
     ? form.recipe.some((r) => r.quantity > 0)
     : form.purchasePrice > 0;
 
-  const handleSave = () => {
+  const validate = (): FormErrors => {
+    const next: FormErrors = {};
+
     if (!form.name.trim()) {
-      alert('Ingresa el nombre del producto.');
-      return;
+      next.name = 'Ingresa el nombre del producto';
     }
     if (isElaborated) {
       if (!form.recipe.some((r) => r.quantity > 0)) {
-        alert('Agrega al menos una materia prima con cantidad mayor a cero.');
-        return;
+        next.recipe = 'Agrega al menos una materia prima con cantidad mayor a cero';
       }
     } else {
-      if (form.purchasePrice <= 0) {
-        alert('Ingresa un precio de compra válido.');
-        return;
-      }
-      if (form.packageQuantity <= 0) {
-        alert('Ingresa cuántas unidades incluye la compra.');
-        return;
-      }
-      if (!form.purchaseUnit.trim()) {
-        alert('Indica qué estás contando (unidad, caja, bolsa, kg, etc.).');
-        return;
-      }
+      if (form.purchasePrice <= 0) next.purchasePrice = 'Ingresa un precio de compra válido';
+      if (form.packageQuantity <= 0) next.packageQuantity = 'Indica cuántas unidades incluye la compra';
+      if (!form.purchaseUnit.trim()) next.purchaseUnit = 'Indica la unidad (unidad, caja, bolsa, kg…)';
     }
     if (form.productionUnits <= 0) {
-      alert('Ingresa las unidades de producción/venta del período.');
-      return;
+      next.productionUnits = 'Ingresa las unidades de producción/venta del período';
     }
+
+    return next;
+  };
+
+  const handleSave = () => {
+    const nextErrors = validate();
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
     const saved = calculateProduct(
       {
@@ -190,6 +192,7 @@ export function CostCalculator({
 
     onSave(saved);
     if (!editingProduct) setForm(defaultForm);
+    setErrors({});
   };
 
   return (
@@ -202,9 +205,9 @@ export function CostCalculator({
 
       <Card>
         <div className="mb-4">
-          <h2 className="text-lg font-bold text-foreground">
+          <h3 className="text-lg font-bold text-foreground">
             {editingProduct ? `Editando: ${editingProduct.name}` : 'Nuevo producto'}
-          </h2>
+          </h3>
         </div>
 
         <div className="space-y-4">
@@ -212,7 +215,11 @@ export function CostCalculator({
             label="Nombre"
             placeholder="Ej. Pan de guayaba"
             value={form.name}
-            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+            error={errors.name}
+            onChange={(e) => {
+              setForm((p) => ({ ...p, name: e.target.value }));
+              if (errors.name) setErrors((p) => ({ ...p, name: undefined }));
+            }}
           />
 
           <div className="grid grid-cols-2 gap-2">
@@ -222,7 +229,7 @@ export function CostCalculator({
                 type="button"
                 onClick={() => setForm((p) => ({ ...p, productType: value }))}
                 className={cn(
-                  'min-h-11 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-colors',
+                  'min-h-11 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-colors active:scale-[0.98]',
                   form.productType === value
                     ? 'border-brand bg-brand-muted text-brand-foreground'
                     : 'border-border bg-surface text-muted hover:border-brand/40'
@@ -234,17 +241,27 @@ export function CostCalculator({
           </div>
 
           {isElaborated ? (
-            <RecipeEditor
-              recipe={form.recipe}
-              rawMaterials={rawMaterials}
-              onChange={(recipe) => setForm((p) => ({ ...p, recipe }))}
-            />
+            <div className="space-y-1.5">
+              <RecipeEditor
+                recipe={form.recipe}
+                rawMaterials={rawMaterials}
+                onChange={(recipe) => {
+                  setForm((p) => ({ ...p, recipe }));
+                  if (errors.recipe) setErrors((p) => ({ ...p, recipe: undefined }));
+                }}
+              />
+              {errors.recipe && <p className="text-xs text-red-600 dark:text-red-400">{errors.recipe}</p>}
+            </div>
           ) : (
             <div className="space-y-4">
               <NumericInput
                 label="Precio de compra (CUP)"
                 value={form.purchasePrice}
-                onChange={(purchasePrice) => setForm((p) => ({ ...p, purchasePrice }))}
+                error={errors.purchasePrice}
+                onChange={(purchasePrice) => {
+                  setForm((p) => ({ ...p, purchasePrice }));
+                  if (errors.purchasePrice) setErrors((p) => ({ ...p, purchasePrice: undefined }));
+                }}
                 hint="Lo que pagaste por el lote"
               />
 
@@ -252,7 +269,11 @@ export function CostCalculator({
                 <NumericInput
                   label="Cantidad en la compra"
                   value={form.packageQuantity}
-                  onChange={(packageQuantity) => setForm((p) => ({ ...p, packageQuantity }))}
+                  error={errors.packageQuantity}
+                  onChange={(packageQuantity) => {
+                    setForm((p) => ({ ...p, packageQuantity }));
+                    if (errors.packageQuantity) setErrors((p) => ({ ...p, packageQuantity: undefined }));
+                  }}
                 />
 
                 <div className="space-y-1.5">
@@ -263,15 +284,24 @@ export function CostCalculator({
                     id="product-purchase-unit"
                     list="product-purchase-unit-suggestions"
                     value={form.purchaseUnit}
-                    onChange={(e) => setForm((p) => ({ ...p, purchaseUnit: e.target.value }))}
+                    onChange={(e) => {
+                      setForm((p) => ({ ...p, purchaseUnit: e.target.value }));
+                      if (errors.purchaseUnit) setErrors((p) => ({ ...p, purchaseUnit: undefined }));
+                    }}
                     placeholder="unidad, caja, bolsa, kg…"
-                    className={fieldClassName}
+                    className={cn(
+                      fieldClassName,
+                      errors.purchaseUnit ? 'border-red-400 dark:border-red-500' : undefined
+                    )}
                   />
                   <datalist id="product-purchase-unit-suggestions">
                     {PRODUCT_PURCHASE_UNIT_SUGGESTIONS.map((unit) => (
                       <option key={unit} value={unit} />
                     ))}
                   </datalist>
+                  {errors.purchaseUnit && (
+                    <p className="text-xs text-red-600 dark:text-red-400">{errors.purchaseUnit}</p>
+                  )}
                 </div>
               </div>
 
@@ -291,7 +321,11 @@ export function CostCalculator({
           <NumericInput
             label="Unidades a vender al mes"
             value={form.productionUnits}
-            onChange={(productionUnits) => setForm((p) => ({ ...p, productionUnits }))}
+            error={errors.productionUnits}
+            onChange={(productionUnits) => {
+              setForm((p) => ({ ...p, productionUnits }));
+              if (errors.productionUnits) setErrors((p) => ({ ...p, productionUnits: undefined }));
+            }}
           />
 
           <CollapsibleSection
@@ -300,19 +334,18 @@ export function CostCalculator({
             defaultOpen
           >
             <div className="space-y-3 pt-3">
-              <select
+              <Select
                 value={form.marginType}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, marginType: e.target.value as MarginType }))
                 }
-                className={fieldClassName}
               >
                 {Object.entries(MARGIN_TYPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -329,6 +362,7 @@ export function CostCalculator({
                   value={form.profitMargin}
                   onChange={(e) => setForm((p) => ({ ...p, profitMargin: Number(e.target.value) }))}
                   className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                  aria-label="Margen de utilidad"
                 />
               </div>
             </div>

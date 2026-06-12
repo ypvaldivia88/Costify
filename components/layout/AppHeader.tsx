@@ -1,7 +1,8 @@
 'use client';
 
 import { Calculator } from 'lucide-react';
-import type { AppTab } from '@/components/ui/BottomNav';
+import { NAV_ITEMS } from '@/lib/navigation/tabs';
+import type { AppTab } from '@/lib/navigation/tabs';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { cn } from '@/lib/utils';
 
@@ -9,13 +10,6 @@ interface AppHeaderProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
 }
-
-const navItems: { id: AppTab; label: string }[] = [
-  { id: 'calculator', label: 'Calculadora' },
-  { id: 'raw-materials', label: 'Materias primas' },
-  { id: 'inventory', label: 'Historial' },
-  { id: 'settings', label: 'Ajustes' },
-];
 
 export function AppHeader({ activeTab, onTabChange }: AppHeaderProps) {
   return (
@@ -29,11 +23,13 @@ export function AppHeader({ activeTab, onTabChange }: AppHeaderProps) {
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map(({ id, label }) => (
+          <nav className="hidden md:flex items-center gap-1" aria-label="Navegación principal">
+            {NAV_ITEMS.map(({ id, label }) => (
               <button
                 key={id}
+                type="button"
                 onClick={() => onTabChange(id)}
+                aria-current={activeTab === id ? 'page' : undefined}
                 className={cn(
                   'px-3 py-2 rounded-lg text-sm font-semibold transition-colors',
                   activeTab === id

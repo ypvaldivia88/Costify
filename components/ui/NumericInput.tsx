@@ -1,11 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import {
-  formatNumericDisplay,
-  isNumericPartial,
-  parseNumericInput,
-} from '@/lib/format/numeric-input';
+import { useNumericField } from '@/hooks/use-numeric-field';
 import { Input } from './Input';
 
 interface NumericInputProps extends Omit<
@@ -17,37 +12,7 @@ interface NumericInputProps extends Omit<
 }
 
 export function NumericInput({ value, onChange, onBlur, onFocus, ...props }: NumericInputProps) {
-  const [text, setText] = useState(() => formatNumericDisplay(value));
-  const [focused, setFocused] = useState(false);
-
-  useEffect(() => {
-    if (!focused) {
-      setText(formatNumericDisplay(value));
-    }
-  }, [value, focused]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(',', '.');
-    if (!isNumericPartial(raw)) return;
-    setText(raw);
-    onChange(parseNumericInput(raw));
-  };
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    setFocused(true);
-    onFocus?.(e);
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    setFocused(false);
-    if (text.trim() === '') {
-      setText('');
-    } else {
-      const parsed = parseNumericInput(text);
-      setText(Number.isFinite(parsed) ? String(parsed) : '');
-    }
-    onBlur?.(e);
-  };
+  const { text, handleChange, handleFocus, handleBlur } = useNumericField({ value, onChange });
 
   return (
     <Input
@@ -56,9 +21,15 @@ export function NumericInput({ value, onChange, onBlur, onFocus, ...props }: Num
       inputMode="decimal"
       autoComplete="off"
       value={text}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
+      onChange={(e) => handleChange(e.target.value)}
+      onFocus={(e) => {
+        handleFocus();
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        handleBlur();
+        onBlur?.(e);
+      }}
     />
   );
 }

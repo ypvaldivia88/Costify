@@ -6,16 +6,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { DistributionCriteria, IndirectCost } from '@/lib/domain/types';
 import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
 import { formatCurrency } from '@/lib/format/currency';
+import { fieldClassNameCompact } from '@/lib/ui/field-styles';
 import { Button } from '@/components/ui/Button';
-import { NumericField } from '@/components/ui/NumericField';
-import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { NumericField } from '@/components/ui/NumericField';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-
-const fieldClass = cn(
-  'px-3 py-2.5 text-sm rounded-lg border border-border bg-surface text-foreground min-h-11',
-  'focus:outline-none focus:border-brand'
-);
+import { cn } from '@/lib/utils';
 
 interface IndirectCostsSettingsProps {
   costs: IndirectCost[];
@@ -23,9 +20,11 @@ interface IndirectCostsSettingsProps {
 }
 
 export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsProps) {
+  const { confirm } = useConfirm();
   const [localCosts, setLocalCosts] = useState<IndirectCost[]>(costs);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<IndirectCost>>({});
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalCosts(costs);
@@ -34,20 +33,19 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
   const startEdit = (cost: IndirectCost) => {
     setEditingId(cost.id);
     setDraft({ ...cost });
+    setDraftError(null);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setDraft({});
+    setDraftError(null);
   };
 
   const saveEdit = () => {
     if (!editingId) return;
-    if (
-      draft.distributionCriteria === 'manual' &&
-      (draft.distributionUnits ?? 0) <= 0
-    ) {
-      alert('Ingresa las unidades para distribuir el gasto.');
+    if (draft.distributionCriteria === 'manual' && (draft.distributionUnits ?? 0) <= 0) {
+      setDraftError('Ingresa las unidades para distribuir el gasto');
       return;
     }
     const updated = localCosts.map((c) =>
@@ -81,11 +79,18 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
     startEdit(newCost);
   };
 
-  const deleteCost = (id: string) => {
-    const updated = localCosts.filter((c) => c.id !== id);
+  const deleteCost = async (cost: IndirectCost) => {
+    const confirmed = await confirm({
+      title: 'Eliminar gasto',
+      message: `¿Eliminar "${cost.name}" de las plantillas globales?`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    const updated = localCosts.filter((c) => c.id !== cost.id);
     setLocalCosts(updated);
     onSave(updated);
-    if (editingId === id) cancelEdit();
+    if (editingId === cost.id) cancelEdit();
   };
 
   return (
@@ -107,7 +112,7 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-8 text-muted text-sm italic"
+              className="text-center py-10 text-muted text-sm"
             >
               No hay gastos configurados. Añade alquiler, servicios, transporte, etc.
             </motion.p>
@@ -127,7 +132,7 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                       type="text"
                       value={draft.name ?? ''}
                       onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                      className={cn('w-full', fieldClass)}
+                      className={cn('w-full', fieldClassNameCompact)}
                       placeholder="Nombre del gasto"
                       autoFocus
                     />
@@ -136,7 +141,6 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                         value={draft.amount ?? 0}
                         onChange={(amount) => setDraft((d) => ({ ...d, amount }))}
                         placeholder="Monto mensual"
-                        className={fieldClass}
                       />
                       <select
                         value={draft.distributionCriteria ?? 'units'}
@@ -146,7 +150,7 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                             distributionCriteria: e.target.value as DistributionCriteria,
                           }))
                         }
-                        className={fieldClass}
+                        className={fieldClassNameCompact}
                       >
                         {Object.entries(DISTRIBUTION_CRITERIA_LABELS).map(([value, label]) => (
                           <option key={value} value={value}>
@@ -162,11 +166,15 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                           setDraft((d) => ({ ...d, distributionUnits }))
                         }
                         placeholder="Unidades para distribuir"
-                        className={cn('w-full', fieldClass)}
+                        className="w-full"
                       />
+                    )}
+                    {draftError && (
+                      <p className="text-xs text-red-600 dark:text-red-400">{draftError}</p>
                     )}
                     <div className="flex justify-end gap-1">
                       <button
+                        type="button"
                         onClick={saveEdit}
                         className="p-2.5 min-w-11 min-h-11 text-brand hover:bg-brand-muted rounded-lg"
                         aria-label="Guardar"
@@ -174,8 +182,9 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                         <Check className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={cancelEdit}
-                        className="p-2.5 min-w-11 min-h-11 text-red-600 hover:bg-red-50 rounded-lg"
+                        className="p-2.5 min-w-11 min-h-11 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg"
                         aria-label="Cancelar"
                       >
                         <X className="w-4 h-4" />
@@ -193,6 +202,7 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <button
+                        type="button"
                         onClick={() => startEdit(cost)}
                         className="p-2.5 min-w-11 min-h-11 text-muted hover:text-foreground hover:bg-surface-muted rounded-lg"
                         aria-label="Editar"
@@ -200,7 +210,8 @@ export function IndirectCostsSettings({ costs, onSave }: IndirectCostsSettingsPr
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => deleteCost(cost.id)}
+                        type="button"
+                        onClick={() => deleteCost(cost)}
                         className="p-2.5 min-w-11 min-h-11 text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg"
                         aria-label="Eliminar"
                       >

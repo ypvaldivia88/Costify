@@ -6,6 +6,7 @@ import type { DistributionCriteria, IndirectCost } from '@/lib/domain/types';
 import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
 import { Button } from '@/components/ui/Button';
 import { NumericField } from '@/components/ui/NumericField';
+import { fieldClassNameCompact } from '@/lib/ui/field-styles';
 import { cn } from '@/lib/utils';
 
 interface IndirectCostsEditorProps {
@@ -14,11 +15,6 @@ interface IndirectCostsEditorProps {
   onImportGlobal?: () => void;
   showImport?: boolean;
 }
-
-const fieldClass = cn(
-  'px-3 py-2 text-sm rounded-lg border border-border bg-surface text-foreground',
-  'focus:outline-none focus:border-brand'
-);
 
 export function IndirectCostsEditor({
   costs,
@@ -85,21 +81,21 @@ export function IndirectCostsEditor({
                   placeholder="Nombre (ej. Alquiler)"
                   value={cost.name}
                   onChange={(e) => updateCost(cost.id, 'name', e.target.value)}
-                  className={cn('w-full', fieldClass)}
+                  className={cn('w-full', fieldClassNameCompact)}
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <NumericField
                     value={cost.amount}
                     onChange={(amount) => updateCost(cost.id, 'amount', amount)}
                     placeholder="Monto mensual"
-                    className={fieldClass}
+                    className={fieldClassNameCompact}
                   />
                   <select
                     value={cost.distributionCriteria}
                     onChange={(e) =>
                       updateCost(cost.id, 'distributionCriteria', e.target.value as DistributionCriteria)
                     }
-                    className={fieldClass}
+                    className={fieldClassNameCompact}
                   >
                     {Object.entries(DISTRIBUTION_CRITERIA_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
@@ -115,7 +111,7 @@ export function IndirectCostsEditor({
                       updateCost(cost.id, 'distributionUnits', distributionUnits)
                     }
                     placeholder="Unidades para distribuir"
-                    className={cn('w-full', fieldClass)}
+                    className={cn('w-full', fieldClassNameCompact)}
                   />
                 )}
                 <div className="flex justify-end">

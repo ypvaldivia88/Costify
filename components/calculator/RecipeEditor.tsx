@@ -12,6 +12,7 @@ import {
 import { formatCurrency } from '@/lib/format/currency';
 import { Button } from '@/components/ui/Button';
 import { NumericField } from '@/components/ui/NumericField';
+import { fieldClassNameCompact } from '@/lib/ui/field-styles';
 import { cn } from '@/lib/utils';
 
 interface RecipeEditorProps {
@@ -19,11 +20,6 @@ interface RecipeEditorProps {
   rawMaterials: RawMaterial[];
   onChange: (recipe: RecipeItem[]) => void;
 }
-
-const fieldClass = cn(
-  'min-h-11 px-3 py-2 text-sm rounded-xl border border-border bg-surface text-foreground',
-  'focus:outline-none focus:border-brand'
-);
 
 function lineCost(item: RecipeItem, material: RawMaterial): number {
   const recipeUnit = resolveRecipeUnit(item, material.unitType);
@@ -125,7 +121,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                 <select
                   value={item.rawMaterialId}
                   onChange={(e) => changeMaterial(index, e.target.value)}
-                  className={cn('w-full', fieldClass)}
+                  className={cn('w-full', fieldClassNameCompact)}
                 >
                   {rawMaterials.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -146,7 +142,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                     onChange={(e) =>
                       updateItem(index, { unitType: e.target.value as UnitType })
                     }
-                    className={cn('w-28', fieldClass)}
+                    className={cn('w-28', fieldClassNameCompact)}
                     aria-label="Unidad de medida"
                   >
                     {unitOptions.map((unit) => (

@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { ProductCalculation, TaxSettings } from '@/lib/domain/types';
 import { calculateBusinessSummary } from '@/lib/domain/calculations';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { BusinessSummaryCard } from './BusinessSummaryCard';
 import { InventoryItem } from './InventoryItem';
 
@@ -24,15 +25,26 @@ export function InventoryList({
   onEdit,
   onRecalculateAll,
 }: InventoryListProps) {
+  const { confirm } = useConfirm();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const summary = calculateBusinessSummary(items, taxSettings);
+
+  const handleDelete = async (item: ProductCalculation) => {
+    const confirmed = await confirm({
+      title: 'Eliminar producto',
+      message: `¿Eliminar "${item.name}" del historial? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (confirmed) onDelete(item.id);
+  };
 
   if (items.length === 0) {
     return (
       <div className="text-center py-16 px-6 bg-surface rounded-2xl border-2 border-dashed border-border">
-        <Package className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-        <p className="text-muted font-semibold">Sin productos guardados</p>
-        <p className="text-muted text-sm mt-1">
+        <Package className="w-12 h-12 text-muted/40 mx-auto mb-4" />
+        <p className="text-foreground font-semibold">Sin productos guardados</p>
+        <p className="text-muted text-sm mt-1 max-w-xs mx-auto">
           Usa la calculadora para crear tu primera ficha de costos.
         </p>
       </div>
@@ -68,7 +80,7 @@ export function InventoryList({
                 taxSettings={taxSettings}
                 onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
                 onEdit={() => onEdit(item)}
-                onDelete={() => onDelete(item.id)}
+                onDelete={() => handleDelete(item)}
               />
             </motion.div>
           ))}

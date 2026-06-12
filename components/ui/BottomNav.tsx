@@ -1,9 +1,10 @@
 'use client';
 
-import { Boxes, Calculator, LayoutList, Settings } from 'lucide-react';
+import { NAV_ITEMS } from '@/lib/navigation/tabs';
+import type { AppTab } from '@/lib/navigation/tabs';
 import { cn } from '@/lib/utils';
 
-export type AppTab = 'calculator' | 'raw-materials' | 'inventory' | 'settings';
+export type { AppTab };
 
 interface BottomNavProps {
   activeTab: AppTab;
@@ -12,13 +13,6 @@ interface BottomNavProps {
   rawMaterialsCount?: number;
 }
 
-const tabs: { id: AppTab; label: string; icon: typeof Calculator }[] = [
-  { id: 'calculator', label: 'Calcular', icon: Calculator },
-  { id: 'raw-materials', label: 'Insumos', icon: Boxes },
-  { id: 'inventory', label: 'Historial', icon: LayoutList },
-  { id: 'settings', label: 'Ajustes', icon: Settings },
-];
-
 export function BottomNav({
   activeTab,
   onTabChange,
@@ -26,29 +20,31 @@ export function BottomNav({
   rawMaterialsCount = 0,
 }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-surface/95 backdrop-blur-md border-t border-border safe-bottom">
+    <nav
+      className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-surface/95 backdrop-blur-md border-t border-border safe-bottom"
+      aria-label="Navegación principal"
+    >
       <div className="flex items-stretch">
-        {tabs.map(({ id, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
           const active = activeTab === id;
+          const count = id === 'inventory' ? inventoryCount : id === 'raw-materials' ? rawMaterialsCount : 0;
+
           return (
             <button
               key={id}
+              type="button"
               onClick={() => onTabChange(id)}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-16 transition-colors',
+                'flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-16 transition-colors active:scale-[0.98]',
                 active ? 'text-brand' : 'text-muted'
               )}
             >
               <span className="relative">
                 <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
-                {id === 'inventory' && inventoryCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">
-                    {inventoryCount > 9 ? '9+' : inventoryCount}
-                  </span>
-                )}
-                {id === 'raw-materials' && rawMaterialsCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">
-                    {rawMaterialsCount > 9 ? '9+' : rawMaterialsCount}
+                {count > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-4 h-4 px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">
+                    {count > 99 ? '99+' : count}
                   </span>
                 )}
               </span>

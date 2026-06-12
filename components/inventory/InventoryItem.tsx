@@ -63,7 +63,7 @@ export function InventoryItem({
         <div className="flex items-center gap-2">
           <button
             onClick={onToggle}
-            className="flex-1 py-2.5 bg-surface-muted text-foreground rounded-xl text-sm font-semibold hover:bg-surface-muted transition-colors min-h-11"
+            className="flex-1 py-2.5 bg-surface-muted text-foreground rounded-xl text-sm font-semibold hover:bg-border/40 transition-colors min-h-11 active:scale-[0.99]"
           >
             {expanded ? 'Ocultar detalles' : 'Ver detalles'}
           </button>
@@ -76,7 +76,7 @@ export function InventoryItem({
           </button>
           <button
             onClick={onDelete}
-            className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-muted hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+            className="p-2.5 min-w-11 min-h-11 flex items-center justify-center text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
             aria-label="Eliminar"
           >
             <Trash2 className="w-4 h-4" />

@@ -9,7 +9,7 @@ import { formatCurrency } from '@/lib/format/currency';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { NumericInput } from '@/components/ui/NumericInput';
-import { cn } from '@/lib/utils';
+import { Select } from '@/components/ui/Select';
 
 interface RawMaterialFormProps {
   editingMaterial?: RawMaterial | null;
@@ -23,6 +23,8 @@ interface RawMaterialFormProps {
   onCancel?: () => void;
 }
 
+type FormErrors = Partial<Record<'name' | 'purchasePrice' | 'packageQuantity', string>>;
+
 const defaultForm = {
   name: '',
   purchasePrice: 0,
@@ -31,13 +33,9 @@ const defaultForm = {
   stockQuantity: 0,
 };
 
-const selectClassName = cn(
-  'w-full min-h-11 px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground',
-  'focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition-all'
-);
-
 export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMaterialFormProps) {
   const [form, setForm] = useState(defaultForm);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (editingMaterial) {
@@ -51,24 +49,24 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
     } else {
       setForm(defaultForm);
     }
+    setErrors({});
   }, [editingMaterial]);
 
   const unitCost = calculateRawMaterialUnitCost(form.purchasePrice, form.packageQuantity);
   const unitLabel = UNIT_SHORT_LABELS[form.unitType];
 
+  const validate = (): FormErrors => {
+    const next: FormErrors = {};
+    if (!form.name.trim()) next.name = 'Ingresa el nombre de la materia prima';
+    if (form.purchasePrice <= 0) next.purchasePrice = 'Ingresa un precio de compra válido';
+    if (form.packageQuantity <= 0) next.packageQuantity = 'Ingresa la cantidad comprada';
+    return next;
+  };
+
   const handleSubmit = () => {
-    if (!form.name.trim()) {
-      alert('Ingresa el nombre de la materia prima.');
-      return;
-    }
-    if (form.purchasePrice <= 0) {
-      alert('Ingresa un precio de compra válido.');
-      return;
-    }
-    if (form.packageQuantity <= 0) {
-      alert('Ingresa la cantidad comprada.');
-      return;
-    }
+    const nextErrors = validate();
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
     onSave({
       name: form.name.trim(),
@@ -79,6 +77,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
     });
 
     if (!editingMaterial) setForm(defaultForm);
+    setErrors({});
   };
 
   return (
@@ -87,41 +86,45 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
         label="Nombre de la materia prima"
         placeholder="Ej. Harina de trigo"
         value={form.name}
-        onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+        error={errors.name}
+        onChange={(e) => {
+          setForm((p) => ({ ...p, name: e.target.value }));
+          if (errors.name) setErrors((p) => ({ ...p, name: undefined }));
+        }}
       />
 
       <NumericInput
         label="Precio de compra (CUP)"
         value={form.purchasePrice}
-        onChange={(purchasePrice) => setForm((p) => ({ ...p, purchasePrice }))}
+        error={errors.purchasePrice}
+        onChange={(purchasePrice) => {
+          setForm((p) => ({ ...p, purchasePrice }));
+          if (errors.purchasePrice) setErrors((p) => ({ ...p, purchasePrice: undefined }));
+        }}
         hint="Costo del paquete o lote"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label htmlFor="unit-type" className="block text-sm font-medium text-foreground">
-            Tipo de unidad
-          </label>
-          <select
-            id="unit-type"
-            value={form.unitType}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, unitType: e.target.value as UnitType }))
-            }
-            className={selectClassName}
-          >
-            {UNIT_TYPES.map((unit) => (
-              <option key={unit} value={unit}>
-                {UNIT_LABELS[unit]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Tipo de unidad"
+          value={form.unitType}
+          onChange={(e) => setForm((p) => ({ ...p, unitType: e.target.value as UnitType }))}
+        >
+          {UNIT_TYPES.map((unit) => (
+            <option key={unit} value={unit}>
+              {UNIT_LABELS[unit]}
+            </option>
+          ))}
+        </Select>
 
         <NumericInput
           label="Cantidad comprada"
           value={form.packageQuantity}
-          onChange={(packageQuantity) => setForm((p) => ({ ...p, packageQuantity }))}
+          error={errors.packageQuantity}
+          onChange={(packageQuantity) => {
+            setForm((p) => ({ ...p, packageQuantity }));
+            if (errors.packageQuantity) setErrors((p) => ({ ...p, packageQuantity: undefined }));
+          }}
           hint={`En ${UNIT_LABELS[form.unitType]} incluidos en el precio`}
         />
       </div>
@@ -134,9 +137,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
 
       {form.purchasePrice > 0 && form.packageQuantity > 0 && (
         <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-            Costo unitario
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand">Costo unitario</p>
           <p className="text-2xl font-black text-foreground tabular-nums mt-1">
             {formatCurrency(unitCost)}
             <span className="text-sm font-semibold text-brand"> / {unitLabel}</span>

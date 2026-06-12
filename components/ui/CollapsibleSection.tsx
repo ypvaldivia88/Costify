@@ -27,7 +27,7 @@ export function CollapsibleSection({
       )}
       open={defaultOpen}
     >
-      <summary className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+      <summary className="flex items-center justify-between gap-3 px-4 py-3.5 min-h-12 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden active:bg-surface-muted/60">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">{title}</p>
           {summary && <p className="text-xs text-muted mt-0.5">{summary}</p>}

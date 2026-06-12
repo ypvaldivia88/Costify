@@ -5,6 +5,7 @@ import { Boxes } from 'lucide-react';
 import type { RawMaterial } from '@/lib/domain/types';
 import { formatCurrency } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { RawMaterialForm } from './RawMaterialForm';
@@ -33,16 +34,26 @@ export function RawMaterialsManager({
   onDelete,
   onStockChange,
 }: RawMaterialsManagerProps) {
+  const { confirm } = useConfirm();
   const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
 
-  const totalStockValue = materials.reduce(
-    (sum, m) => sum + m.unitCost * m.stockQuantity,
-    0
-  );
+  const totalStockValue = materials.reduce((sum, m) => sum + m.unitCost * m.stockQuantity, 0);
 
   const handleEdit = (material: RawMaterial) => {
     setEditingMaterial(material);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (material: RawMaterial) => {
+    const confirmed = await confirm({
+      title: 'Eliminar materia prima',
+      message: `¿Eliminar "${material.name}"? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    onDelete(material.id);
+    if (editingMaterial?.id === material.id) setEditingMaterial(null);
   };
 
   return (
@@ -80,11 +91,10 @@ export function RawMaterialsManager({
         )}
 
         {materials.length === 0 ? (
-          <Card variant="muted" className="text-center py-8">
-            <Boxes className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
-            <p className="text-sm text-muted">
-              Aún no hay materias primas registradas.
-              <br />
+          <Card variant="muted" className="text-center py-10">
+            <Boxes className="w-10 h-10 text-muted/40 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-foreground">Sin materias primas</p>
+            <p className="text-sm text-muted mt-1 max-w-xs mx-auto">
               Agrega la primera para confeccionar productos elaborados.
             </p>
           </Card>
@@ -95,12 +105,7 @@ export function RawMaterialsManager({
                 key={material.id}
                 material={material}
                 onEdit={() => handleEdit(material)}
-                onDelete={() => {
-                  if (confirm(`¿Eliminar "${material.name}"?`)) {
-                    onDelete(material.id);
-                    if (editingMaterial?.id === material.id) setEditingMaterial(null);
-                  }
-                }}
+                onDelete={() => handleDelete(material)}
                 onStockChange={(stock) => onStockChange(material.id, stock)}
               />
             ))}
