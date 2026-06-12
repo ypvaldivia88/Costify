@@ -1,0 +1,157 @@
+import type { GlobalFundSettings, ProductCalculation, ProductInput, RawMaterial, UnitType } from '../types';
+import { calculateUnitDirectCost } from './direct-cost';
+import { calculateGlobalFundPerUnit } from './global-fund';
+import { allocateIndirectCosts } from './indirect-allocation';
+import {
+  calculateGrossMarginPercent,
+  calculateProfitPerUnit,
+  calculateSuggestedPrice,
+} from './pricing';
+import { calculateRecipeUnitCost } from './recipe-cost';
+
+type LegacyProductInput = Partial<ProductInput> & {
+  unitsPerPackage?: number;
+  unitType?: UnitType;
+};
+
+const LEGACY_UNIT_LABELS: Record<UnitType, string> = {
+  ud: 'unidad',
+  gr: 'gr',
+  kg: 'kg',
+  lt: 'lt',
+  ml: 'ml',
+};
+
+function normalizePurchaseUnit(value: string | undefined, legacyUnitType?: UnitType): string {
+  const trimmed = value?.trim();
+  if (trimmed) return trimmed;
+  if (legacyUnitType) return LEGACY_UNIT_LABELS[legacyUnitType];
+  return 'unidad';
+}
+
+export function migrateProductInput(product: LegacyProductInput): ProductInput {
+  return {
+    name: product.name ?? '',
+    productType: product.productType ?? 'simple',
+    purchasePrice: product.purchasePrice ?? 0,
+    purchaseUnit: normalizePurchaseUnit(product.purchaseUnit, product.unitType),
+    packageQuantity: product.packageQuantity ?? product.unitsPerPackage ?? 1,
+    recipe: product.recipe,
+    productionUnits: product.productionUnits ?? 1,
+    productWeight: product.productWeight,
+    indirectCosts: product.indirectCosts ?? [],
+    profitMargin: product.profitMargin ?? 0,
+    marginType: product.marginType ?? 'markup',
+  };
+}
+
+function resolveDirectCost(
+  input: ProductInput,
+  rawMaterials: RawMaterial[]
+): {
+  unitCost: number;
+  purchasePrice: number;
+  purchaseUnit: string;
+  packageQuantity: number;
+  recipeBreakdown?: ProductCalculation['recipeBreakdown'];
+} {
+  if (input.productType === 'elaborated' && input.recipe && input.recipe.length > 0) {
+    const { unitCost, breakdown } = calculateRecipeUnitCost(input.recipe, rawMaterials);
+    return {
+      unitCost,
+      purchasePrice: unitCost,
+      purchaseUnit: normalizePurchaseUnit(input.purchaseUnit),
+      packageQuantity: 1,
+      recipeBreakdown: breakdown,
+    };
+  }
+
+  const unitCost = calculateUnitDirectCost(input.purchasePrice, input.packageQuantity);
+  return {
+    unitCost,
+    purchasePrice: input.purchasePrice,
+    purchaseUnit: normalizePurchaseUnit(input.purchaseUnit),
+    packageQuantity: input.packageQuantity,
+  };
+}
+
+export function calculateProduct(
+  input: ProductInput,
+  otherProducts: ProductCalculation[],
+  rawMaterials: RawMaterial[] = [],
+  globalFund?: GlobalFundSettings,
+  id?: string,
+  timestamp?: number
+): ProductCalculation {
+  const direct = resolveDirectCost(input, rawMaterials);
+
+  const allocation = allocateIndirectCosts(
+    {
+      purchasePrice: direct.purchasePrice,
+      packageQuantity: direct.packageQuantity,
+      productionUnits: input.productionUnits,
+      productWeight: input.productWeight,
+      unitDirectCost: direct.unitCost,
+    },
+    otherProducts,
+    input.indirectCosts
+  );
+
+  const globalFundPerUnit = calculateGlobalFundPerUnit(direct.unitCost, globalFund);
+  const totalIndirectPerUnit = allocation.totalPerUnit + globalFundPerUnit;
+
+  const indirectBreakdown = [...allocation.breakdown];
+  if (globalFundPerUnit > 0 && globalFund?.enabled) {
+    indirectBreakdown.unshift({
+      name: globalFund.name.trim() || 'Fondo global',
+      assigned: globalFundPerUnit * input.productionUnits,
+      perUnit: globalFundPerUnit,
+      criteria: 'direct-cost',
+    });
+  }
+
+  const totalUnitCost = direct.unitCost + totalIndirectPerUnit;
+  const suggestedPrice = calculateSuggestedPrice(
+    totalUnitCost,
+    input.profitMargin,
+    input.marginType
+  );
+  const profitPerUnit = calculateProfitPerUnit(suggestedPrice, totalUnitCost);
+  const grossMarginPercent = calculateGrossMarginPercent(suggestedPrice, totalUnitCost);
+
+  return {
+    ...input,
+    productType: input.productType ?? 'simple',
+    purchasePrice: direct.purchasePrice,
+    purchaseUnit: direct.purchaseUnit,
+    packageQuantity: direct.packageQuantity,
+    id: id ?? crypto.randomUUID(),
+    unitCost: direct.unitCost,
+    totalIndirectPerUnit,
+    totalUnitCost,
+    suggestedPrice,
+    profitPerUnit,
+    grossMarginPercent,
+    indirectBreakdown,
+    recipeBreakdown: direct.recipeBreakdown,
+    timestamp: timestamp ?? Date.now(),
+  };
+}
+
+export function recalculateInventory(
+  products: ProductCalculation[],
+  rawMaterials: RawMaterial[] = [],
+  globalFund?: GlobalFundSettings
+): ProductCalculation[] {
+  return products.map((product) => {
+    const others = products.filter((p) => p.id !== product.id);
+    return calculateProduct(
+      migrateProductInput(product),
+      others,
+      rawMaterials,
+      globalFund,
+      product.id,
+      product.timestamp
+    );
+  });
+}
