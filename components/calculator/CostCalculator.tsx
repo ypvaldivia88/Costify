@@ -11,9 +11,11 @@ import type {
   RawMaterial,
   RecipeItem,
   TaxSettings,
+  UnitSettings,
 } from '@/lib/domain/types';
 import { calculateProduct, migrateProductInput } from '@/lib/domain/calculations';
-import { MARGIN_TYPE_LABELS, PRODUCT_PURCHASE_UNIT_SUGGESTIONS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
+import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
+import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { fieldClassName } from '@/lib/ui/field-styles';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -33,6 +35,7 @@ interface CostCalculatorProps {
   globalIndirectCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
+  unitSettings: UnitSettings;
   editingProduct?: ProductCalculation | null;
   onSave: (product: ProductCalculation) => void;
   onCancelEdit?: () => void;
@@ -59,17 +62,19 @@ export function CostCalculator({
   globalIndirectCosts,
   globalFund,
   taxSettings,
+  unitSettings,
   editingProduct,
   onSave,
   onCancelEdit,
 }: CostCalculatorProps) {
   const { showToast } = useToast();
+  const unitCatalog = useUnitCatalog();
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (editingProduct) {
-      const migrated = migrateProductInput(editingProduct);
+      const migrated = migrateProductInput(editingProduct, unitSettings);
       setForm({
         name: editingProduct.name,
         productType: editingProduct.productType ?? 'simple',
@@ -109,9 +114,12 @@ export function CostCalculator({
         },
         otherProducts,
         rawMaterials,
-        globalFund
+        globalFund,
+        undefined,
+        undefined,
+        unitSettings
       ),
-    [form, otherProducts, rawMaterials, globalFund]
+    [form, otherProducts, rawMaterials, globalFund, unitSettings]
   );
 
   const importGlobalCosts = () => {
@@ -187,7 +195,8 @@ export function CostCalculator({
       rawMaterials,
       globalFund,
       editingProduct?.id,
-      editingProduct?.timestamp
+      editingProduct?.timestamp,
+      unitSettings
     );
 
     onSave(saved);
@@ -295,7 +304,7 @@ export function CostCalculator({
                     )}
                   />
                   <datalist id="product-purchase-unit-suggestions">
-                    {PRODUCT_PURCHASE_UNIT_SUGGESTIONS.map((unit) => (
+                    {unitCatalog.getPurchaseUnitSuggestions().map((unit) => (
                       <option key={unit} value={unit} />
                     ))}
                   </datalist>

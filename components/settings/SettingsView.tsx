@@ -1,21 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Database, Percent, PiggyBank, Receipt } from 'lucide-react';
+import { Database, Percent, PiggyBank, Receipt, Ruler } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
   ProductCalculation,
   RawMaterial,
   TaxSettings,
+  UnitSettings,
 } from '@/lib/domain/types';
 import { cn } from '@/lib/utils';
 import { DataSyncPanel } from './DataSyncPanel';
 import { GlobalFundSettingsPanel } from './GlobalFundSettings';
 import { IndirectCostsSettings } from './IndirectCostsSettings';
 import { TaxSettingsPanel } from './TaxSettingsPanel';
+import { UnitSettingsPanel } from './UnitSettingsPanel';
 
-type SettingsSection = 'sync' | 'indirect' | 'fund' | 'taxes';
+type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'sync';
 
 interface SettingsViewProps {
   inventory: ProductCalculation[];
@@ -23,16 +25,20 @@ interface SettingsViewProps {
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
+  unitSettings: UnitSettings;
   onSaveCosts: (costs: IndirectCost[]) => void;
   onUpdateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
   onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
+  onSaveUnitSettings: (settings: UnitSettings) => void;
+  onResetUnitSettings: () => void;
 }
 
 const sections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
-  { id: 'sync', label: 'Respaldo', icon: Database },
-  { id: 'indirect', label: 'Gastos', icon: Percent },
-  { id: 'fund', label: 'Fondo', icon: PiggyBank },
   { id: 'taxes', label: 'Impuestos', icon: Receipt },
+  { id: 'fund', label: 'Fondo', icon: PiggyBank },
+  { id: 'indirect', label: 'Gastos', icon: Percent },
+  { id: 'units', label: 'Unidades', icon: Ruler },
+  { id: 'sync', label: 'Respaldo', icon: Database },
 ];
 
 export function SettingsView({
@@ -41,11 +47,14 @@ export function SettingsView({
   globalCosts,
   globalFund,
   taxSettings,
+  unitSettings,
   onSaveCosts,
   onUpdateGlobalFund,
   onUpdateTaxSettings,
+  onSaveUnitSettings,
+  onResetUnitSettings,
 }: SettingsViewProps) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>('sync');
+  const [activeSection, setActiveSection] = useState<SettingsSection>('taxes');
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -74,6 +83,24 @@ export function SettingsView({
         })}
       </nav>
 
+      {activeSection === 'taxes' && (
+        <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
+      )}
+      {activeSection === 'fund' && (
+        <GlobalFundSettingsPanel settings={globalFund} onChange={onUpdateGlobalFund} />
+      )}
+      {activeSection === 'indirect' && (
+        <IndirectCostsSettings costs={globalCosts} onSave={onSaveCosts} />
+      )}
+      {activeSection === 'units' && (
+        <UnitSettingsPanel
+          settings={unitSettings}
+          rawMaterials={rawMaterials}
+          inventory={inventory}
+          onSave={onSaveUnitSettings}
+          onReset={onResetUnitSettings}
+        />
+      )}
       {activeSection === 'sync' && (
         <DataSyncPanel
           inventory={inventory}
@@ -81,16 +108,8 @@ export function SettingsView({
           globalCosts={globalCosts}
           globalFund={globalFund}
           taxSettings={taxSettings}
+          unitSettings={unitSettings}
         />
-      )}
-      {activeSection === 'indirect' && (
-        <IndirectCostsSettings costs={globalCosts} onSave={onSaveCosts} />
-      )}
-      {activeSection === 'fund' && (
-        <GlobalFundSettingsPanel settings={globalFund} onChange={onUpdateGlobalFund} />
-      )}
-      {activeSection === 'taxes' && (
-        <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
       )}
     </div>
   );

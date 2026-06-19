@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Save } from 'lucide-react';
 import type { RawMaterial, UnitType } from '@/lib/domain/types';
 import { calculateRawMaterialUnitCost } from '@/lib/domain/calculations';
-import { UNIT_LABELS, UNIT_SHORT_LABELS, UNIT_TYPES } from '@/lib/domain/constants';
+import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { formatCurrency } from '@/lib/format/currency';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -34,6 +34,7 @@ const defaultForm = {
 };
 
 export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMaterialFormProps) {
+  const unitCatalog = useUnitCatalog();
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -53,7 +54,8 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
   }, [editingMaterial]);
 
   const unitCost = calculateRawMaterialUnitCost(form.purchasePrice, form.packageQuantity);
-  const unitLabel = UNIT_SHORT_LABELS[form.unitType];
+  const unitLabel = unitCatalog.getShortLabel(form.unitType);
+  const unitOptions = unitCatalog.getSelectableUnitIds();
 
   const validate = (): FormErrors => {
     const next: FormErrors = {};
@@ -110,9 +112,9 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
           value={form.unitType}
           onChange={(e) => setForm((p) => ({ ...p, unitType: e.target.value as UnitType }))}
         >
-          {UNIT_TYPES.map((unit) => (
+          {unitOptions.map((unit) => (
             <option key={unit} value={unit}>
-              {UNIT_LABELS[unit]}
+              {unitCatalog.getLabel(unit)}
             </option>
           ))}
         </Select>
@@ -125,7 +127,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
             setForm((p) => ({ ...p, packageQuantity }));
             if (errors.packageQuantity) setErrors((p) => ({ ...p, packageQuantity: undefined }));
           }}
-          hint={`En ${UNIT_LABELS[form.unitType]} incluidos en el precio`}
+          hint={`En ${unitCatalog.getLabel(form.unitType)} incluidos en el precio`}
         />
       </div>
 

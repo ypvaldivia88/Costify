@@ -2,7 +2,7 @@
 
 import { Edit2, Package, Trash2 } from 'lucide-react';
 import type { RawMaterial } from '@/lib/domain/types';
-import { UNIT_SHORT_LABELS } from '@/lib/domain/constants';
+import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { formatCurrency } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
 import { NumericField } from '@/components/ui/NumericField';
@@ -15,7 +15,8 @@ interface RawMaterialItemProps {
 }
 
 export function RawMaterialItem({ material, onEdit, onDelete, onStockChange }: RawMaterialItemProps) {
-  const unitLabel = UNIT_SHORT_LABELS[material.unitType];
+  const unitCatalog = useUnitCatalog();
+  const unitLabel = unitCatalog.getShortLabel(material.unitType);
 
   return (
     <Card className="!p-4">

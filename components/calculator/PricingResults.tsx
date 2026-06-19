@@ -6,7 +6,8 @@ import {
   getTotalMonthlyIndirectCosts,
 } from '@/lib/domain/calculations';
 import { calculateMonthlyTaxProjection, hasActiveTaxes } from '@/lib/domain/calculations/taxes';
-import { DISTRIBUTION_CRITERIA_SHORT, MARGIN_TYPE_LABELS, UNIT_SHORT_LABELS } from '@/lib/domain/constants';
+import { DISTRIBUTION_CRITERIA_SHORT, MARGIN_TYPE_LABELS } from '@/lib/domain/constants';
+import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
@@ -18,6 +19,7 @@ interface PricingResultsProps {
 }
 
 export function PricingResults({ result, taxSettings }: PricingResultsProps) {
+  const unitCatalog = useUnitCatalog();
   const totalMonthlyIndirect = getTotalMonthlyIndirectCosts(result.indirectCosts);
   const coverage = getIndirectCoverage(
     result.totalIndirectPerUnit,
@@ -72,8 +74,8 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
                       <span className="text-muted truncate">
                         {item.name}
                         <span className="text-xs opacity-70 ml-1">
-                          ({item.quantity} {UNIT_SHORT_LABELS[item.unitType]} ×{' '}
-                          {formatCurrency(item.unitCost)}/{UNIT_SHORT_LABELS[item.unitType]})
+                          ({item.quantity} {unitCatalog.getShortLabel(item.unitType)} ×{' '}
+                          {formatCurrency(item.unitCost)}/{unitCatalog.getShortLabel(item.unitType)})
                         </span>
                       </span>
                       <span className="font-semibold text-foreground tabular-nums shrink-0">

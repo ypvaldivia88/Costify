@@ -37,7 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
     id: 'settings',
     label: 'Ajustes',
     title: 'Ajustes',
-    description: 'Respaldo, gastos globales, fondo e impuestos',
+    description: 'Impuestos, gastos, unidades de medida y respaldo',
     icon: Settings,
   },
 ];

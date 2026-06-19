@@ -1,43 +1,5 @@
-import type { DistributionCriteria, GlobalFundSettings, UnitType, TaxSettings } from './types';
+import type { DistributionCriteria, GlobalFundSettings, TaxSettings } from './types';
 import { getPresetLines } from './tax-presets';
-
-export const UNIT_TYPES: UnitType[] = ['ud', 'gr', 'kg', 'lb', 'lt', 'ml'];
-
-export const UNIT_LABELS: Record<UnitType, string> = {
-  ud: 'Unidad básica',
-  gr: 'gr',
-  kg: 'kg',
-  lb: 'libra',
-  lt: 'lt',
-  ml: 'ml',
-};
-
-/** Etiqueta corta para listas y costos unitarios */
-export const UNIT_SHORT_LABELS: Record<UnitType, string> = {
-  ud: 'ud',
-  gr: 'gr',
-  kg: 'kg',
-  lb: 'lb',
-  lt: 'lt',
-  ml: 'ml',
-};
-
-/** Sugerencias para la unidad de compra de productos simples */
-export const PRODUCT_PURCHASE_UNIT_SUGGESTIONS = [
-  'unidad',
-  'caja',
-  'bolsa',
-  'saco',
-  'paquete',
-  'docena',
-  'par',
-  'kg',
-  'gr',
-  'libra',
-  'lt',
-  'ml',
-  'rollo',
-] as const;
 
 export const DEFAULT_TAX_SETTINGS: TaxSettings = {
   enabled: true,
@@ -76,6 +38,7 @@ export const STORAGE_KEYS = {
   taxSettings: 'costify_tax_settings_v3',
   rawMaterials: 'costify_raw_materials_v2',
   globalFund: 'costify_global_fund_v2',
+  unitSettings: 'costify_unit_settings_v1',
   theme: 'costify_theme_v1',
 } as const;
 

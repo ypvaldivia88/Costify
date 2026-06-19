@@ -1,4 +1,20 @@
-export type UnitType = 'gr' | 'kg' | 'lb' | 'lt' | 'ml' | 'ud';
+export type UnitType = string;
+
+export type UnitFamily = 'count' | 'weight' | 'volume';
+
+export interface UnitDefinition {
+  id: string;
+  label: string;
+  shortLabel: string;
+  family: UnitFamily;
+  /** Factor respecto a la unidad base (gr para peso, ml para volumen) */
+  factor: number;
+  builtin?: boolean;
+}
+
+export interface UnitSettings {
+  units: UnitDefinition[];
+}
 
 export type DistributionCriteria = 'units' | 'direct-cost' | 'weight' | 'manual';
 

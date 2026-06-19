@@ -1,5 +1,6 @@
-import type { RawMaterial, RawMaterialInput, UnitType } from '../types';
+import type { RawMaterial, RawMaterialInput, UnitSettings } from '../types';
 import { calculateUnitDirectCost } from './direct-cost';
+import { DEFAULT_UNIT_SETTINGS, isValidUnitType as isConfiguredUnitType } from '../unit-settings';
 
 type LegacyRawMaterial = Partial<RawMaterialInput> & {
   unitsPerPackage?: number;
@@ -16,8 +17,11 @@ export function migrateRawMaterialInput(material: LegacyRawMaterial): RawMateria
   };
 }
 
-export function isValidUnitType(value: unknown): value is UnitType {
-  return value === 'ud' || value === 'gr' || value === 'kg' || value === 'lb' || value === 'lt' || value === 'ml';
+export function isValidUnitType(
+  value: unknown,
+  settings: UnitSettings = DEFAULT_UNIT_SETTINGS
+): value is string {
+  return isConfiguredUnitType(settings, value);
 }
 
 export function calculateRawMaterialUnitCost(

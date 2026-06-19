@@ -8,6 +8,7 @@ import type {
   ProductCalculation,
   RawMaterial,
   TaxSettings,
+  UnitSettings,
 } from '@/lib/domain/types';
 import {
   applyBackupToStorage,
@@ -29,6 +30,7 @@ interface DataSyncPanelProps {
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
+  unitSettings: UnitSettings;
 }
 
 type SyncTab = 'export' | 'import';
@@ -39,6 +41,7 @@ export function DataSyncPanel({
   globalCosts,
   globalFund,
   taxSettings,
+  unitSettings,
 }: DataSyncPanelProps) {
   const { confirm } = useConfirm();
   const { showToast } = useToast();
@@ -55,8 +58,9 @@ export function DataSyncPanel({
         globalCosts,
         globalFund,
         taxSettings,
+        unitSettings,
       }),
-    [inventory, rawMaterials, globalCosts, globalFund, taxSettings]
+    [inventory, rawMaterials, globalCosts, globalFund, taxSettings, unitSettings]
   );
 
   const summary = `${inventory.length} producto(s), ${rawMaterials.length} materia(s) prima(s)`;

@@ -4,9 +4,11 @@ import type {
   ProductCalculation,
   RawMaterial,
   TaxSettings,
+  UnitSettings,
 } from '@/lib/domain/types';
 import { migrateGlobalFundSettings } from '@/lib/domain/calculations/global-fund';
 import { migrateTaxSettings } from '@/lib/domain/migrate-tax-settings';
+import { migrateUnitSettings } from '@/lib/domain/unit-settings';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
   DEFAULT_TAX_SETTINGS,
@@ -24,6 +26,7 @@ export interface AppBackupV1 {
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
+  unitSettings?: UnitSettings;
 }
 
 export interface AppBackupInput {
@@ -32,6 +35,7 @@ export interface AppBackupInput {
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
+  unitSettings: UnitSettings;
 }
 
 function toBase64Url(text: string): string {
@@ -55,6 +59,7 @@ export function createBackupPayload(input: AppBackupInput): string {
     globalCosts: input.globalCosts,
     globalFund: input.globalFund,
     taxSettings: input.taxSettings,
+    unitSettings: input.unitSettings,
   };
   return BACKUP_PREFIX + toBase64Url(JSON.stringify(backup));
 }
@@ -89,6 +94,7 @@ export function parseBackupPayload(raw: string): AppBackupV1 {
     globalCosts: Array.isArray(backup.globalCosts) ? backup.globalCosts : [],
     globalFund: migrateGlobalFundSettings(backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
     taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
+    unitSettings: migrateUnitSettings(backup.unitSettings),
   };
 }
 
@@ -98,6 +104,7 @@ export function applyBackupToStorage(backup: AppBackupV1): void {
   saveToStorage(STORAGE_KEYS.globalCosts, backup.globalCosts);
   saveToStorage(STORAGE_KEYS.globalFund, backup.globalFund);
   saveToStorage(STORAGE_KEYS.taxSettings, migrateTaxSettings(backup.taxSettings));
+  saveToStorage(STORAGE_KEYS.unitSettings, migrateUnitSettings(backup.unitSettings));
 }
 
 export function readBackupFromFile(file: File): Promise<string> {
@@ -126,6 +133,7 @@ export function readBackupFromFile(file: File): Promise<string> {
                 backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS
               ),
               taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
+              unitSettings: migrateUnitSettings(backup.unitSettings),
             })
           );
           return;
