@@ -18,6 +18,7 @@ const LEGACY_UNIT_LABELS: Record<UnitType, string> = {
   ud: 'unidad',
   gr: 'gr',
   kg: 'kg',
+  lb: 'libra',
   lt: 'lt',
   ml: 'ml',
 };

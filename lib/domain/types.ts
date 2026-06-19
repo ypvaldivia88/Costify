@@ -1,4 +1,4 @@
-export type UnitType = 'gr' | 'kg' | 'lt' | 'ml' | 'ud';
+export type UnitType = 'gr' | 'kg' | 'lb' | 'lt' | 'ml' | 'ud';
 
 export type DistributionCriteria = 'units' | 'direct-cost' | 'weight' | 'manual';
 

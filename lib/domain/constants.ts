@@ -1,12 +1,13 @@
 import type { DistributionCriteria, GlobalFundSettings, UnitType, TaxSettings } from './types';
 import { getPresetLines } from './tax-presets';
 
-export const UNIT_TYPES: UnitType[] = ['ud', 'gr', 'kg', 'lt', 'ml'];
+export const UNIT_TYPES: UnitType[] = ['ud', 'gr', 'kg', 'lb', 'lt', 'ml'];
 
 export const UNIT_LABELS: Record<UnitType, string> = {
   ud: 'Unidad básica',
   gr: 'gr',
   kg: 'kg',
+  lb: 'libra',
   lt: 'lt',
   ml: 'ml',
 };
@@ -16,6 +17,7 @@ export const UNIT_SHORT_LABELS: Record<UnitType, string> = {
   ud: 'ud',
   gr: 'gr',
   kg: 'kg',
+  lb: 'lb',
   lt: 'lt',
   ml: 'ml',
 };
@@ -31,6 +33,7 @@ export const PRODUCT_PURCHASE_UNIT_SUGGESTIONS = [
   'par',
   'kg',
   'gr',
+  'libra',
   'lt',
   'ml',
   'rollo',

@@ -17,7 +17,7 @@ export function migrateRawMaterialInput(material: LegacyRawMaterial): RawMateria
 }
 
 export function isValidUnitType(value: unknown): value is UnitType {
-  return value === 'ud' || value === 'gr' || value === 'kg' || value === 'lt' || value === 'ml';
+  return value === 'ud' || value === 'gr' || value === 'kg' || value === 'lb' || value === 'lt' || value === 'ml';
 }
 
 export function calculateRawMaterialUnitCost(

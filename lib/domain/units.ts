@@ -1,7 +1,18 @@
 import type { UnitType } from './types';
 
-const WEIGHT_UNITS: UnitType[] = ['gr', 'kg'];
+const WEIGHT_UNITS: UnitType[] = ['gr', 'kg', 'lb'];
 const VOLUME_UNITS: UnitType[] = ['ml', 'lt'];
+
+const GRAMS_PER: Partial<Record<UnitType, number>> = {
+  gr: 1,
+  kg: 1000,
+  lb: 453.592,
+};
+
+const ML_PER: Partial<Record<UnitType, number>> = {
+  ml: 1,
+  lt: 1000,
+};
 
 export function getUnitFamily(unit: UnitType): 'weight' | 'volume' | 'count' {
   if (WEIGHT_UNITS.includes(unit)) return 'weight';
@@ -25,10 +36,17 @@ export function convertQuantity(value: number, from: UnitType, to: UnitType): nu
   if (from === to) return value;
   if (!areUnitsCompatible(from, to)) return value;
 
-  if (from === 'kg' && to === 'gr') return value * 1000;
-  if (from === 'gr' && to === 'kg') return value / 1000;
-  if (from === 'lt' && to === 'ml') return value * 1000;
-  if (from === 'ml' && to === 'lt') return value / 1000;
+  const fromGrams = GRAMS_PER[from];
+  const toGrams = GRAMS_PER[to];
+  if (fromGrams !== undefined && toGrams !== undefined) {
+    return (value * fromGrams) / toGrams;
+  }
+
+  const fromMl = ML_PER[from];
+  const toMl = ML_PER[to];
+  if (fromMl !== undefined && toMl !== undefined) {
+    return (value * fromMl) / toMl;
+  }
 
   return value;
 }
