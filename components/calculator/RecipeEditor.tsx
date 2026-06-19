@@ -1,6 +1,8 @@
 'use client';
 
-import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Trash2, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { RawMaterial, RecipeItem, UnitSettings, UnitType } from '@/lib/domain/types';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import {
@@ -35,16 +37,20 @@ function lineCost(item: RecipeItem, material: RawMaterial, unitSettings: UnitSet
 export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorProps) {
   const unitCatalog = useUnitCatalog();
   const unitSettings = unitCatalog.settings;
+  const [showPicker, setShowPicker] = useState(false);
+
   const usedIds = new Set(recipe.map((r) => r.rawMaterialId));
   const availableMaterials = rawMaterials.filter((m) => !usedIds.has(m.id));
 
-  const addItem = () => {
-    if (availableMaterials.length === 0) return;
-    const material = availableMaterials[0];
+  const addItem = (rawMaterialId: string) => {
+    const material = rawMaterials.find((m) => m.id === rawMaterialId);
+    if (!material) return;
+
     onChange([
-      ...recipe,
       { rawMaterialId: material.id, quantity: 1, unitType: material.unitType },
+      ...recipe,
     ]);
+    setShowPicker(false);
   };
 
   const updateItem = (index: number, updates: Partial<RecipeItem>) => {
@@ -90,7 +96,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
         <Button
           variant="outline"
           size="sm"
-          onClick={addItem}
+          onClick={() => setShowPicker((open) => !open)}
           disabled={availableMaterials.length === 0}
           type="button"
         >
@@ -98,6 +104,46 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
           Agregar
         </Button>
       </div>
+
+      <AnimatePresence>
+        {showPicker && availableMaterials.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="rounded-xl border border-brand/30 bg-brand-muted/30 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">Selecciona un insumo</p>
+                <button
+                  type="button"
+                  onClick={() => setShowPicker(false)}
+                  className="p-1.5 text-muted hover:text-foreground rounded-lg transition-colors"
+                  aria-label="Cerrar listado"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {availableMaterials.map((material) => (
+                  <button
+                    key={material.id}
+                    type="button"
+                    onClick={() => addItem(material.id)}
+                    className="w-full text-left px-3 py-2.5 rounded-lg border border-border bg-surface hover:border-brand hover:bg-brand-muted/40 transition-colors"
+                  >
+                    <span className="text-sm font-medium text-foreground">{material.name}</span>
+                    <span className="text-xs text-muted ml-2">
+                      {formatCurrency(material.unitCost)}/{unitCatalog.getShortLabel(material.unitType)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <p className="text-xs text-muted">
         Puedes usar otra unidad que la de compra (ej. gramos si compraste en kg).
@@ -120,10 +166,13 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
               recipeUnit,
               unitSettings
             );
+            const selectableMaterials = rawMaterials.filter(
+              (m) => m.id === item.rawMaterialId || !usedIds.has(m.id)
+            );
 
             return (
               <div
-                key={`${item.rawMaterialId}-${index}`}
+                key={item.rawMaterialId}
                 className="p-3 rounded-xl border border-border bg-surface-muted/50 space-y-2"
               >
                 <select
@@ -131,7 +180,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                   onChange={(e) => changeMaterial(index, e.target.value)}
                   className={cn('w-full', fieldClassNameCompact)}
                 >
-                  {rawMaterials.map((m) => (
+                  {selectableMaterials.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name} ({formatCurrency(m.unitCost)}/{unitCatalog.getShortLabel(m.unitType)})
                     </option>
