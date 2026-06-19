@@ -53,7 +53,9 @@ export function BusinessSummaryCard({ summary, taxSettings }: BusinessSummaryCar
       )}
 
       <p className="text-[11px] text-brand/70 mt-3">
-        Basado en las unidades de venta configuradas por producto.
+        {summary.productCount > 0 && summary.totalRevenue === 0
+          ? 'Indica unidades/mes en cada producto para ver proyecciones mensuales.'
+          : 'Basado en las unidades de venta configuradas por producto.'}
       </p>
     </Card>
   );

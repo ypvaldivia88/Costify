@@ -50,7 +50,7 @@ const defaultForm = {
   purchaseUnit: 'unidad',
   packageQuantity: 1,
   recipe: [] as RecipeItem[],
-  productionUnits: 100,
+  productionUnits: 0,
   profitMargin: 30,
   marginType: 'markup' as MarginType,
   indirectCosts: [] as IndirectCost[],
@@ -166,8 +166,8 @@ export function CostCalculator({
       if (form.packageQuantity <= 0) next.packageQuantity = 'Indica cuántas unidades incluye la compra';
       if (!form.purchaseUnit.trim()) next.purchaseUnit = 'Indica la unidad (unidad, caja, bolsa, kg…)';
     }
-    if (form.productionUnits <= 0) {
-      next.productionUnits = 'Ingresa las unidades de producción/venta del período';
+    if (form.productionUnits < 0) {
+      next.productionUnits = 'Las unidades no pueden ser negativas';
     }
 
     return next;
@@ -327,15 +327,32 @@ export function CostCalculator({
             </div>
           )}
 
-          <NumericInput
-            label="Unidades a vender al mes"
-            value={form.productionUnits}
-            error={errors.productionUnits}
-            onChange={(productionUnits) => {
-              setForm((p) => ({ ...p, productionUnits }));
-              if (errors.productionUnits) setErrors((p) => ({ ...p, productionUnits: undefined }));
-            }}
-          />
+          <CollapsibleSection
+            title="Proyección mensual (opcional)"
+            summary={
+              form.productionUnits > 0
+                ? `${form.productionUnits} uds./mes`
+                : 'Sin estimar — precio por venta individual'
+            }
+          >
+            <div className="space-y-3 pt-3">
+              <p className="text-sm text-muted leading-relaxed">
+                El precio sugerido se calcula por cada venta (costo directo + margen). Solo necesitas
+                estimar un volumen mensual si quieres incluir gastos fijos en el precio o ver
+                proyecciones de ingresos e impuestos.
+              </p>
+              <NumericInput
+                label="Unidades a vender al mes (opcional)"
+                value={form.productionUnits}
+                error={errors.productionUnits}
+                onChange={(productionUnits) => {
+                  setForm((p) => ({ ...p, productionUnits }));
+                  if (errors.productionUnits) setErrors((p) => ({ ...p, productionUnits: undefined }));
+                }}
+                hint="Déjalo en 0 si aún no sabes cuánto venderás"
+              />
+            </div>
+          </CollapsibleSection>
 
           <CollapsibleSection
             title="Margen de utilidad"

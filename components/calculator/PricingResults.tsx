@@ -31,11 +31,14 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
   const monthlyGrossProfit = result.profitPerUnit * result.productionUnits;
   const taxes = calculateMonthlyTaxProjection(monthlyRevenue, monthlyGrossProfit, taxSettings);
 
+  const hasMonthlyProjection = result.productionUnits > 0;
+  const hasUnallocatedIndirect = result.indirectCosts.length > 0 && !hasMonthlyProjection;
+
   const hasDetails =
     (result.recipeBreakdown && result.recipeBreakdown.length > 0) ||
     result.indirectBreakdown.length > 0 ||
     totalMonthlyIndirect > 0 ||
-    result.productionUnits > 0;
+    hasMonthlyProjection;
 
   return (
     <div className="space-y-3">
@@ -55,6 +58,12 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
             Margen: <strong className="text-brand">{formatPercent(result.grossMarginPercent)}</strong>
           </span>
         </div>
+        {hasUnallocatedIndirect && (
+          <p className="text-xs text-muted mt-3 max-w-sm mx-auto leading-relaxed">
+            Los gastos indirectos mensuales no se incluyen en este precio. Indica un volumen en
+            proyección mensual para repartirlos por unidad.
+          </p>
+        )}
       </Card>
 
       {hasDetails && (
@@ -122,7 +131,7 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
               </Card>
             )}
 
-            {totalMonthlyIndirect > 0 && result.productionUnits > 0 && (
+            {totalMonthlyIndirect > 0 && hasMonthlyProjection && (
               <Card variant="muted" className="!p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
                   Cobertura de gastos fijos
@@ -139,7 +148,7 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
               </Card>
             )}
 
-            {result.productionUnits > 0 && (
+            {hasMonthlyProjection && (
               <Card className="!p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
                   Proyección mensual ({result.productionUnits} uds.)

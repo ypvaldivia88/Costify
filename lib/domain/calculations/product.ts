@@ -37,7 +37,7 @@ export function migrateProductInput(
     purchaseUnit: normalizePurchaseUnit(product.purchaseUnit, product.unitType, unitSettings),
     packageQuantity: product.packageQuantity ?? product.unitsPerPackage ?? 1,
     recipe: product.recipe,
-    productionUnits: product.productionUnits ?? 1,
+    productionUnits: product.productionUnits ?? 0,
     productWeight: product.productWeight,
     indirectCosts: product.indirectCosts ?? [],
     profitMargin: product.profitMargin ?? 0,
