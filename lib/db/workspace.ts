@@ -11,6 +11,7 @@ export const WORKSPACES_COLLECTION = 'workspaces';
 
 export interface WorkspaceDocument {
   workspaceId: string;
+  tenantId: string;
   inventory: ProductCalculation[];
   rawMaterials: RawMaterial[];
   globalCosts: IndirectCost[];

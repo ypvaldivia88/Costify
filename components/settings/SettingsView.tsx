@@ -27,6 +27,7 @@ interface SettingsViewProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  tenantName?: string;
   cloudSync: {
     status: SyncStatus;
     direction: SyncDirection;
@@ -58,6 +59,7 @@ export function SettingsView({
   globalFund,
   taxSettings,
   unitSettings,
+  tenantName,
   cloudSync,
   onSaveCosts,
   onUpdateGlobalFund,
@@ -120,6 +122,7 @@ export function SettingsView({
           globalFund={globalFund}
           taxSettings={taxSettings}
           unitSettings={unitSettings}
+          tenantName={tenantName}
           cloudSync={cloudSync}
         />
       )}

@@ -45,11 +45,13 @@ export function collectLocalData(): AppBackupInput {
 
 function toWorkspacePayload(
   workspaceId: string,
+  tenantId: string,
   data: AppBackupInput,
   updatedAt: number
 ): Omit<WorkspaceDocument, 'createdAt'> {
   return {
     workspaceId,
+    tenantId,
     inventory: data.inventory,
     rawMaterials: data.rawMaterials,
     globalCosts: data.globalCosts,
@@ -92,6 +94,7 @@ async function fetchRemoteWorkspace(workspaceId: string): Promise<WorkspaceDocum
   const response = await fetch(`/api/sync?workspaceId=${encodeURIComponent(workspaceId)}`, {
     method: 'GET',
     cache: 'no-store',
+    credentials: 'include',
   });
 
   if (response.status === 404) return null;
@@ -105,13 +108,15 @@ async function fetchRemoteWorkspace(workspaceId: string): Promise<WorkspaceDocum
 
 async function pushWorkspace(
   workspaceId: string,
+  tenantId: string,
   data: AppBackupInput,
   updatedAt: number
 ): Promise<WorkspaceDocument> {
   const response = await fetch('/api/sync', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(toWorkspacePayload(workspaceId, data, updatedAt)),
+    credentials: 'include',
+    body: JSON.stringify(toWorkspacePayload(workspaceId, tenantId, data, updatedAt)),
   });
 
   if (response.status === 409) {
@@ -127,9 +132,16 @@ async function pushWorkspace(
   return json.workspace;
 }
 
-export async function syncWithCloud(workspaceId = getWorkspaceId()): Promise<SyncResult> {
+export async function syncWithCloud(
+  workspaceId = getWorkspaceId(),
+  tenantId?: string
+): Promise<SyncResult> {
   if (!isOnline()) {
     return { status: 'offline', direction: 'none' };
+  }
+
+  if (!tenantId) {
+    return { status: 'error', direction: 'none', message: 'Sesión de negocio no válida.' };
   }
 
   const metadata = loadSyncMetadata();
@@ -152,14 +164,14 @@ export async function syncWithCloud(workspaceId = getWorkspaceId()): Promise<Syn
       }
 
       const pushedAt = localUpdatedAt || Date.now();
-      await pushWorkspace(workspaceId, localData, pushedAt);
+      await pushWorkspace(workspaceId, tenantId, localData, pushedAt);
       saveSyncMetadata({ lastSyncedAt: pushedAt, localUpdatedAt: pushedAt });
       return { status: 'synced', direction: 'push' };
     }
 
     if (pending) {
       const pushAt = Math.max(localUpdatedAt, remote.updatedAt);
-      await pushWorkspace(workspaceId, localData, pushAt);
+      await pushWorkspace(workspaceId, tenantId, localData, pushAt);
       saveSyncMetadata({ lastSyncedAt: pushAt, localUpdatedAt: pushAt });
       return { status: 'synced', direction: 'push' };
     }

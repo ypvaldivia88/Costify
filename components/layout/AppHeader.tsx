@@ -5,11 +5,14 @@ import { NAV_ITEMS } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
+import { useAuth } from '@/components/auth/AuthProvider';
+import type { SessionUser } from '@/lib/auth/types';
 import { cn } from '@/lib/utils';
 
 interface AppHeaderProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
+  user?: SessionUser | null;
   cloudSync?: {
     status: 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
     direction: 'none' | 'pull' | 'push';
@@ -20,7 +23,8 @@ interface AppHeaderProps {
   };
 }
 
-export function AppHeader({ activeTab, onTabChange, cloudSync }: AppHeaderProps) {
+export function AppHeader({ activeTab, onTabChange, cloudSync, user }: AppHeaderProps) {
+  const { logout } = useAuth();
   return (
     <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-border">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
@@ -29,6 +33,9 @@ export function AppHeader({ activeTab, onTabChange, cloudSync }: AppHeaderProps)
             <Calculator className="w-4.5 h-4.5 text-white" />
           </div>
           <h1 className="text-base font-bold text-foreground leading-tight truncate">Costify</h1>
+          {user?.tenantName && (
+            <p className="text-xs text-muted truncate">{user.tenantName}</p>
+          )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
@@ -60,6 +67,15 @@ export function AppHeader({ activeTab, onTabChange, cloudSync }: AppHeaderProps)
               errorMessage={cloudSync.errorMessage}
               onSync={cloudSync.syncNow}
             />
+          )}
+          {user && (
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="hidden md:inline-flex px-3 py-2 rounded-lg text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-muted"
+            >
+              Salir
+            </button>
           )}
           <ThemeToggle />
         </div>

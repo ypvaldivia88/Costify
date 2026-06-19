@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { useInventory } from '@/hooks/use-inventory';
 import { useRawMaterials } from '@/hooks/use-raw-materials';
 import { useGlobalCosts } from '@/hooks/use-global-costs';
@@ -10,6 +11,7 @@ import { useUnitSettings } from '@/hooks/use-unit-settings';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 
 export function useAppData() {
+  const { user } = useAuth();
   const inventoryState = useInventory();
   const rawMaterialsState = useRawMaterials();
   const globalCostsState = useGlobalCosts();
@@ -44,7 +46,12 @@ export function useAppData() {
     ]
   );
 
-  const cloudSync = useCloudSync({ enabled: hydrated, data: syncData });
+  const cloudSync = useCloudSync({
+    enabled: hydrated && Boolean(user?.workspaceId && user?.tenantId),
+    data: syncData,
+    tenantId: user?.tenantId,
+    workspaceId: user?.workspaceId,
+  });
 
   useEffect(() => {
     if (!hydrated || inventoryState.inventory.length === 0) return;
@@ -62,6 +69,7 @@ export function useAppData() {
 
   return {
     hydrated,
+    user,
     inventory: inventoryState.inventory,
     materials: rawMaterialsState.materials,
     globalCosts: globalCostsState.globalCosts,

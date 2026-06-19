@@ -1,8 +1,17 @@
+import { scopedStorageKey } from '@/lib/storage/scoped-storage';
+
+const UNSCOPED_KEYS = new Set(['costify_theme_v1']);
+
+function resolveKey(key: string): string {
+  if (UNSCOPED_KEYS.has(key)) return key;
+  return scopedStorageKey(key);
+}
+
 export function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
 
   try {
-    const saved = localStorage.getItem(key);
+    const saved = localStorage.getItem(resolveKey(key));
     if (!saved) return fallback;
     return JSON.parse(saved) as T;
   } catch {
@@ -12,7 +21,7 @@ export function loadFromStorage<T>(key: string, fallback: T): T {
 
 export function saveToStorage<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(key, JSON.stringify(value));
+  localStorage.setItem(resolveKey(key), JSON.stringify(value));
 }
 
 /** Migra datos de la versión anterior si existen */

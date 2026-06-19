@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { AuthError, requireTenantAccess } from '@/lib/auth/guards';
 import { getDb } from '@/lib/db/mongodb';
 import {
   WORKSPACES_COLLECTION,
@@ -26,6 +27,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'workspaceId inválido.' }, { status: 400 });
     }
 
+    await requireTenantAccess(workspaceId);
+
     const db = await getDb();
     const workspace = await db
       .collection<WorkspaceDocument>(WORKSPACES_COLLECTION)
@@ -42,6 +45,9 @@ export async function GET(request: Request) {
       workspace: payload,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('[sync GET]', error);
     return NextResponse.json({ error: 'No se pudo leer la base de datos.' }, { status: 500 });
   }
@@ -61,6 +67,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'updatedAt inválido.' }, { status: 400 });
     }
 
+    const session = await requireTenantAccess(workspaceId);
+
     const db = await getDb();
     const collection = db.collection<WorkspaceDocument>(WORKSPACES_COLLECTION);
     const existing = await collection.findOne({ workspaceId });
@@ -78,6 +86,7 @@ export async function PUT(request: Request) {
     const now = Date.now();
     const document: WorkspaceDocument = {
       workspaceId,
+      tenantId: session.tenantId!,
       inventory: Array.isArray(body.inventory) ? body.inventory : [],
       rawMaterials: Array.isArray(body.rawMaterials) ? body.rawMaterials : [],
       globalCosts: Array.isArray(body.globalCosts) ? body.globalCosts : [],
@@ -95,6 +104,9 @@ export async function PUT(request: Request) {
       workspace: document,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('[sync PUT]', error);
     return NextResponse.json({ error: 'No se pudo guardar en la base de datos.' }, { status: 500 });
   }
