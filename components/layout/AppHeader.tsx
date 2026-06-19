@@ -4,14 +4,23 @@ import { Calculator } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
 import { cn } from '@/lib/utils';
 
 interface AppHeaderProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
+  cloudSync?: {
+    status: 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
+    direction: 'none' | 'pull' | 'push';
+    pending: boolean;
+    lastSyncedAt: number;
+    errorMessage: string | null;
+    syncNow: () => void;
+  };
 }
 
-export function AppHeader({ activeTab, onTabChange }: AppHeaderProps) {
+export function AppHeader({ activeTab, onTabChange, cloudSync }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-border">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
@@ -41,6 +50,17 @@ export function AppHeader({ activeTab, onTabChange }: AppHeaderProps) {
               </button>
             ))}
           </nav>
+          {cloudSync && (
+            <CloudSyncStatus
+              compact
+              status={cloudSync.status}
+              direction={cloudSync.direction}
+              pending={cloudSync.pending}
+              lastSyncedAt={cloudSync.lastSyncedAt}
+              errorMessage={cloudSync.errorMessage}
+              onSync={cloudSync.syncNow}
+            />
+          )}
           <ThemeToggle />
         </div>
       </div>

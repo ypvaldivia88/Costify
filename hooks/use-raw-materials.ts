@@ -9,23 +9,32 @@ import {
 } from '@/lib/domain/calculations';
 import { STORAGE_KEYS } from '@/lib/domain/constants';
 import { loadFromStorage, saveToStorage } from '@/lib/storage/local-storage';
+import { useStorageReload } from '@/hooks/use-storage-reload';
+
+function loadMaterials(): RawMaterial[] {
+  const saved = loadFromStorage<Array<RawMaterial & { unitsPerPackage?: number; stockUnits?: number }>>(
+    STORAGE_KEYS.rawMaterials,
+    []
+  );
+  return saved.map((material) =>
+    buildRawMaterial(migrateRawMaterialInput(material), material.id, material.timestamp)
+  );
+}
 
 export function useRawMaterials() {
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    const saved = loadFromStorage<Array<RawMaterial & { unitsPerPackage?: number; stockUnits?: number }>>(
-      STORAGE_KEYS.rawMaterials,
-      []
-    );
-    setMaterials(
-      saved.map((material) =>
-        buildRawMaterial(migrateRawMaterialInput(material), material.id, material.timestamp)
-      )
-    );
-    setHydrated(true);
+  const reload = useCallback(() => {
+    setMaterials(loadMaterials());
   }, []);
+
+  useEffect(() => {
+    reload();
+    setHydrated(true);
+  }, [reload]);
+
+  useStorageReload(reload);
 
   useEffect(() => {
     if (!hydrated) return;

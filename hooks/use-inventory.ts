@@ -10,22 +10,30 @@ import {
   migrateLegacyInventory,
   saveToStorage,
 } from '@/lib/storage/local-storage';
+import { useStorageReload } from '@/hooks/use-storage-reload';
+
+function loadInventory(): ProductCalculation[] {
+  const saved = loadFromStorage<
+    Array<ProductCalculation & { unitsPerPackage?: number; unitType?: string }>
+  >(STORAGE_KEYS.inventory, []);
+  const legacy = saved.length > 0 ? saved : (migrateLegacyInventory() as ProductCalculation[]);
+  return recalculateInventory(legacy);
+}
 
 export function useInventory() {
   const [inventory, setInventory] = useState<ProductCalculation[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    const saved = loadFromStorage<
-      Array<ProductCalculation & { unitsPerPackage?: number; unitType?: string }>
-    >(
-      STORAGE_KEYS.inventory,
-      []
-    );
-    const legacy = saved.length > 0 ? saved : (migrateLegacyInventory() as ProductCalculation[]);
-    setInventory(recalculateInventory(legacy));
-    setHydrated(true);
+  const reload = useCallback(() => {
+    setInventory(loadInventory());
   }, []);
+
+  useEffect(() => {
+    reload();
+    setHydrated(true);
+  }, [reload]);
+
+  useStorageReload(reload);
 
   useEffect(() => {
     if (!hydrated) return;

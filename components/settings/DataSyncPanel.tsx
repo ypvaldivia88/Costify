@@ -22,6 +22,9 @@ import { Card } from '@/components/ui/Card';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useToast } from '@/components/ui/Toast';
+import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
+import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
+import { setWorkspaceId } from '@/lib/sync/workspace-id';
 import { cn } from '@/lib/utils';
 
 interface DataSyncPanelProps {
@@ -31,6 +34,15 @@ interface DataSyncPanelProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  cloudSync: {
+    status: SyncStatus;
+    direction: SyncDirection;
+    pending: boolean;
+    lastSyncedAt: number;
+    errorMessage: string | null;
+    workspaceId: string;
+    syncNow: () => void;
+  };
 }
 
 type SyncTab = 'export' | 'import';
@@ -42,13 +54,16 @@ export function DataSyncPanel({
   globalFund,
   taxSettings,
   unitSettings,
+  cloudSync,
 }: DataSyncPanelProps) {
   const { confirm } = useConfirm();
   const { showToast } = useToast();
   const [tab, setTab] = useState<SyncTab>('export');
   const [copied, setCopied] = useState(false);
+  const [workspaceCopied, setWorkspaceCopied] = useState(false);
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
+  const [workspaceInput, setWorkspaceInput] = useState(cloudSync.workspaceId);
 
   const payload = useMemo(
     () =>
@@ -74,6 +89,36 @@ export function DataSyncPanel({
     } catch {
       showToast('No se pudo copiar. Selecciona y copia el código manualmente.', 'error');
     }
+  };
+
+  const handleCopyWorkspace = async () => {
+    try {
+      await navigator.clipboard.writeText(cloudSync.workspaceId);
+      setWorkspaceCopied(true);
+      showToast('ID de espacio copiado', 'success');
+      setTimeout(() => setWorkspaceCopied(false), 2000);
+    } catch {
+      showToast('No se pudo copiar el ID.', 'error');
+    }
+  };
+
+  const handleWorkspaceSave = async () => {
+    const trimmed = workspaceInput.trim();
+    if (!trimmed || trimmed === cloudSync.workspaceId) return;
+
+    const confirmed = await confirm({
+      title: 'Cambiar espacio de trabajo',
+      message:
+        'Al cambiar el ID se vinculará este dispositivo a otro espacio en la nube. ' +
+        'Si ya tienes datos locales, se intentará sincronizar con ese espacio al reconectar.',
+      confirmLabel: 'Cambiar ID',
+      variant: 'primary',
+    });
+    if (!confirmed) return;
+
+    setWorkspaceId(trimmed);
+    showToast('ID actualizado. Sincronizando…', 'info');
+    cloudSync.syncNow();
   };
 
   const handleImport = async () => {
@@ -111,12 +156,56 @@ export function DataSyncPanel({
   };
 
   return (
-    <Card>
-      <SectionHeader
-        icon={Share2}
-        title="Sincronizar entre dispositivos"
-        description="Copia el código de respaldo o comparte el archivo en otro dispositivo"
-      />
+    <div className="space-y-4">
+      <Card>
+        <SectionHeader
+          icon={Share2}
+          title="Sincronización en la nube"
+          description="Los datos se guardan localmente y se sincronizan con MongoDB cuando hay conexión"
+        />
+
+        <div className="space-y-4">
+          <CloudSyncStatus
+            status={cloudSync.status}
+            direction={cloudSync.direction}
+            pending={cloudSync.pending}
+            lastSyncedAt={cloudSync.lastSyncedAt}
+            errorMessage={cloudSync.errorMessage}
+            onSync={cloudSync.syncNow}
+          />
+
+          <div className="space-y-1.5">
+            <label htmlFor="workspace-id" className="text-sm font-medium text-foreground">
+              ID de espacio de trabajo
+            </label>
+            <p className="text-xs text-muted">
+              Usa el mismo ID en varios dispositivos para compartir los mismos datos en la nube.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <input
+                id="workspace-id"
+                value={workspaceInput}
+                onChange={(e) => setWorkspaceInput(e.target.value)}
+                className="flex-1 min-w-[220px] px-3 py-2 text-xs font-mono rounded-xl border border-border bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-brand/25"
+              />
+              <Button type="button" variant="outline" onClick={handleCopyWorkspace}>
+                <Copy className="w-4 h-4" />
+                {workspaceCopied ? 'Copiado' : 'Copiar'}
+              </Button>
+              <Button type="button" variant="outline" onClick={handleWorkspaceSave}>
+                Aplicar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionHeader
+          icon={Share2}
+          title="Respaldo manual"
+          description="Copia el código de respaldo o comparte el archivo en otro dispositivo sin conexión a la nube"
+        />
 
       <div className="flex gap-2 mb-4" role="tablist" aria-label="Modo de sincronización">
         {(['export', 'import'] as SyncTab[]).map((value) => (
@@ -215,6 +304,7 @@ export function DataSyncPanel({
           </Button>
         </div>
       )}
-    </Card>
+      </Card>
+    </div>
   );
 }
