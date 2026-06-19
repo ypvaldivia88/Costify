@@ -36,9 +36,14 @@ export function RawMaterialItem({ material, onEdit, onDelete, onStockChange }: R
               </strong>
             </span>
             <span>
-              Compra: <strong className="text-foreground">{formatCurrency(material.purchasePrice)}</strong>
-              {' / '}
+              Compra:{' '}
+              <strong className="text-foreground">
+                {formatCurrency(material.unitCost)}/{unitLabel}
+              </strong>
+              {' × '}
               {material.packageQuantity} {unitLabel}
+              {' = '}
+              <strong className="text-foreground">{formatCurrency(material.purchasePrice)}</strong>
             </span>
           </div>
         </div>

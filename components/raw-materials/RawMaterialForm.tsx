@@ -23,15 +23,20 @@ interface RawMaterialFormProps {
   onCancel?: () => void;
 }
 
-type FormErrors = Partial<Record<'name' | 'purchasePrice' | 'packageQuantity', string>>;
+type FormErrors = Partial<Record<'name' | 'unitPurchasePrice' | 'packageQuantity', string>>;
 
 const defaultForm = {
   name: '',
-  purchasePrice: 0,
+  unitPurchasePrice: 0,
   unitType: 'kg' as UnitType,
   packageQuantity: 1,
   stockQuantity: 0,
 };
+
+function toUnitPurchasePrice(material: RawMaterial): number {
+  if (material.packageQuantity <= 0) return material.unitCost;
+  return material.purchasePrice / material.packageQuantity;
+}
 
 export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMaterialFormProps) {
   const unitCatalog = useUnitCatalog();
@@ -42,7 +47,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
     if (editingMaterial) {
       setForm({
         name: editingMaterial.name,
-        purchasePrice: editingMaterial.purchasePrice,
+        unitPurchasePrice: toUnitPurchasePrice(editingMaterial),
         unitType: editingMaterial.unitType,
         packageQuantity: editingMaterial.packageQuantity,
         stockQuantity: editingMaterial.stockQuantity,
@@ -53,14 +58,15 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
     setErrors({});
   }, [editingMaterial]);
 
-  const unitCost = calculateRawMaterialUnitCost(form.purchasePrice, form.packageQuantity);
   const unitLabel = unitCatalog.getShortLabel(form.unitType);
   const unitOptions = unitCatalog.getSelectableUnitIds();
+  const totalPurchasePrice = form.unitPurchasePrice * form.packageQuantity;
+  const unitCost = calculateRawMaterialUnitCost(totalPurchasePrice, form.packageQuantity);
 
   const validate = (): FormErrors => {
     const next: FormErrors = {};
     if (!form.name.trim()) next.name = 'Ingresa el nombre de la materia prima';
-    if (form.purchasePrice <= 0) next.purchasePrice = 'Ingresa un precio de compra válido';
+    if (form.unitPurchasePrice <= 0) next.unitPurchasePrice = 'Ingresa un precio por unidad válido';
     if (form.packageQuantity <= 0) next.packageQuantity = 'Ingresa la cantidad comprada';
     return next;
   };
@@ -72,7 +78,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
 
     onSave({
       name: form.name.trim(),
-      purchasePrice: form.purchasePrice,
+      purchasePrice: totalPurchasePrice,
       unitType: form.unitType,
       packageQuantity: form.packageQuantity,
       stockQuantity: form.stockQuantity,
@@ -93,17 +99,6 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
           setForm((p) => ({ ...p, name: e.target.value }));
           if (errors.name) setErrors((p) => ({ ...p, name: undefined }));
         }}
-      />
-
-      <NumericInput
-        label="Precio de compra (CUP)"
-        value={form.purchasePrice}
-        error={errors.purchasePrice}
-        onChange={(purchasePrice) => {
-          setForm((p) => ({ ...p, purchasePrice }));
-          if (errors.purchasePrice) setErrors((p) => ({ ...p, purchasePrice: undefined }));
-        }}
-        hint="Costo del paquete o lote"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -127,9 +122,20 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
             setForm((p) => ({ ...p, packageQuantity }));
             if (errors.packageQuantity) setErrors((p) => ({ ...p, packageQuantity: undefined }));
           }}
-          hint={`En ${unitCatalog.getLabel(form.unitType)} incluidos en el precio`}
+          hint={`Total de ${unitCatalog.getLabel(form.unitType)} adquiridos`}
         />
       </div>
+
+      <NumericInput
+        label={`Precio de compra por ${unitLabel} (CUP)`}
+        value={form.unitPurchasePrice}
+        error={errors.unitPurchasePrice}
+        onChange={(unitPurchasePrice) => {
+          setForm((p) => ({ ...p, unitPurchasePrice }));
+          if (errors.unitPurchasePrice) setErrors((p) => ({ ...p, unitPurchasePrice: undefined }));
+        }}
+        hint={`Costo por cada ${unitCatalog.getLabel(form.unitType)}`}
+      />
 
       <NumericInput
         label={`Stock disponible (${unitLabel})`}
@@ -137,12 +143,23 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
         onChange={(stockQuantity) => setForm((p) => ({ ...p, stockQuantity }))}
       />
 
-      {form.purchasePrice > 0 && form.packageQuantity > 0 && (
-        <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand">Costo unitario</p>
-          <p className="text-2xl font-black text-foreground tabular-nums mt-1">
-            {formatCurrency(unitCost)}
-            <span className="text-sm font-semibold text-brand"> / {unitLabel}</span>
+      {form.unitPurchasePrice > 0 && form.packageQuantity > 0 && (
+        <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3 space-y-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand">Costo unitario</p>
+            <p className="text-2xl font-black text-foreground tabular-nums mt-1">
+              {formatCurrency(unitCost)}
+              <span className="text-sm font-semibold text-brand"> / {unitLabel}</span>
+            </p>
+          </div>
+          <p className="text-sm text-muted">
+            Precio total de compra:{' '}
+            <strong className="text-foreground tabular-nums">
+              {formatCurrency(totalPurchasePrice)}
+            </strong>
+            <span className="ml-1">
+              ({form.packageQuantity} {unitLabel} × {formatCurrency(form.unitPurchasePrice)})
+            </span>
           </p>
         </div>
       )}
@@ -156,7 +173,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
         <Button
           variant="secondary"
           onClick={handleSubmit}
-          disabled={!form.name || form.purchasePrice <= 0}
+          disabled={!form.name || form.unitPurchasePrice <= 0}
           type="button"
         >
           <Save className="w-4 h-4" />
