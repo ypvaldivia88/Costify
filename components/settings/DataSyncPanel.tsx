@@ -22,6 +22,8 @@ import { Card } from '@/components/ui/Card';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useToast } from '@/components/ui/Toast';
+import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
+import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 import { cn } from '@/lib/utils';
 
 interface DataSyncPanelProps {
@@ -31,6 +33,16 @@ interface DataSyncPanelProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  tenantName?: string;
+  cloudSync: {
+    status: SyncStatus;
+    direction: SyncDirection;
+    pending: boolean;
+    lastSyncedAt: number;
+    errorMessage: string | null;
+    workspaceId: string;
+    syncNow: () => void;
+  };
 }
 
 type SyncTab = 'export' | 'import';
@@ -42,6 +54,8 @@ export function DataSyncPanel({
   globalFund,
   taxSettings,
   unitSettings,
+  tenantName,
+  cloudSync,
 }: DataSyncPanelProps) {
   const { confirm } = useConfirm();
   const { showToast } = useToast();
@@ -111,12 +125,38 @@ export function DataSyncPanel({
   };
 
   return (
-    <Card>
-      <SectionHeader
-        icon={Share2}
-        title="Sincronizar entre dispositivos"
-        description="Copia el código de respaldo o comparte el archivo en otro dispositivo"
-      />
+    <div className="space-y-4">
+      <Card>
+        <SectionHeader
+          icon={Share2}
+          title="Sincronización en la nube"
+          description="Los datos se guardan localmente y se sincronizan con MongoDB cuando hay conexión"
+        />
+
+        <div className="space-y-4">
+          <CloudSyncStatus
+            status={cloudSync.status}
+            direction={cloudSync.direction}
+            pending={cloudSync.pending}
+            lastSyncedAt={cloudSync.lastSyncedAt}
+            errorMessage={cloudSync.errorMessage}
+            onSync={cloudSync.syncNow}
+          />
+
+          {tenantName && (
+            <p className="text-sm text-muted">
+              Negocio: <strong className="text-foreground">{tenantName}</strong>
+            </p>
+          )}
+        </div>
+      </Card>
+
+      <Card>
+        <SectionHeader
+          icon={Share2}
+          title="Respaldo manual"
+          description="Copia el código de respaldo o comparte el archivo en otro dispositivo sin conexión a la nube"
+        />
 
       <div className="flex gap-2 mb-4" role="tablist" aria-label="Modo de sincronización">
         {(['export', 'import'] as SyncTab[]).map((value) => (
@@ -215,6 +255,7 @@ export function DataSyncPanel({
           </Button>
         </div>
       )}
-    </Card>
+      </Card>
+    </div>
   );
 }

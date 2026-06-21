@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import type { ProductCalculation } from '@/lib/domain/types';
 import { NAV_BY_ID } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -25,11 +26,12 @@ function LoadingScreen() {
 }
 
 export function AppShell() {
+  const { loading: authLoading } = useAuth();
   const data = useAppData();
   const [activeTab, setActiveTab] = useState<AppTab>('calculator');
   const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
 
-  if (!data.hydrated) {
+  if (authLoading || !data.hydrated) {
     return <LoadingScreen />;
   }
 
@@ -49,7 +51,12 @@ export function AppShell() {
   return (
     <UnitCatalogProvider settings={data.unitSettings}>
       <div className="min-h-screen bg-background text-foreground">
-        <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
+        <AppHeader
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          cloudSync={data.cloudSync}
+          user={data.user}
+        />
 
         <main className="max-w-5xl mx-auto px-4 pt-4 pb-28 md:pb-8">
           <motion.div
@@ -105,6 +112,8 @@ export function AppShell() {
                 globalFund={data.globalFund}
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
+                tenantName={data.user?.tenantName}
+                cloudSync={data.cloudSync}
                 onSaveCosts={data.saveCosts}
                 onUpdateGlobalFund={data.updateGlobalFund}
                 onUpdateTaxSettings={data.updateTaxSettings}

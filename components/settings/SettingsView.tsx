@@ -16,6 +16,7 @@ import { GlobalFundSettingsPanel } from './GlobalFundSettings';
 import { IndirectCostsSettings } from './IndirectCostsSettings';
 import { TaxSettingsPanel } from './TaxSettingsPanel';
 import { UnitSettingsPanel } from './UnitSettingsPanel';
+import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 
 type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'sync';
 
@@ -26,6 +27,16 @@ interface SettingsViewProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  tenantName?: string;
+  cloudSync: {
+    status: SyncStatus;
+    direction: SyncDirection;
+    pending: boolean;
+    lastSyncedAt: number;
+    errorMessage: string | null;
+    workspaceId: string;
+    syncNow: () => void;
+  };
   onSaveCosts: (costs: IndirectCost[]) => void;
   onUpdateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
   onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
@@ -48,6 +59,8 @@ export function SettingsView({
   globalFund,
   taxSettings,
   unitSettings,
+  tenantName,
+  cloudSync,
   onSaveCosts,
   onUpdateGlobalFund,
   onUpdateTaxSettings,
@@ -109,6 +122,8 @@ export function SettingsView({
           globalFund={globalFund}
           taxSettings={taxSettings}
           unitSettings={unitSettings}
+          tenantName={tenantName}
+          cloudSync={cloudSync}
         />
       )}
     </div>

@@ -5,18 +5,29 @@ import type { GlobalFundSettings } from '@/lib/domain/types';
 import { migrateGlobalFundSettings } from '@/lib/domain/calculations';
 import { DEFAULT_GLOBAL_FUND_SETTINGS, STORAGE_KEYS } from '@/lib/domain/constants';
 import { loadFromStorage, saveToStorage } from '@/lib/storage/local-storage';
+import { useStorageReload } from '@/hooks/use-storage-reload';
+
+function loadGlobalFund(): GlobalFundSettings {
+  const saved = loadFromStorage<
+    Partial<GlobalFundSettings> & { amount?: number; distributionCriteria?: string }
+  >(STORAGE_KEYS.globalFund, DEFAULT_GLOBAL_FUND_SETTINGS);
+  return migrateGlobalFundSettings(saved);
+}
 
 export function useGlobalFund() {
   const [globalFund, setGlobalFund] = useState<GlobalFundSettings>(DEFAULT_GLOBAL_FUND_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    const saved = loadFromStorage<
-      Partial<GlobalFundSettings> & { amount?: number; distributionCriteria?: string }
-    >(STORAGE_KEYS.globalFund, DEFAULT_GLOBAL_FUND_SETTINGS);
-    setGlobalFund(migrateGlobalFundSettings(saved));
-    setHydrated(true);
+  const reload = useCallback(() => {
+    setGlobalFund(loadGlobalFund());
   }, []);
+
+  useEffect(() => {
+    reload();
+    setHydrated(true);
+  }, [reload]);
+
+  useStorageReload(reload);
 
   useEffect(() => {
     if (!hydrated) return;

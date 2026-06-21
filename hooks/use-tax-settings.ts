@@ -5,6 +5,7 @@ import type { TaxSettings } from '@/lib/domain/types';
 import { DEFAULT_TAX_SETTINGS, STORAGE_KEYS } from '@/lib/domain/constants';
 import { migrateTaxSettings } from '@/lib/domain/migrate-tax-settings';
 import { loadFromStorage, saveToStorage } from '@/lib/storage/local-storage';
+import { useStorageReload } from '@/hooks/use-storage-reload';
 
 const LEGACY_TAX_STORAGE_KEY = 'costify_tax_settings_v2';
 
@@ -28,10 +29,16 @@ export function useTaxSettings() {
   const [taxSettings, setTaxSettings] = useState<TaxSettings>(DEFAULT_TAX_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     setTaxSettings(loadTaxSettings());
-    setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    reload();
+    setHydrated(true);
+  }, [reload]);
+
+  useStorageReload(reload);
 
   useEffect(() => {
     if (!hydrated) return;

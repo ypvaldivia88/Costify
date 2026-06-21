@@ -40,6 +40,8 @@ export const STORAGE_KEYS = {
   globalFund: 'costify_global_fund_v2',
   unitSettings: 'costify_unit_settings_v1',
   theme: 'costify_theme_v1',
+  syncWorkspaceId: 'costify_workspace_id_v1',
+  syncMetadata: 'costify_sync_metadata_v1',
 } as const;
 
 export const PRODUCT_TYPE_LABELS = {
