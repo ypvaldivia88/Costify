@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ensureSuperAdmin, findUserByEmail } from '@/lib/auth/users';
+import { ensureSuperAdmin, findUserByEmail, isSuperAdminBootstrapConfigured } from '@/lib/auth/users';
 import { verifyPassword } from '@/lib/auth/password';
 import {
   createSessionToken,
@@ -23,7 +23,12 @@ export async function POST(request: Request) {
 
     const user = await findUserByEmail(email);
     if (!user || user.status !== 'active') {
-      return NextResponse.json({ error: 'Credenciales inválidas.' }, { status: 401 });
+      const bootstrapConfigured = isSuperAdminBootstrapConfigured();
+      const message =
+        !bootstrapConfigured && email === process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase()
+          ? 'El super administrador no está configurado en el servidor. Define SUPER_ADMIN_EMAIL y SUPER_ADMIN_PASSWORD.'
+          : 'Credenciales inválidas.';
+      return NextResponse.json({ error: message }, { status: 401 });
     }
 
     const valid = await verifyPassword(password, user.passwordHash);
