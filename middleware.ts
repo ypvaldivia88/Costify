@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
 
   if (
     session.role === 'super_admin' &&
-    (pathname === '/' || pathname.startsWith('/api/sync'))
+    (pathname === '/' || pathname.startsWith('/api/sync') || pathname.startsWith('/api/account'))
   ) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
