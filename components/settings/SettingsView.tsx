@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Database, Percent, PiggyBank, Receipt, Ruler } from 'lucide-react';
+import { Database, Percent, PiggyBank, Receipt, Ruler, User } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -12,13 +12,15 @@ import type {
 } from '@/lib/domain/types';
 import { cn } from '@/lib/utils';
 import { DataSyncPanel } from './DataSyncPanel';
+import { AccountSettingsPanel } from './AccountSettingsPanel';
 import { GlobalFundSettingsPanel } from './GlobalFundSettings';
 import { IndirectCostsSettings } from './IndirectCostsSettings';
 import { TaxSettingsPanel } from './TaxSettingsPanel';
 import { UnitSettingsPanel } from './UnitSettingsPanel';
 import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
+import type { SessionUser } from '@/lib/auth/types';
 
-type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'sync';
+type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'sync' | 'account';
 
 interface SettingsViewProps {
   inventory: ProductCalculation[];
@@ -28,6 +30,7 @@ interface SettingsViewProps {
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   tenantName?: string;
+  user?: SessionUser | null;
   cloudSync: {
     status: SyncStatus;
     direction: SyncDirection;
@@ -50,6 +53,7 @@ const sections: { id: SettingsSection; label: string; icon: typeof Database }[] 
   { id: 'indirect', label: 'Gastos', icon: Percent },
   { id: 'units', label: 'Unidades', icon: Ruler },
   { id: 'sync', label: 'Respaldo', icon: Database },
+  { id: 'account', label: 'Cuenta', icon: User },
 ];
 
 export function SettingsView({
@@ -60,6 +64,7 @@ export function SettingsView({
   taxSettings,
   unitSettings,
   tenantName,
+  user,
   cloudSync,
   onSaveCosts,
   onUpdateGlobalFund,
@@ -126,6 +131,7 @@ export function SettingsView({
           cloudSync={cloudSync}
         />
       )}
+      {activeSection === 'account' && <AccountSettingsPanel user={user} />}
     </div>
   );
 }

@@ -72,7 +72,7 @@ export function AppHeader({ activeTab, onTabChange, cloudSync, user }: AppHeader
             <button
               type="button"
               onClick={() => void logout()}
-              className="hidden md:inline-flex px-3 py-2 rounded-lg text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-muted"
+              className="inline-flex px-3 py-2 rounded-lg text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-muted"
             >
               Salir
             </button>

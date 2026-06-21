@@ -113,6 +113,7 @@ export function AppShell() {
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
                 tenantName={data.user?.tenantName}
+                user={data.user}
                 cloudSync={data.cloudSync}
                 onSaveCosts={data.saveCosts}
                 onUpdateGlobalFund={data.updateGlobalFund}
