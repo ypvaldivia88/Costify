@@ -6,9 +6,12 @@ import type { RawMaterial, UnitType } from '@/lib/domain/types';
 import { calculateRawMaterialUnitCost } from '@/lib/domain/calculations';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { formatCurrency } from '@/lib/format/currency';
+import type { PurchasePriceMode } from '@/lib/ui/purchase-price';
+import { fromTotalPurchasePrice, toTotalPurchasePrice } from '@/lib/ui/purchase-price';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { NumericInput } from '@/components/ui/NumericInput';
+import { PurchasePriceInput } from '@/components/ui/PurchasePriceInput';
 import { Select } from '@/components/ui/Select';
 
 interface RawMaterialFormProps {
@@ -23,20 +26,16 @@ interface RawMaterialFormProps {
   onCancel?: () => void;
 }
 
-type FormErrors = Partial<Record<'name' | 'unitPurchasePrice' | 'packageQuantity', string>>;
+type FormErrors = Partial<Record<'name' | 'purchasePrice' | 'packageQuantity', string>>;
 
 const defaultForm = {
   name: '',
-  unitPurchasePrice: 0,
+  purchasePrice: 0,
+  purchasePriceMode: 'per-unit' as PurchasePriceMode,
   unitType: 'kg' as UnitType,
   packageQuantity: 1,
   stockQuantity: 0,
 };
-
-function toUnitPurchasePrice(material: RawMaterial): number {
-  if (material.packageQuantity <= 0) return material.unitCost;
-  return material.purchasePrice / material.packageQuantity;
-}
 
 export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMaterialFormProps) {
   const unitCatalog = useUnitCatalog();
@@ -47,7 +46,12 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
     if (editingMaterial) {
       setForm({
         name: editingMaterial.name,
-        unitPurchasePrice: toUnitPurchasePrice(editingMaterial),
+        purchasePrice: fromTotalPurchasePrice(
+          editingMaterial.purchasePrice,
+          'per-unit',
+          editingMaterial.packageQuantity
+        ),
+        purchasePriceMode: 'per-unit',
         unitType: editingMaterial.unitType,
         packageQuantity: editingMaterial.packageQuantity,
         stockQuantity: editingMaterial.stockQuantity,
@@ -60,13 +64,24 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
 
   const unitLabel = unitCatalog.getShortLabel(form.unitType);
   const unitOptions = unitCatalog.getSelectableUnitIds();
-  const totalPurchasePrice = form.unitPurchasePrice * form.packageQuantity;
+  const totalPurchasePrice = toTotalPurchasePrice(
+    form.purchasePrice,
+    form.purchasePriceMode,
+    form.packageQuantity
+  );
   const unitCost = calculateRawMaterialUnitCost(totalPurchasePrice, form.packageQuantity);
+  const unitPurchasePrice =
+    form.packageQuantity > 0 ? totalPurchasePrice / form.packageQuantity : totalPurchasePrice;
 
   const validate = (): FormErrors => {
     const next: FormErrors = {};
     if (!form.name.trim()) next.name = 'Ingresa el nombre de la materia prima';
-    if (form.unitPurchasePrice <= 0) next.unitPurchasePrice = 'Ingresa un precio por unidad válido';
+    if (form.purchasePrice <= 0) {
+      next.purchasePrice =
+        form.purchasePriceMode === 'per-unit'
+          ? 'Ingresa un precio por unidad válido'
+          : 'Ingresa un precio del lote válido';
+    }
     if (form.packageQuantity <= 0) next.packageQuantity = 'Ingresa la cantidad comprada';
     return next;
   };
@@ -126,15 +141,19 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
         />
       </div>
 
-      <NumericInput
-        label={`Precio de compra por ${unitLabel} (CUP)`}
-        value={form.unitPurchasePrice}
-        error={errors.unitPurchasePrice}
-        onChange={(unitPurchasePrice) => {
-          setForm((p) => ({ ...p, unitPurchasePrice }));
-          if (errors.unitPurchasePrice) setErrors((p) => ({ ...p, unitPurchasePrice: undefined }));
+      <PurchasePriceInput
+        mode={form.purchasePriceMode}
+        onModeChange={(purchasePriceMode) => setForm((p) => ({ ...p, purchasePriceMode }))}
+        value={form.purchasePrice}
+        onChange={(purchasePrice) => {
+          setForm((p) => ({ ...p, purchasePrice }));
+          if (errors.purchasePrice) setErrors((p) => ({ ...p, purchasePrice: undefined }));
         }}
-        hint={`Costo por cada ${unitCatalog.getLabel(form.unitType)}`}
+        packageQuantity={form.packageQuantity}
+        unitLabel={unitLabel}
+        error={errors.purchasePrice}
+        perUnitHint={`Costo por cada ${unitCatalog.getLabel(form.unitType)}`}
+        perPackageHint={`Precio total por ${form.packageQuantity} ${unitLabel}`}
       />
 
       <NumericInput
@@ -143,7 +162,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
         onChange={(stockQuantity) => setForm((p) => ({ ...p, stockQuantity }))}
       />
 
-      {form.unitPurchasePrice > 0 && form.packageQuantity > 0 && (
+      {form.purchasePrice > 0 && form.packageQuantity > 0 && (
         <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3 space-y-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-brand">Costo unitario</p>
@@ -158,7 +177,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
               {formatCurrency(totalPurchasePrice)}
             </strong>
             <span className="ml-1">
-              ({form.packageQuantity} {unitLabel} × {formatCurrency(form.unitPurchasePrice)})
+              ({form.packageQuantity} {unitLabel} × {formatCurrency(unitPurchasePrice)})
             </span>
           </p>
         </div>
@@ -173,7 +192,7 @@ export function RawMaterialForm({ editingMaterial, onSave, onCancel }: RawMateri
         <Button
           variant="secondary"
           onClick={handleSubmit}
-          disabled={!form.name || form.unitPurchasePrice <= 0}
+          disabled={!form.name || form.purchasePrice <= 0}
           type="button"
         >
           <Save className="w-4 h-4" />

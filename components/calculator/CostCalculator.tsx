@@ -17,11 +17,14 @@ import { calculateProduct, migrateProductInput } from '@/lib/domain/calculations
 import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { fieldClassName } from '@/lib/ui/field-styles';
+import type { PurchasePriceMode } from '@/lib/ui/purchase-price';
+import { fromTotalPurchasePrice, toTotalPurchasePrice } from '@/lib/ui/purchase-price';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 import { Input } from '@/components/ui/Input';
 import { NumericInput } from '@/components/ui/NumericInput';
+import { PurchasePriceInput } from '@/components/ui/PurchasePriceInput';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
@@ -47,6 +50,7 @@ const defaultForm = {
   name: '',
   productType: 'simple' as ProductType,
   purchasePrice: 0,
+  purchasePriceMode: 'per-package' as PurchasePriceMode,
   purchaseUnit: 'unidad',
   packageQuantity: 1,
   recipe: [] as RecipeItem[],
@@ -78,7 +82,12 @@ export function CostCalculator({
       setForm({
         name: editingProduct.name,
         productType: editingProduct.productType ?? 'simple',
-        purchasePrice: editingProduct.purchasePrice,
+        purchasePrice: fromTotalPurchasePrice(
+          editingProduct.purchasePrice,
+          'per-package',
+          migrated.packageQuantity
+        ),
+        purchasePriceMode: 'per-package',
         purchaseUnit: migrated.purchaseUnit,
         packageQuantity: migrated.packageQuantity,
         recipe: editingProduct.recipe ?? [],
@@ -97,13 +106,19 @@ export function CostCalculator({
     ? inventory.filter((p) => p.id !== editingProduct.id)
     : inventory;
 
+  const totalPurchasePrice = toTotalPurchasePrice(
+    form.purchasePrice,
+    form.purchasePriceMode,
+    form.packageQuantity
+  );
+
   const result = useMemo(
     () =>
       calculateProduct(
         {
           name: form.name || 'Producto',
           productType: form.productType,
-          purchasePrice: form.purchasePrice,
+          purchasePrice: totalPurchasePrice,
           purchaseUnit: form.purchaseUnit,
           packageQuantity: form.packageQuantity,
           recipe: form.recipe,
@@ -119,7 +134,7 @@ export function CostCalculator({
         undefined,
         unitSettings
       ),
-    [form, otherProducts, rawMaterials, globalFund, unitSettings]
+    [form, otherProducts, rawMaterials, globalFund, unitSettings, totalPurchasePrice]
   );
 
   const importGlobalCosts = () => {
@@ -162,7 +177,12 @@ export function CostCalculator({
         next.recipe = 'Agrega al menos una materia prima con cantidad mayor a cero';
       }
     } else {
-      if (form.purchasePrice <= 0) next.purchasePrice = 'Ingresa un precio de compra válido';
+      if (form.purchasePrice <= 0) {
+        next.purchasePrice =
+          form.purchasePriceMode === 'per-unit'
+            ? 'Ingresa un precio por unidad válido'
+            : 'Ingresa un precio del lote válido';
+      }
       if (form.packageQuantity <= 0) next.packageQuantity = 'Indica cuántas unidades incluye la compra';
       if (!form.purchaseUnit.trim()) next.purchaseUnit = 'Indica la unidad (unidad, caja, bolsa, kg…)';
     }
@@ -182,7 +202,7 @@ export function CostCalculator({
       {
         name: form.name.trim(),
         productType: form.productType,
-        purchasePrice: form.purchasePrice,
+        purchasePrice: totalPurchasePrice,
         purchaseUnit: form.purchaseUnit.trim(),
         packageQuantity: form.packageQuantity,
         recipe: isElaborated ? form.recipe : undefined,
@@ -263,15 +283,19 @@ export function CostCalculator({
             </div>
           ) : (
             <div className="space-y-4">
-              <NumericInput
-                label="Precio de compra (CUP)"
+              <PurchasePriceInput
+                mode={form.purchasePriceMode}
+                onModeChange={(purchasePriceMode) => setForm((p) => ({ ...p, purchasePriceMode }))}
                 value={form.purchasePrice}
                 error={errors.purchasePrice}
                 onChange={(purchasePrice) => {
                   setForm((p) => ({ ...p, purchasePrice }));
                   if (errors.purchasePrice) setErrors((p) => ({ ...p, purchasePrice: undefined }));
                 }}
-                hint="Lo que pagaste por el lote"
+                packageQuantity={form.packageQuantity}
+                unitLabel={form.purchaseUnit.trim() || 'unidad'}
+                perUnitHint={`Costo por cada ${form.purchaseUnit.trim() || 'unidad'}`}
+                perPackageHint="Lo que pagaste por la compra completa"
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
