@@ -89,6 +89,13 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.safe-fixed-top-right {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  z-index: 50;
+}
+
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
