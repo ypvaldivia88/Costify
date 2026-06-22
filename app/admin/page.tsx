@@ -151,19 +151,21 @@ export default function AdminPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-9 h-9 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen mesh-bg flex items-center justify-center">
+        <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow">
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-surface/95 backdrop-blur-md">
+    <div className="min-h-screen mesh-bg text-foreground">
+      <header className="glass border-b border-border/60">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center">
-              <Shield className="w-4.5 h-4.5 text-white" />
+            <div className="w-8 h-8 bg-brand-gradient rounded-xl flex items-center justify-center shadow-glow">
+              <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
               <h1 className="text-base font-bold">Panel Super Admin</h1>

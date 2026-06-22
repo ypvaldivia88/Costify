@@ -20,8 +20,8 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       onClick={toggle}
       className={cn(
-        'p-2.5 min-w-10 min-h-10 flex items-center justify-center rounded-xl transition-colors',
-        'text-muted hover:text-foreground hover:bg-surface-muted',
+        'p-2.5 min-w-10 min-h-10 flex items-center justify-center rounded-xl transition-all duration-200',
+        'text-muted hover:text-foreground hover:bg-surface-muted active:scale-95',
         className
       )}
       aria-label={resolved === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}

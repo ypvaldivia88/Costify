@@ -18,8 +18,10 @@ import { useAppData } from '@/hooks/use-app-data';
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
-      <div className="w-9 h-9 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen mesh-bg flex flex-col items-center justify-center gap-4">
+      <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow">
+        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      </div>
       <p className="text-sm text-muted">Cargando tus datos…</p>
     </div>
   );
@@ -39,7 +41,7 @@ export function AppShell() {
 
   return (
     <UnitCatalogProvider settings={data.unitSettings}>
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen mesh-bg text-foreground">
         <AppHeader
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -47,7 +49,7 @@ export function AppShell() {
           user={data.user}
         />
 
-        <main className="max-w-5xl mx-auto px-4 pt-4 pb-28 md:pb-8">
+        <main className="max-w-5xl mx-auto px-4 pt-5 pb-32 md:pb-8">
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 8 }}

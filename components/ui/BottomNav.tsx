@@ -23,48 +23,58 @@ export function BottomNav({
 }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-surface/95 backdrop-blur-md border-t border-border safe-bottom"
+      className="fixed bottom-0 inset-x-0 z-50 md:hidden safe-bottom px-4 pb-3"
       aria-label="Navegación principal"
     >
-      <div className="flex items-stretch">
-        {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-          const active = activeTab === id;
-          const count =
-            id === 'products'
-              ? productsCount
-              : id === 'raw-materials'
-                ? rawMaterialsCount
-                : id === 'warehouses'
-                  ? alertCount
-                  : 0;
+      <div className="glass rounded-2xl shadow-float border border-border/60">
+        <div className="flex items-stretch">
+          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+            const active = activeTab === id;
+            const count =
+              id === 'products'
+                ? productsCount
+                : id === 'raw-materials'
+                  ? rawMaterialsCount
+                  : id === 'warehouses'
+                    ? alertCount
+                    : 0;
 
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onTabChange(id)}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-16 transition-colors active:scale-[0.98]',
-                active ? 'text-brand' : 'text-muted'
-              )}
-            >
-              <span className="relative">
-                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
-                {count > 0 && (
-                  <span
-                    className={`absolute -top-1.5 -right-2.5 min-w-4 h-4 px-1 rounded-full text-white text-[10px] font-bold flex items-center justify-center ${
-                      id === 'warehouses' ? 'bg-red-500' : 'bg-brand'
-                    }`}
-                  >
-                    {count > 99 ? '99+' : count}
-                  </span>
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onTabChange(id)}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[60px] transition-all duration-200 active:scale-[0.97] rounded-xl',
+                  active ? 'text-brand' : 'text-muted'
                 )}
-              </span>
-              <span className="text-[11px] font-semibold">{label}</span>
-            </button>
-          );
-        })}
+              >
+                <span
+                  className={cn(
+                    'relative flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200',
+                    active && 'bg-brand-muted'
+                  )}
+                >
+                  <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
+                  {count > 0 && (
+                    <span
+                      className={cn(
+                        'absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-white text-[10px] font-bold flex items-center justify-center',
+                        id === 'warehouses' ? 'bg-red-500' : 'bg-brand'
+                      )}
+                    >
+                      {count > 99 ? '99+' : count}
+                    </span>
+                  )}
+                </span>
+                <span className={cn('text-[10px] font-semibold', active && 'text-brand')}>
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );

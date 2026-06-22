@@ -1,37 +1,56 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f4f4f5;
-  --foreground: #18181b;
-  --muted: #71717a;
-  --border: #e4e4e7;
+  --background: #f8faf9;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
   --surface: #ffffff;
-  --surface-muted: #fafafa;
+  --surface-muted: #f1f5f9;
   --brand: #059669;
+  --brand-light: #34d399;
+  --brand-dark: #047857;
   --brand-muted: #d1fae5;
   --brand-foreground: #064e3b;
   --accent-surface: #ecfdf5;
   --accent-border: #a7f3d0;
+  --ring: rgba(5, 150, 105, 0.35);
+  --shadow-color: 15 23 42;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --mesh-1: rgba(5, 150, 105, 0.18);
+  --mesh-2: rgba(52, 211, 153, 0.12);
+  --mesh-3: rgba(16, 185, 129, 0.08);
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --muted: #a1a1aa;
-  --border: #3f3f46;
-  --surface: #18181b;
-  --surface-muted: #27272a;
+  --background: #030712;
+  --foreground: #f8fafc;
+  --muted: #94a3b8;
+  --border: #1e293b;
+  --surface: #0f172a;
+  --surface-muted: #1e293b;
   --brand: #34d399;
+  --brand-light: #6ee7b7;
+  --brand-dark: #10b981;
   --brand-muted: #064e3b;
   --brand-foreground: #d1fae5;
   --accent-surface: #052e16;
   --accent-border: #065f46;
+  --ring: rgba(52, 211, 153, 0.35);
+  --shadow-color: 0 0 0;
+  --glass-bg: rgba(15, 23, 42, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --mesh-1: rgba(52, 211, 153, 0.15);
+  --mesh-2: rgba(16, 185, 129, 0.1);
+  --mesh-3: rgba(5, 150, 105, 0.06);
 }
 
 @theme inline {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
@@ -39,10 +58,15 @@
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
   --color-brand: var(--brand);
+  --color-brand-light: var(--brand-light);
+  --color-brand-dark: var(--brand-dark);
   --color-brand-muted: var(--brand-muted);
   --color-brand-foreground: var(--brand-foreground);
   --color-accent-surface: var(--accent-surface);
   --color-accent-border: var(--accent-border);
+  --shadow-elevated: 0 1px 2px rgb(var(--shadow-color) / 0.04), 0 8px 24px rgb(var(--shadow-color) / 0.08);
+  --shadow-float: 0 4px 6px rgb(var(--shadow-color) / 0.04), 0 20px 40px rgb(var(--shadow-color) / 0.12);
+  --shadow-glow: 0 0 0 1px rgb(var(--shadow-color) / 0.04), 0 8px 32px rgba(5, 150, 105, 0.18);
 }
 
 * {
@@ -72,6 +96,57 @@ body {
 
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Mesh gradient background */
+.mesh-bg {
+  position: relative;
+  background-color: var(--background);
+  overflow: hidden;
+}
+
+.mesh-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, var(--mesh-1), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 0%, var(--mesh-2), transparent 45%),
+    radial-gradient(ellipse 50% 60% at 50% 100%, var(--mesh-3), transparent 50%);
+  pointer-events: none;
+}
+
+.mesh-bg > * {
+  position: relative;
+}
+
+/* Glass surface */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+}
+
+/* Brand gradient text */
+.text-gradient-brand {
+  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 50%, var(--brand-light) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Brand gradient button background */
+.bg-brand-gradient {
+  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 50%, var(--brand-light) 100%);
+}
+
+/* Subtle grid pattern */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgb(var(--shadow-color) / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--shadow-color) / 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 input[type="range"] {

@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import './globals.css';
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-plus-jakarta',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Costify — Calculadora de Costos para MIPYME',
@@ -33,7 +40,7 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className={plusJakarta.variable} suppressHydrationWarning>
       <head>
         <Script id="costify-theme" strategy="beforeInteractive">
           {themeScript}

@@ -26,16 +26,18 @@ interface AppHeaderProps {
 export function AppHeader({ activeTab, onTabChange, cloudSync, user }: AppHeaderProps) {
   const { logout } = useAuth();
   return (
-    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-border">
+    <header className="sticky top-0 z-40 glass border-b border-border/60">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center shadow-sm shrink-0">
-            <Calculator className="w-4.5 h-4.5 text-white" />
+          <div className="w-8 h-8 bg-brand-gradient rounded-xl flex items-center justify-center shadow-glow shrink-0">
+            <Calculator className="w-4 h-4 text-white" strokeWidth={2.5} />
           </div>
-          <h1 className="text-base font-bold text-foreground leading-tight truncate">Costify</h1>
-          {user?.tenantName && (
-            <p className="text-xs text-muted truncate">{user.tenantName}</p>
-          )}
+          <div className="min-w-0">
+            <h1 className="text-base font-bold text-foreground leading-tight truncate">Costify</h1>
+            {user?.tenantName && (
+              <p className="text-[11px] text-muted truncate leading-tight">{user.tenantName}</p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
@@ -47,9 +49,9 @@ export function AppHeader({ activeTab, onTabChange, cloudSync, user }: AppHeader
                 onClick={() => onTabChange(id)}
                 aria-current={activeTab === id ? 'page' : undefined}
                 className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-semibold transition-colors',
+                  'px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200',
                   activeTab === id
-                    ? 'bg-brand-muted text-brand-foreground'
+                    ? 'bg-brand-muted text-brand-foreground shadow-sm'
                     : 'text-muted hover:text-foreground hover:bg-surface-muted'
                 )}
               >
@@ -72,7 +74,7 @@ export function AppHeader({ activeTab, onTabChange, cloudSync, user }: AppHeader
             <button
               type="button"
               onClick={() => void logout()}
-              className="inline-flex px-3 py-2 rounded-lg text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-muted"
+              className="inline-flex px-3 py-2 rounded-xl text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
             >
               Salir
             </button>

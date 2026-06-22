@@ -7,11 +7,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-brand text-white hover:opacity-90 active:opacity-80 shadow-sm',
-  secondary: 'bg-foreground text-background hover:opacity-90 active:opacity-80',
+  primary:
+    'bg-brand-gradient text-white hover:brightness-110 active:brightness-95 shadow-glow hover:shadow-[0_8px_32px_rgba(5,150,105,0.28)]',
+  secondary: 'bg-foreground text-background hover:opacity-90 active:opacity-80 shadow-elevated',
   ghost: 'text-muted hover:bg-surface-muted hover:text-foreground',
   danger: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40',
-  outline: 'border border-border text-foreground hover:bg-surface-muted',
+  outline: 'border border-border text-foreground hover:bg-surface-muted hover:border-brand/30',
 };
 
 const sizes = {
@@ -30,7 +31,7 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]',
         variants[variant],
         sizes[size],
         className
