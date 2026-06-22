@@ -3,8 +3,11 @@ import type {
   IndirectCost,
   ProductCalculation,
   RawMaterial,
+  StockMovement,
+  StockThreshold,
   TaxSettings,
   UnitSettings,
+  Warehouse,
 } from '@/lib/domain/types';
 
 export const WORKSPACES_COLLECTION = 'workspaces';
@@ -18,6 +21,9 @@ export interface WorkspaceDocument {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  warehouses: Warehouse[];
+  stockMovements: StockMovement[];
+  stockThresholds: StockThreshold[];
   updatedAt: number;
   createdAt: number;
 }

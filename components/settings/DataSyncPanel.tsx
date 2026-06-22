@@ -7,8 +7,11 @@ import type {
   IndirectCost,
   ProductCalculation,
   RawMaterial,
+  StockMovement,
+  StockThreshold,
   TaxSettings,
   UnitSettings,
+  Warehouse,
 } from '@/lib/domain/types';
 import {
   applyBackupToStorage,
@@ -33,6 +36,9 @@ interface DataSyncPanelProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  warehouses: Warehouse[];
+  stockMovements: StockMovement[];
+  stockThresholds: StockThreshold[];
   tenantName?: string;
   cloudSync: {
     status: SyncStatus;
@@ -54,6 +60,9 @@ export function DataSyncPanel({
   globalFund,
   taxSettings,
   unitSettings,
+  warehouses,
+  stockMovements,
+  stockThresholds,
   tenantName,
   cloudSync,
 }: DataSyncPanelProps) {
@@ -73,11 +82,24 @@ export function DataSyncPanel({
         globalFund,
         taxSettings,
         unitSettings,
+        warehouses,
+        stockMovements,
+        stockThresholds,
       }),
-    [inventory, rawMaterials, globalCosts, globalFund, taxSettings, unitSettings]
+    [
+      inventory,
+      rawMaterials,
+      globalCosts,
+      globalFund,
+      taxSettings,
+      unitSettings,
+      warehouses,
+      stockMovements,
+      stockThresholds,
+    ]
   );
 
-  const summary = `${inventory.length} producto(s), ${rawMaterials.length} materia(s) prima(s)`;
+  const summary = `${inventory.length} producto(s), ${rawMaterials.length} materia(s) prima(s), ${warehouses.length} almacén(es)`;
 
   const handleCopy = async () => {
     try {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Factory, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ProductCalculation, TaxSettings } from '@/lib/domain/types';
 import { calculateMonthlyTaxProjection, hasActiveTaxes } from '@/lib/domain/calculations/taxes';
@@ -16,6 +16,7 @@ interface InventoryItemProps {
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onRegisterProduction?: () => void;
 }
 
 export function InventoryItem({
@@ -25,6 +26,7 @@ export function InventoryItem({
   onToggle,
   onEdit,
   onDelete,
+  onRegisterProduction,
 }: InventoryItemProps) {
   const unitCatalog = useUnitCatalog();
   const monthlyRevenue = item.suggestedPrice * item.productionUnits;
@@ -63,6 +65,15 @@ export function InventoryItem({
         </div>
 
         <div className="flex items-center gap-2">
+          {onRegisterProduction && (
+            <button
+              onClick={onRegisterProduction}
+              className="flex-1 py-2.5 bg-brand-muted text-brand-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-colors min-h-11 active:scale-[0.99] flex items-center justify-center gap-1.5"
+            >
+              <Factory className="w-4 h-4" />
+              Producir
+            </button>
+          )}
           <button
             onClick={onToggle}
             className="flex-1 py-2.5 bg-surface-muted text-foreground rounded-xl text-sm font-semibold hover:bg-border/40 transition-colors min-h-11 active:scale-[0.99]"

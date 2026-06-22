@@ -14,6 +14,7 @@ import { CostCalculator } from '@/components/calculator/CostCalculator';
 import { InventoryList } from '@/components/inventory/InventoryList';
 import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsManager';
 import { SettingsView } from '@/components/settings/SettingsView';
+import { WarehousesView } from '@/components/warehouses/WarehousesView';
 import { useAppData } from '@/hooks/use-app-data';
 
 function LoadingScreen() {
@@ -28,7 +29,7 @@ function LoadingScreen() {
 export function AppShell() {
   const { loading: authLoading } = useAuth();
   const data = useAppData();
-  const [activeTab, setActiveTab] = useState<AppTab>('calculator');
+  const [activeTab, setActiveTab] = useState<AppTab>('warehouses');
   const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
 
   if (authLoading || !data.hydrated) {
@@ -90,10 +91,31 @@ export function AppShell() {
               />
             )}
 
+            {activeTab === 'warehouses' && (
+              <WarehousesView
+                warehouses={data.warehouses}
+                stockMovements={data.stockMovements}
+                stockThresholds={data.stockThresholds}
+                stockLevels={data.stockLevels}
+                stockAlerts={data.stockAlerts}
+                stockValuation={data.stockValuation}
+                materials={data.materials}
+                products={data.inventory}
+                onSaveWarehouse={data.saveWarehouse}
+                onDeleteWarehouse={data.deleteWarehouse}
+                onRegisterMovement={data.registerMovement}
+                onSaveThreshold={data.saveStockThreshold}
+                onDeleteThreshold={data.deleteStockThreshold}
+              />
+            )}
+
             {activeTab === 'inventory' && (
               <InventoryList
                 items={data.inventory}
                 taxSettings={data.taxSettings}
+                materials={data.materials}
+                warehouses={data.warehouses}
+                unitSettings={data.unitSettings}
                 onDelete={(id) =>
                   data.deleteProduct(id, data.materials, data.globalFund, data.unitSettings)
                 }
@@ -101,6 +123,8 @@ export function AppShell() {
                 onRecalculateAll={() =>
                   data.recalculateAll(data.materials, data.globalFund, data.unitSettings)
                 }
+                onRegisterProduction={data.registerProduction}
+                stockValuation={data.stockValuation}
               />
             )}
 
@@ -112,6 +136,9 @@ export function AppShell() {
                 globalFund={data.globalFund}
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
+                warehouses={data.warehouses}
+                stockMovements={data.stockMovements}
+                stockThresholds={data.stockThresholds}
                 tenantName={data.user?.tenantName}
                 user={data.user}
                 cloudSync={data.cloudSync}
@@ -130,6 +157,7 @@ export function AppShell() {
           onTabChange={setActiveTab}
           inventoryCount={data.inventory.length}
           rawMaterialsCount={data.materials.length}
+          alertCount={data.stockAlerts.length}
         />
       </div>
     </UnitCatalogProvider>

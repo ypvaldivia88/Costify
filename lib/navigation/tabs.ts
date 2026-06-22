@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import { Boxes, Calculator, LayoutList, Settings } from 'lucide-react';
+import { Boxes, Calculator, LayoutList, Settings, Warehouse } from 'lucide-react';
 
-export type AppTab = 'calculator' | 'raw-materials' | 'inventory' | 'settings';
+export type AppTab = 'calculator' | 'raw-materials' | 'warehouses' | 'inventory' | 'settings';
 
 export interface NavItem {
   id: AppTab;
@@ -13,11 +13,11 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   {
-    id: 'calculator',
-    label: 'Calcular',
-    title: 'Calcular precio',
-    description: 'Crea fichas de costos y obtén el precio de venta sugerido',
-    icon: Calculator,
+    id: 'warehouses',
+    label: 'Almacén',
+    title: 'Almacenes',
+    description: 'Stock actual, movimientos y alertas de inventario',
+    icon: Warehouse,
   },
   {
     id: 'raw-materials',
@@ -25,6 +25,13 @@ export const NAV_ITEMS: NavItem[] = [
     title: 'Materias primas',
     description: 'Registra insumos y controla el stock disponible',
     icon: Boxes,
+  },
+  {
+    id: 'calculator',
+    label: 'Calcular',
+    title: 'Calcular precio',
+    description: 'Crea fichas de costos y obtén el precio de venta sugerido',
+    icon: Calculator,
   },
   {
     id: 'inventory',

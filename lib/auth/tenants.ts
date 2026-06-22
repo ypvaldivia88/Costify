@@ -115,6 +115,9 @@ export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
     globalFund: DEFAULT_GLOBAL_FUND_SETTINGS,
     taxSettings: DEFAULT_TAX_SETTINGS,
     unitSettings: DEFAULT_UNIT_SETTINGS,
+    warehouses: [],
+    stockMovements: [],
+    stockThresholds: [],
     updatedAt: now,
     createdAt: now,
   };

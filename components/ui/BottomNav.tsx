@@ -11,6 +11,7 @@ interface BottomNavProps {
   onTabChange: (tab: AppTab) => void;
   inventoryCount: number;
   rawMaterialsCount?: number;
+  alertCount?: number;
 }
 
 export function BottomNav({
@@ -18,6 +19,7 @@ export function BottomNav({
   onTabChange,
   inventoryCount,
   rawMaterialsCount = 0,
+  alertCount = 0,
 }: BottomNavProps) {
   return (
     <nav
@@ -27,7 +29,14 @@ export function BottomNav({
       <div className="flex items-stretch">
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
           const active = activeTab === id;
-          const count = id === 'inventory' ? inventoryCount : id === 'raw-materials' ? rawMaterialsCount : 0;
+          const count =
+            id === 'inventory'
+              ? inventoryCount
+              : id === 'raw-materials'
+                ? rawMaterialsCount
+                : id === 'warehouses'
+                  ? alertCount
+                  : 0;
 
           return (
             <button
@@ -43,7 +52,11 @@ export function BottomNav({
               <span className="relative">
                 <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
                 {count > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 min-w-4 h-4 px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">
+                  <span
+                    className={`absolute -top-1.5 -right-2.5 min-w-4 h-4 px-1 rounded-full text-white text-[10px] font-bold flex items-center justify-center ${
+                      id === 'warehouses' ? 'bg-red-500' : 'bg-brand'
+                    }`}
+                  >
                     {count > 99 ? '99+' : count}
                   </span>
                 )}
