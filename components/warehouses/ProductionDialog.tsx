@@ -43,10 +43,20 @@ export function ProductionDialog({
       ? estimateRecipeConsumption(product.recipe, materials, quantity, unitSettings)
       : [];
 
+  const insufficient = consumption.filter((c) => {
+    const material = materials.find((m) => m.id === c.rawMaterialId);
+    return material && c.quantity > material.stockQuantity;
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!warehouseId || quantity <= 0) {
       showToast('Indica cantidad y almacén.', 'error');
+      return;
+    }
+
+    if (insufficient.length > 0) {
+      showToast('Stock insuficiente de uno o más insumos.', 'error');
       return;
     }
 
@@ -94,20 +104,32 @@ export function ProductionDialog({
           </div>
 
           {consumption.length > 0 && (
-            <div className="rounded-xl bg-surface-muted p-3 space-y-1">
-              <p className="text-xs font-semibold uppercase text-muted mb-2">Consumo de insumos</p>
+            <div className="rounded-xl bg-surface-muted p-3 space-y-2">
+              <p className="text-xs font-semibold uppercase text-muted">Consumo de insumos</p>
               {consumption.map((c) => {
                 const material = materials.find((m) => m.id === c.rawMaterialId);
+                const available = material?.stockQuantity ?? 0;
+                const short = material && c.quantity > available;
                 return (
-                  <p key={c.rawMaterialId} className="text-sm text-muted">
-                    {material?.name ?? 'Insumo'}:{' '}
-                    <strong className="text-foreground">
+                  <div key={c.rawMaterialId} className="flex justify-between gap-2 text-sm">
+                    <span className={short ? 'text-red-600 dark:text-red-400' : 'text-muted'}>
+                      {material?.name ?? 'Insumo'}
+                    </span>
+                    <span className="font-medium tabular-nums shrink-0">
                       {c.quantity.toLocaleString('es-CU')}{' '}
                       {material ? unitCatalog.getShortLabel(material.unitType) : ''}
-                    </strong>
-                  </p>
+                      <span className="text-xs text-muted font-normal ml-1">
+                        (disp. {available.toLocaleString('es-CU')})
+                      </span>
+                    </span>
+                  </div>
                 );
               })}
+              {insufficient.length > 0 && (
+                <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                  Stock insuficiente para producir esta cantidad.
+                </p>
+              )}
             </div>
           )}
 
@@ -120,7 +142,7 @@ export function ProductionDialog({
           />
 
           <div className="flex gap-2">
-            <Button type="submit" className="flex-1">
+            <Button type="submit" className="flex-1" disabled={insufficient.length > 0}>
               Confirmar producción
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>

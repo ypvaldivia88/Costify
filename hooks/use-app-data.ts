@@ -12,7 +12,7 @@ import { useWarehouses } from '@/hooks/use-warehouses';
 import { useStockMovements } from '@/hooks/use-stock-movements';
 import { useStockThresholds } from '@/hooks/use-stock-thresholds';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
-import type { ProductCalculation, StockMovement, Warehouse } from '@/lib/domain/types';
+import type { ProductCalculation, RawMaterialInput, StockMovement, Warehouse } from '@/lib/domain/types';
 import {
   calculateStockLevels,
   createInitialStockMovements,
@@ -274,6 +274,143 @@ export function useAppData() {
     ]
   );
 
+  const registerProductMovement = useCallback(
+    (
+      product: ProductCalculation,
+      input: {
+        type: StockMovement['type'];
+        warehouseId: string;
+        sourceWarehouseId?: string;
+        quantity: number;
+        note?: string;
+      }
+    ) => {
+      const { type, warehouseId, sourceWarehouseId, quantity, note } = input;
+
+      return stockMovementsState.addMovement({
+        type,
+        warehouseId,
+        sourceWarehouseId,
+        note,
+        lines: [
+          {
+            refType: 'product',
+            refId: product.id,
+            quantity,
+            unitType: product.purchaseUnit,
+          },
+        ],
+      });
+    },
+    [stockMovementsState]
+  );
+
+  const registerProductInitialStock = useCallback(
+    (product: ProductCalculation, quantity: number, warehouseId: string) => {
+      if (quantity <= 0) return;
+
+      return stockMovementsState.addMovement({
+        type: 'inventario_inicial',
+        warehouseId,
+        note: `Stock inicial: ${product.name}`,
+        lines: [
+          {
+            refType: 'product',
+            refId: product.id,
+            quantity,
+            unitType: product.purchaseUnit,
+          },
+        ],
+      });
+    },
+    [stockMovementsState]
+  );
+
+  const purgeStockReferences = useCallback(
+    (refType: 'raw_material' | 'product', refId: string) => {
+      stockMovementsState.setMovementsDirect(
+        stockMovementsState.movements.filter(
+          (movement) =>
+            movement.productId !== refId &&
+            !movement.lines.some((line) => line.refType === refType && line.refId === refId)
+        )
+      );
+      stockThresholdsState.setThresholdsDirect(
+        stockThresholdsState.thresholds.filter(
+          (threshold) => !(threshold.refType === refType && threshold.refId === refId)
+        )
+      );
+    },
+    [stockMovementsState, stockThresholdsState]
+  );
+
+  const saveMaterial = useCallback(
+    (input: RawMaterialInput, id?: string, timestamp?: number) => {
+      const isNew = !id;
+      const previous = id
+        ? rawMaterialsState.materials.find((material) => material.id === id)
+        : undefined;
+      const material = rawMaterialsState.saveMaterial(input, id, timestamp);
+
+      const warehouse = getDefaultWarehouse();
+      if (!warehouse) return material;
+
+      if (isNew && input.stockQuantity > 0) {
+        stockMovementsState.addMovement({
+          type: 'inventario_inicial',
+          warehouseId: warehouse.id,
+          note: `Stock inicial: ${material.name}`,
+          lines: [
+            {
+              refType: 'raw_material',
+              refId: material.id,
+              quantity: input.stockQuantity,
+              unitType: material.unitType,
+            },
+          ],
+        });
+      } else if (previous && input.stockQuantity !== previous.stockQuantity) {
+        const current = getStockQuantity(stockLevels, 'raw_material', material.id, warehouse.id);
+        const adjustment = createStockAdjustmentMovement(
+          'raw_material',
+          material.id,
+          warehouse.id,
+          current,
+          input.stockQuantity,
+          material.unitType,
+          'Ajuste desde insumos'
+        );
+        if (adjustment.lines[0]?.quantity !== 0) {
+          stockMovementsState.addMovement(adjustment);
+        }
+      }
+
+      return material;
+    },
+    [rawMaterialsState, getDefaultWarehouse, stockMovementsState, stockLevels]
+  );
+
+  const deleteMaterial = useCallback(
+    (id: string) => {
+      rawMaterialsState.deleteMaterial(id);
+      purgeStockReferences('raw_material', id);
+    },
+    [rawMaterialsState, purgeStockReferences]
+  );
+
+  const deleteProduct = useCallback(
+    (
+      id: string,
+      rawMaterials: Parameters<typeof inventoryState.deleteProduct>[1],
+      globalFund: Parameters<typeof inventoryState.deleteProduct>[2],
+      unitSettings: Parameters<typeof inventoryState.deleteProduct>[3]
+    ) => {
+      inventoryState.deleteProduct(id, rawMaterials, globalFund, unitSettings);
+      purgeStockReferences('product', id);
+    },
+    [inventoryState, purgeStockReferences]
+  );
+
   return {
     hydrated,
     user,
@@ -291,10 +428,10 @@ export function useAppData() {
     stockAlerts,
     cloudSync,
     saveProduct: inventoryState.saveProduct,
-    deleteProduct: inventoryState.deleteProduct,
+    deleteProduct,
     recalculateAll: inventoryState.recalculateAll,
-    saveMaterial: rawMaterialsState.saveMaterial,
-    deleteMaterial: rawMaterialsState.deleteMaterial,
+    saveMaterial,
+    deleteMaterial,
     updateStock,
     saveCosts: globalCostsState.saveCosts,
     updateGlobalFund: globalFundState.updateGlobalFund,
@@ -308,6 +445,8 @@ export function useAppData() {
     saveStockThreshold: stockThresholdsState.saveThreshold,
     deleteStockThreshold: stockThresholdsState.deleteThreshold,
     registerProduction,
+    registerProductMovement,
+    registerProductInitialStock,
     getDefaultWarehouse,
   };
 }

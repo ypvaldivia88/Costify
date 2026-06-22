@@ -9,7 +9,7 @@ export type { AppTab };
 interface BottomNavProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
-  inventoryCount: number;
+  productsCount: number;
   rawMaterialsCount?: number;
   alertCount?: number;
 }
@@ -17,7 +17,7 @@ interface BottomNavProps {
 export function BottomNav({
   activeTab,
   onTabChange,
-  inventoryCount,
+  productsCount,
   rawMaterialsCount = 0,
   alertCount = 0,
 }: BottomNavProps) {
@@ -30,8 +30,8 @@ export function BottomNav({
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
           const active = activeTab === id;
           const count =
-            id === 'inventory'
-              ? inventoryCount
+            id === 'products'
+              ? productsCount
               : id === 'raw-materials'
                 ? rawMaterialsCount
                 : id === 'warehouses'

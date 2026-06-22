@@ -10,8 +10,7 @@ import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { BottomNav } from '@/components/ui/BottomNav';
-import { CostCalculator } from '@/components/calculator/CostCalculator';
-import { InventoryList } from '@/components/inventory/InventoryList';
+import { ProductsView } from '@/components/products/ProductsView';
 import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsManager';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { WarehousesView } from '@/components/warehouses/WarehousesView';
@@ -29,24 +28,13 @@ function LoadingScreen() {
 export function AppShell() {
   const { loading: authLoading } = useAuth();
   const data = useAppData();
-  const [activeTab, setActiveTab] = useState<AppTab>('warehouses');
-  const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
+  const [activeTab, setActiveTab] = useState<AppTab>('products');
 
   if (authLoading || !data.hydrated) {
     return <LoadingScreen />;
   }
 
-  const handleSaveProduct = (product: ProductCalculation) => {
-    data.saveProduct(product, data.materials, data.globalFund, data.unitSettings);
-    setEditingProduct(null);
-    setActiveTab('inventory');
-  };
-
-  const handleEditProduct = (product: ProductCalculation) => {
-    setEditingProduct(product);
-    setActiveTab('calculator');
-  };
-
+  const defaultWarehouse = data.getDefaultWarehouse();
   const currentNav = NAV_BY_ID[activeTab];
 
   return (
@@ -68,23 +56,45 @@ export function AppShell() {
           >
             <PageHeader title={currentNav.title} description={currentNav.description} />
 
-            {activeTab === 'calculator' && (
-              <CostCalculator
+            {activeTab === 'products' && (
+              <ProductsView
                 inventory={data.inventory}
-                rawMaterials={data.materials}
+                materials={data.materials}
                 globalIndirectCosts={data.globalCosts}
                 globalFund={data.globalFund}
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
-                editingProduct={editingProduct}
-                onSave={handleSaveProduct}
-                onCancelEdit={() => setEditingProduct(null)}
+                warehouses={data.warehouses}
+                stockLevels={data.stockLevels}
+                stockValuation={data.stockValuation}
+                defaultWarehouseId={defaultWarehouse?.id}
+                onSaveProduct={(product) =>
+                  data.saveProduct(product, data.materials, data.globalFund, data.unitSettings)
+                }
+                onDeleteProduct={(id) =>
+                  data.deleteProduct(id, data.materials, data.globalFund, data.unitSettings)
+                }
+                onRecalculateAll={() =>
+                  data.recalculateAll(data.materials, data.globalFund, data.unitSettings)
+                }
+                onRegisterProductMovement={(product, input) =>
+                  data.registerProductMovement(product, input)
+                }
+                onRegisterProductInitialStock={(product, quantity, warehouseId) =>
+                  data.registerProductInitialStock(product, quantity, warehouseId)
+                }
+                onRegisterProduction={(product, quantity, warehouseId, note) =>
+                  data.registerProduction(product, quantity, warehouseId, note)
+                }
               />
             )}
 
             {activeTab === 'raw-materials' && (
               <RawMaterialsManager
                 materials={data.materials}
+                warehouses={data.warehouses}
+                stockLevels={data.stockLevels}
+                defaultWarehouse={defaultWarehouse}
                 onSave={data.saveMaterial}
                 onDelete={data.deleteMaterial}
                 onStockChange={data.updateStock}
@@ -106,25 +116,6 @@ export function AppShell() {
                 onRegisterMovement={data.registerMovement}
                 onSaveThreshold={data.saveStockThreshold}
                 onDeleteThreshold={data.deleteStockThreshold}
-              />
-            )}
-
-            {activeTab === 'inventory' && (
-              <InventoryList
-                items={data.inventory}
-                taxSettings={data.taxSettings}
-                materials={data.materials}
-                warehouses={data.warehouses}
-                unitSettings={data.unitSettings}
-                onDelete={(id) =>
-                  data.deleteProduct(id, data.materials, data.globalFund, data.unitSettings)
-                }
-                onEdit={handleEditProduct}
-                onRecalculateAll={() =>
-                  data.recalculateAll(data.materials, data.globalFund, data.unitSettings)
-                }
-                onRegisterProduction={data.registerProduction}
-                stockValuation={data.stockValuation}
               />
             )}
 
@@ -155,7 +146,7 @@ export function AppShell() {
         <BottomNav
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          inventoryCount={data.inventory.length}
+          productsCount={data.inventory.length}
           rawMaterialsCount={data.materials.length}
           alertCount={data.stockAlerts.length}
         />

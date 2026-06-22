@@ -1,7 +1,8 @@
 'use client';
 
 import { Edit2, Package, Trash2 } from 'lucide-react';
-import type { RawMaterial } from '@/lib/domain/types';
+import type { RawMaterial, StockLevel, Warehouse } from '@/lib/domain/types';
+import { getStockQuantity } from '@/lib/domain/calculations';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { formatCurrency } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
@@ -9,14 +10,30 @@ import { NumericField } from '@/components/ui/NumericField';
 
 interface RawMaterialItemProps {
   material: RawMaterial;
+  warehouses: Warehouse[];
+  stockLevels: StockLevel[];
+  defaultWarehouse?: Warehouse;
   onEdit: () => void;
   onDelete: () => void;
   onStockChange: (stockQuantity: number) => void;
 }
 
-export function RawMaterialItem({ material, onEdit, onDelete, onStockChange }: RawMaterialItemProps) {
+export function RawMaterialItem({
+  material,
+  warehouses,
+  stockLevels,
+  defaultWarehouse,
+  onEdit,
+  onDelete,
+  onStockChange,
+}: RawMaterialItemProps) {
   const unitCatalog = useUnitCatalog();
   const unitLabel = unitCatalog.getShortLabel(material.unitType);
+  const activeWarehouses = warehouses.filter((w) => w.active);
+  const warehouseRows = activeWarehouses.map((warehouse) => ({
+    warehouse,
+    quantity: getStockQuantity(stockLevels, 'raw_material', material.id, warehouse.id),
+  }));
 
   return (
     <Card className="!p-4">
@@ -38,12 +55,10 @@ export function RawMaterialItem({ material, onEdit, onDelete, onStockChange }: R
             <span>
               Compra:{' '}
               <strong className="text-foreground">
-                {formatCurrency(material.unitCost)}/{unitLabel}
+                {formatCurrency(material.purchasePrice)}
               </strong>
-              {' × '}
+              {' · '}
               {material.packageQuantity} {unitLabel}
-              {' = '}
-              <strong className="text-foreground">{formatCurrency(material.purchasePrice)}</strong>
             </span>
           </div>
         </div>
@@ -65,10 +80,24 @@ export function RawMaterialItem({ material, onEdit, onDelete, onStockChange }: R
         </div>
       </div>
 
+      {warehouseRows.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Stock por almacén</p>
+          {warehouseRows.map(({ warehouse, quantity }) => (
+            <div key={warehouse.id} className="flex justify-between text-sm">
+              <span className="text-muted truncate">{warehouse.name}</span>
+              <span className="font-medium tabular-nums shrink-0">
+                {quantity.toLocaleString('es-CU')} {unitLabel}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="mt-3 pt-3 border-t border-border">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 text-muted shrink-0" />
-          <label className="text-sm font-medium text-foreground shrink-0">Stock:</label>
+          <label className="text-sm font-medium text-foreground shrink-0">Ajustar stock:</label>
           <NumericField
             value={material.stockQuantity}
             onChange={onStockChange}
@@ -76,6 +105,11 @@ export function RawMaterialItem({ material, onEdit, onDelete, onStockChange }: R
           />
           <span className="text-xs text-muted shrink-0">{unitLabel}</span>
         </div>
+        {defaultWarehouse && (
+          <p className="text-[11px] text-muted mt-1.5">
+            Los ajustes se aplican en <strong>{defaultWarehouse.name}</strong>.
+          </p>
+        )}
       </div>
     </Card>
   );

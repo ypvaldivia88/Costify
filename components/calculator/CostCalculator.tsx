@@ -413,9 +413,9 @@ export function CostCalculator({
           </CollapsibleSection>
 
           <div className="flex flex-col gap-2 pt-1">
-            {editingProduct && (
+            {onCancelEdit && (
               <Button variant="outline" onClick={onCancelEdit} type="button">
-                Cancelar edición
+                {editingProduct ? 'Cancelar edición' : 'Volver a productos'}
               </Button>
             )}
             <Button
@@ -426,7 +426,7 @@ export function CostCalculator({
               type="button"
             >
               <Save className="w-4 h-4" />
-              {editingProduct ? 'Actualizar producto' : 'Guardar en historial'}
+              {editingProduct ? 'Actualizar producto' : 'Guardar producto'}
             </Button>
           </div>
         </div>

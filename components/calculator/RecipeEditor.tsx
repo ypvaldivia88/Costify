@@ -21,6 +21,7 @@ interface RecipeEditorProps {
   recipe: RecipeItem[];
   rawMaterials: RawMaterial[];
   onChange: (recipe: RecipeItem[]) => void;
+  showStockHints?: boolean;
 }
 
 function lineCost(item: RecipeItem, material: RawMaterial, unitSettings: UnitSettings): number {
@@ -34,7 +35,7 @@ function lineCost(item: RecipeItem, material: RawMaterial, unitSettings: UnitSet
   return material.unitCost * qty;
 }
 
-export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorProps) {
+export function RecipeEditor({ recipe, rawMaterials, onChange, showStockHints = true }: RecipeEditorProps) {
   const unitCatalog = useUnitCatalog();
   const unitSettings = unitCatalog.settings;
   const [showPicker, setShowPicker] = useState(false);
@@ -136,6 +137,11 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                     <span className="text-sm font-medium text-foreground">{material.name}</span>
                     <span className="text-xs text-muted ml-2">
                       {formatCurrency(material.unitCost)}/{unitCatalog.getShortLabel(material.unitType)}
+                      {showStockHints && (
+                        <span className="ml-1">
+                          · {material.stockQuantity.toLocaleString('es-CU')} en stock
+                        </span>
+                      )}
                     </span>
                   </button>
                 ))}
@@ -224,6 +230,18 @@ export function RecipeEditor({ recipe, rawMaterials, onChange }: RecipeEditorPro
                     {recipeUnit !== material.unitType && (
                       <span className="ml-1 opacity-70">
                         (compra en {unitCatalog.getShortLabel(material.unitType)})
+                      </span>
+                    )}
+                    {showStockHints && (
+                      <span
+                        className={`ml-2 ${
+                          material.stockQuantity <= 0
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-muted'
+                        }`}
+                      >
+                        · Stock: {material.stockQuantity.toLocaleString('es-CU')}{' '}
+                        {unitCatalog.getShortLabel(material.unitType)}
                       </span>
                     )}
                   </span>

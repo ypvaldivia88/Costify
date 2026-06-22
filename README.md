@@ -5,7 +5,7 @@ Calculadora de costos, precios de venta e inventario para micro y pequeñas empr
 ## Características
 
 ### Almacenes e inventario
-- **Stock actual** — vista principal al abrir la app; valorización en CUP de insumos y productos terminados
+- **Stock actual** — valorización en CUP de insumos y productos terminados en almacén
 - **Múltiples almacenes** — bodega principal, punto de venta y área de producción
 - **Movimientos de stock** — entradas, salidas, transferencias, mermas, ajustes e inventario inicial
 - **Kardex** — historial de movimientos por ítem y almacén
@@ -13,9 +13,8 @@ Calculadora de costos, precios de venta e inventario para micro y pequeñas empr
 - **Alertas** — umbrales de stock mínimo configurables
 
 ### Costos y precios
-- **Calculadora de precios** — productos simples o elaborados con recetas de insumos
+- **Productos** — fichas de costo unificadas con stock por almacén y producción
 - **Materias primas** — catálogo de insumos, costo unitario y stock sincronizado con almacén
-- **Historial** — productos guardados, resumen del negocio e inventario físico valorizado
 - **Impuestos** — presets para TCP, MIPYME y CNA, editables por línea
 - **Gastos indirectos y fondo global** — distribución por unidades, costo directo, peso o manual
 - **Unidades de medida** — catálogo configurable (ud, gr, kg, lb, lt, ml…)
@@ -29,14 +28,13 @@ Calculadora de costos, precios de venta e inventario para micro y pequeñas empr
 
 ## Navegación de la app
 
-Al iniciar sesión, el admin del negocio entra en **Almacén → Stock actual**. El orden de las pestañas es:
+Al iniciar sesión, el admin del negocio entra en **Productos**. El orden de las pestañas es:
 
 | Pestaña | Descripción |
 |---------|-------------|
-| **Almacén** | Stock actual, movimientos, gestión de bodegas y alertas |
+| **Productos** | Fichas de costo, precios sugeridos, stock y producción por producto |
 | **Insumos** | Materias primas y costos unitarios |
-| **Calcular** | Fichas de costo y precio de venta sugerido |
-| **Historial** | Productos guardados y resumen del negocio |
+| **Almacén** | Stock actual, movimientos, gestión de bodegas y alertas |
 | **Ajustes** | Impuestos, gastos, unidades, respaldo y cuenta |
 
 ## Stack tecnológico

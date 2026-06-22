@@ -156,8 +156,11 @@ export interface BusinessSummary {
   taxLineTotals: TaxLineAmount[];
   totalTaxes: number;
   totalNetProfit: number;
+  /** Suma de precio sugerido × unidades/mes (proyección, no stock físico) */
+  totalProjectedRevenue: number;
   productCount: number;
   averageGrossMargin: number;
+  /** @deprecated Usar totalProjectedRevenue */
   totalStockValue: number;
 }
 

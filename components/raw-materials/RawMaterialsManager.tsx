@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Boxes } from 'lucide-react';
-import type { RawMaterial } from '@/lib/domain/types';
+import type { RawMaterial, StockLevel, Warehouse } from '@/lib/domain/types';
 import { formatCurrency } from '@/lib/format/currency';
 import { Card } from '@/components/ui/Card';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
@@ -13,6 +13,9 @@ import { RawMaterialItem } from './RawMaterialItem';
 
 interface RawMaterialsManagerProps {
   materials: RawMaterial[];
+  warehouses: Warehouse[];
+  stockLevels: StockLevel[];
+  defaultWarehouse?: Warehouse;
   onSave: (
     data: {
       name: string;
@@ -30,6 +33,9 @@ interface RawMaterialsManagerProps {
 
 export function RawMaterialsManager({
   materials,
+  warehouses,
+  stockLevels,
+  defaultWarehouse,
   onSave,
   onDelete,
   onStockChange,
@@ -85,7 +91,7 @@ export function RawMaterialsManager({
               <StatCard label="Materias primas" value={String(materials.length)} />
             </Card>
             <Card className="!p-3">
-              <StatCard label="Valor en stock" value={formatCurrency(totalStockValue)} />
+              <StatCard label="Valor en almacén" value={formatCurrency(totalStockValue)} />
             </Card>
           </div>
         )}
@@ -104,6 +110,9 @@ export function RawMaterialsManager({
               <RawMaterialItem
                 key={material.id}
                 material={material}
+                warehouses={warehouses}
+                stockLevels={stockLevels}
+                defaultWarehouse={defaultWarehouse}
                 onEdit={() => handleEdit(material)}
                 onDelete={() => handleDelete(material)}
                 onStockChange={(stock) => onStockChange(material.id, stock)}
