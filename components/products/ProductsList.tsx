@@ -87,7 +87,7 @@ export function ProductsList({
           <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">
             Inventario físico en almacén
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label="Insumos" value={formatCurrency(stockValuation.rawMaterialsValue)} />
             <StatCard label="Productos" value={formatCurrency(stockValuation.productsValue)} />
             <StatCard label="Total" value={formatCurrency(stockValuation.totalValue)} variant="accent" />

@@ -17,6 +17,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { NumericField } from '@/components/ui/NumericField';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { cn } from '@/lib/utils';
+import { iconButtonClassName, iconButtonDangerClassName, iconButtonMutedClassName } from '@/lib/ui/field-styles';
 
 interface UnitSettingsPanelProps {
   settings: UnitSettings;
@@ -227,7 +228,7 @@ export function UnitSettingsPanel({
                             value={draft.factor ?? 1}
                             disabled={draft.builtin}
                             onChange={(factor) => setDraft((d) => ({ ...d, factor }))}
-                            className="mt-0.5 w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm min-h-9 disabled:opacity-60"
+                            className="mt-0.5 w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm min-h-11 disabled:opacity-60"
                           />
                         </div>
                       )}
@@ -276,7 +277,7 @@ export function UnitSettingsPanel({
                       <button
                         type="button"
                         onClick={() => startEdit(unit)}
-                        className="p-2 text-muted hover:text-foreground rounded-lg transition-colors"
+                        className={iconButtonMutedClassName}
                         aria-label={`Editar ${unit.label}`}
                       >
                         <Edit2 className="w-4 h-4" />
@@ -288,9 +289,9 @@ export function UnitSettingsPanel({
                           disabled={!deleteCheck.allowed}
                           title={deleteCheck.reason}
                           className={cn(
-                            'p-2 rounded-lg transition-colors',
+                            iconButtonClassName,
                             deleteCheck.allowed
-                              ? 'text-muted hover:text-red-500'
+                              ? 'text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40'
                               : 'text-muted/40 cursor-not-allowed'
                           )}
                           aria-label={`Eliminar ${unit.label}`}

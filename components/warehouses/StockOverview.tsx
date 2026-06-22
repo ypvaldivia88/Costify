@@ -118,7 +118,7 @@ export function StockOverview({
         <select
           value={selectedWarehouseId ?? ''}
           onChange={(e) => onWarehouseChange(e.target.value || undefined)}
-          className="min-h-10 px-3 rounded-xl border border-border bg-surface text-sm font-medium"
+          className="min-h-11 px-3 rounded-xl border border-border bg-surface text-sm font-medium"
         >
           <option value="">Todos los almacenes</option>
           {warehouses.filter((w) => w.active).map((w) => (
@@ -132,7 +132,7 @@ export function StockOverview({
             key={f}
             type="button"
             onClick={() => setFilter(f)}
-            className={`px-3 py-2 rounded-xl text-sm font-semibold border ${
+            className={`min-h-11 px-4 py-2.5 rounded-xl text-sm font-semibold border active:scale-[0.98] transition-transform ${
               filter === f
                 ? 'border-brand bg-brand-muted text-brand-foreground'
                 : 'border-border text-muted'

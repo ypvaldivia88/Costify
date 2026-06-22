@@ -53,7 +53,7 @@ export function CloudSyncStatus({
         disabled={syncing}
         title={statusLabel(status, pending, direction)}
         className={cn(
-          'inline-flex items-center justify-center w-9 h-9 rounded-lg border transition-colors',
+          'inline-flex items-center justify-center min-w-11 min-h-11 rounded-xl border transition-colors active:scale-[0.97]',
           offline
             ? 'border-amber-300/60 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30'
             : pending
@@ -106,7 +106,7 @@ export function CloudSyncStatus({
           onClick={onSync}
           disabled={syncing || offline}
           className={cn(
-            'inline-flex items-center gap-1.5 shrink-0 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors',
+            'inline-flex items-center gap-1.5 shrink-0 min-h-11 px-3 rounded-lg text-xs font-semibold border transition-colors',
             syncing || offline
               ? 'border-border text-muted cursor-not-allowed'
               : 'border-brand/30 text-brand hover:bg-brand-muted'

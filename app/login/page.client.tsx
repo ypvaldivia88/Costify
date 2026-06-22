@@ -38,8 +38,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen mesh-bg grid-pattern text-foreground flex flex-col">
-      <div className="safe-fixed-top-right">
+    <div className="min-h-dvh mesh-bg grid-pattern text-foreground flex flex-col">
+      <div className="safe-fixed-top-right is-overlay">
         <ThemeToggle className="glass shadow-sm border border-border/60" />
       </div>
 

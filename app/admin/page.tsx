@@ -151,7 +151,7 @@ export default function AdminPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen mesh-bg flex items-center justify-center">
+      <div className="min-h-dvh mesh-bg flex items-center justify-center">
         <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow">
           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
         </div>
@@ -160,9 +160,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen mesh-bg text-foreground">
-      <header className="glass border-b border-border/60">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+    <div className="min-h-dvh mesh-bg text-foreground">
+      <header className="glass border-b border-border/60 safe-top">
+        <div className="max-w-6xl mx-auto px-4 min-h-14 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-brand-gradient rounded-xl flex items-center justify-center shadow-glow">
               <Shield className="w-4 h-4 text-white" />
@@ -353,7 +353,7 @@ export default function AdminPage() {
                           role: e.target.value as 'tenant_admin' | 'tenant_user',
                         }))
                       }
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-surface text-sm"
+                      className="w-full min-h-11 px-3 py-2 rounded-xl border border-border bg-surface text-sm"
                     >
                       <option value="tenant_admin">Administrador del negocio</option>
                       <option value="tenant_user">Usuario del negocio</option>

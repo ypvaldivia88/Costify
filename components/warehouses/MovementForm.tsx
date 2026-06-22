@@ -116,7 +116,7 @@ export function MovementForm({
                 key={t}
                 type="button"
                 onClick={() => setType(t)}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border ${
+                className={`min-h-11 px-4 py-2.5 rounded-xl text-xs font-semibold border active:scale-[0.98] transition-transform ${
                   type === t
                     ? 'border-brand bg-brand-muted text-brand-foreground'
                     : 'border-border text-muted'
@@ -173,7 +173,7 @@ export function MovementForm({
                 setRefType(rt);
                 setRefId('');
               }}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold border ${
+              className={`min-h-11 px-4 py-2.5 rounded-xl text-sm font-semibold border active:scale-[0.98] transition-transform ${
                 refType === rt
                   ? 'border-brand bg-brand-muted text-brand-foreground'
                   : 'border-border text-muted'

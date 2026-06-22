@@ -89,11 +89,29 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-fixed-top {
+  top: max(1rem, env(safe-area-inset-top, 0px));
+}
+
 .safe-fixed-top-right {
   position: fixed;
   top: max(1rem, env(safe-area-inset-top, 0px));
   right: max(1rem, env(safe-area-inset-right, 0px));
   z-index: 50;
+}
+
+/* Alias: overlays inside mesh-bg must not be forced to position:relative */
+.is-overlay {
+  position: fixed;
+  z-index: 50;
+}
+
+.sheet-safe-bottom {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
 }
 
 .scrollbar-none {
@@ -109,7 +127,7 @@ body {
 .mesh-bg {
   position: relative;
   background-color: var(--background);
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 .mesh-bg::before {
@@ -125,6 +143,12 @@ body {
 
 .mesh-bg > * {
   position: relative;
+  z-index: 1;
+}
+
+.mesh-bg > .is-overlay {
+  position: fixed;
+  z-index: 50;
 }
 
 /* Glass surface */

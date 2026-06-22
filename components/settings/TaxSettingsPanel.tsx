@@ -11,6 +11,7 @@ import {
 import { Card } from '@/components/ui/Card';
 import { NumericField } from '@/components/ui/NumericField';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { iconButtonDangerClassName } from '@/lib/ui/field-styles';
 
 interface TaxSettingsPanelProps {
   settings: TaxSettings;
@@ -160,7 +161,7 @@ export function TaxSettingsPanel({ settings, onChange }: TaxSettingsPanelProps) 
                               onChange={(ratePercent) =>
                                 handleLineChange(line.id, { ratePercent })
                               }
-                              className="mt-0.5 w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm min-h-9"
+                              className="mt-0.5 w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm min-h-11"
                             />
                           </div>
                           <div>
@@ -192,7 +193,7 @@ export function TaxSettingsPanel({ settings, onChange }: TaxSettingsPanelProps) 
                               onChange={(monthlyThresholdCup) =>
                                 handleLineChange(line.id, { monthlyThresholdCup })
                               }
-                              className="mt-0.5 w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm min-h-9"
+                              className="mt-0.5 w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm min-h-11"
                             />
                           </div>
                         )}
@@ -201,7 +202,7 @@ export function TaxSettingsPanel({ settings, onChange }: TaxSettingsPanelProps) 
                         <button
                           type="button"
                           onClick={() => removeLine(line.id)}
-                          className="p-1.5 text-muted hover:text-red-500 transition-colors"
+                          className={iconButtonDangerClassName}
                           aria-label="Eliminar línea"
                         >
                           <Trash2 className="w-4 h-4" />

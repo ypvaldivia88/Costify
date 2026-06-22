@@ -48,7 +48,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="fixed top-4 inset-x-4 z-[100] flex flex-col items-center gap-2 pointer-events-none md:items-end md:right-4 md:left-auto md:max-w-sm"
+        className="fixed safe-fixed-top inset-x-4 z-[100] flex flex-col items-center gap-2 pointer-events-none md:items-end md:right-4 md:left-auto md:max-w-sm"
         aria-live="polite"
       >
         <AnimatePresence>

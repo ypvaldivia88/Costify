@@ -101,7 +101,7 @@ export function RawMaterialItem({
           <NumericField
             value={material.stockQuantity}
             onChange={onStockChange}
-            className="flex-1 min-h-10"
+            className="flex-1 min-h-11"
           />
           <span className="text-xs text-muted shrink-0">{unitLabel}</span>
         </div>
