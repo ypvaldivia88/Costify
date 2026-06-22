@@ -3,8 +3,11 @@ import type {
   IndirectCost,
   ProductCalculation,
   RawMaterial,
+  StockMovement,
+  StockThreshold,
   TaxSettings,
   UnitSettings,
+  Warehouse,
 } from '@/lib/domain/types';
 import { migrateGlobalFundSettings } from '@/lib/domain/calculations/global-fund';
 import { migrateTaxSettings } from '@/lib/domain/migrate-tax-settings';
@@ -27,6 +30,9 @@ export interface AppBackupV1 {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings?: UnitSettings;
+  warehouses?: Warehouse[];
+  stockMovements?: StockMovement[];
+  stockThresholds?: StockThreshold[];
 }
 
 export interface AppBackupInput {
@@ -36,6 +42,9 @@ export interface AppBackupInput {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  warehouses: Warehouse[];
+  stockMovements: StockMovement[];
+  stockThresholds: StockThreshold[];
 }
 
 function toBase64Url(text: string): string {
@@ -60,6 +69,9 @@ export function createBackupPayload(input: AppBackupInput): string {
     globalFund: input.globalFund,
     taxSettings: input.taxSettings,
     unitSettings: input.unitSettings,
+    warehouses: input.warehouses,
+    stockMovements: input.stockMovements,
+    stockThresholds: input.stockThresholds,
   };
   return BACKUP_PREFIX + toBase64Url(JSON.stringify(backup));
 }
@@ -95,6 +107,9 @@ export function parseBackupPayload(raw: string): AppBackupV1 {
     globalFund: migrateGlobalFundSettings(backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
     taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
     unitSettings: migrateUnitSettings(backup.unitSettings),
+    warehouses: Array.isArray(backup.warehouses) ? backup.warehouses : [],
+    stockMovements: Array.isArray(backup.stockMovements) ? backup.stockMovements : [],
+    stockThresholds: Array.isArray(backup.stockThresholds) ? backup.stockThresholds : [],
   };
 }
 
@@ -105,6 +120,9 @@ export function applyBackupToStorage(backup: AppBackupV1): void {
   saveToStorage(STORAGE_KEYS.globalFund, backup.globalFund);
   saveToStorage(STORAGE_KEYS.taxSettings, migrateTaxSettings(backup.taxSettings));
   saveToStorage(STORAGE_KEYS.unitSettings, migrateUnitSettings(backup.unitSettings));
+  saveToStorage(STORAGE_KEYS.warehouses, backup.warehouses ?? []);
+  saveToStorage(STORAGE_KEYS.stockMovements, backup.stockMovements ?? []);
+  saveToStorage(STORAGE_KEYS.stockThresholds, backup.stockThresholds ?? []);
 }
 
 export function readBackupFromFile(file: File): Promise<string> {
@@ -134,6 +152,9 @@ export function readBackupFromFile(file: File): Promise<string> {
               ),
               taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
               unitSettings: migrateUnitSettings(backup.unitSettings),
+              warehouses: backup.warehouses ?? [],
+              stockMovements: backup.stockMovements ?? [],
+              stockThresholds: backup.stockThresholds ?? [],
             })
           );
           return;

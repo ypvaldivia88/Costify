@@ -168,3 +168,73 @@ export interface ProductAllocationContext {
   productWeight?: number;
   unitDirectCost?: number;
 }
+
+/** Tipo de almacén (presets cubanos) */
+export type WarehouseType = 'principal' | 'venta' | 'produccion';
+
+export interface Warehouse {
+  id: string;
+  name: string;
+  type: WarehouseType;
+  active: boolean;
+  timestamp: number;
+}
+
+export type StockRefType = 'raw_material' | 'product';
+
+export type MovementType =
+  | 'inventario_inicial'
+  | 'entrada'
+  | 'salida'
+  | 'transferencia'
+  | 'merma'
+  | 'ajuste'
+  | 'produccion';
+
+export interface MovementLine {
+  refType: StockRefType;
+  refId: string;
+  /** Cantidad positiva; en ajustes puede ser delta con signo */
+  quantity: number;
+  unitType?: UnitType;
+}
+
+export interface StockMovement {
+  id: string;
+  type: MovementType;
+  warehouseId: string;
+  /** Origen en transferencias */
+  sourceWarehouseId?: string;
+  lines: MovementLine[];
+  note?: string;
+  /** Producto elaborado asociado a movimientos de producción */
+  productId?: string;
+  timestamp: number;
+}
+
+export interface StockThreshold {
+  id: string;
+  refType: StockRefType;
+  refId: string;
+  /** Si se omite, aplica al stock total en todos los almacenes */
+  warehouseId?: string;
+  minQuantity: number;
+}
+
+export interface StockLevel {
+  refType: StockRefType;
+  refId: string;
+  warehouseId: string;
+  quantity: number;
+}
+
+export interface StockAlert {
+  refType: StockRefType;
+  refId: string;
+  name: string;
+  warehouseId?: string;
+  warehouseName?: string;
+  currentQuantity: number;
+  minQuantity: number;
+  unitLabel: string;
+}

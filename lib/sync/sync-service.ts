@@ -40,6 +40,9 @@ export function collectLocalData(): AppBackupInput {
     globalFund: loadFromStorage(STORAGE_KEYS.globalFund, DEFAULT_GLOBAL_FUND_SETTINGS),
     taxSettings: migrateTaxSettings(loadFromStorage(STORAGE_KEYS.taxSettings, DEFAULT_TAX_SETTINGS)),
     unitSettings: migrateUnitSettings(loadFromStorage(STORAGE_KEYS.unitSettings, undefined)),
+    warehouses: loadFromStorage(STORAGE_KEYS.warehouses, []),
+    stockMovements: loadFromStorage(STORAGE_KEYS.stockMovements, []),
+    stockThresholds: loadFromStorage(STORAGE_KEYS.stockThresholds, []),
   };
 }
 
@@ -58,6 +61,9 @@ function toWorkspacePayload(
     globalFund: data.globalFund,
     taxSettings: data.taxSettings,
     unitSettings: data.unitSettings,
+    warehouses: data.warehouses,
+    stockMovements: data.stockMovements,
+    stockThresholds: data.stockThresholds,
     updatedAt,
   };
 }
@@ -72,6 +78,9 @@ function workspaceToBackup(workspace: WorkspaceDocument | Omit<WorkspaceDocument
     globalFund: migrateGlobalFundSettings(workspace.globalFund),
     taxSettings: migrateTaxSettings(workspace.taxSettings),
     unitSettings: migrateUnitSettings(workspace.unitSettings),
+    warehouses: workspace.warehouses ?? [],
+    stockMovements: workspace.stockMovements ?? [],
+    stockThresholds: workspace.stockThresholds ?? [],
   };
 }
 
@@ -81,7 +90,9 @@ function hasLocalData(data: AppBackupInput): boolean {
     data.rawMaterials.length > 0 ||
     data.globalCosts.length > 0 ||
     data.globalFund.enabled ||
-    data.taxSettings.sector !== 'mipyme'
+    data.taxSettings.sector !== 'mipyme' ||
+    data.warehouses.length > 0 ||
+    data.stockMovements.length > 0
   );
 }
 

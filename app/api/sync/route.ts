@@ -93,6 +93,9 @@ export async function PUT(request: Request) {
       globalFund: migrateGlobalFundSettings(body.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
       taxSettings: migrateTaxSettings(body.taxSettings ?? DEFAULT_TAX_SETTINGS),
       unitSettings: migrateUnitSettings(body.unitSettings),
+      warehouses: Array.isArray(body.warehouses) ? body.warehouses : [],
+      stockMovements: Array.isArray(body.stockMovements) ? body.stockMovements : [],
+      stockThresholds: Array.isArray(body.stockThresholds) ? body.stockThresholds : [],
       updatedAt,
       createdAt: existing?.createdAt ?? now,
     };

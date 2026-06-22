@@ -7,8 +7,11 @@ import type {
   IndirectCost,
   ProductCalculation,
   RawMaterial,
+  StockMovement,
+  StockThreshold,
   TaxSettings,
   UnitSettings,
+  Warehouse,
 } from '@/lib/domain/types';
 import { cn } from '@/lib/utils';
 import { DataSyncPanel } from './DataSyncPanel';
@@ -29,6 +32,9 @@ interface SettingsViewProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  warehouses: Warehouse[];
+  stockMovements: StockMovement[];
+  stockThresholds: StockThreshold[];
   tenantName?: string;
   user?: SessionUser | null;
   cloudSync: {
@@ -63,6 +69,9 @@ export function SettingsView({
   globalFund,
   taxSettings,
   unitSettings,
+  warehouses,
+  stockMovements,
+  stockThresholds,
   tenantName,
   user,
   cloudSync,
@@ -127,6 +136,9 @@ export function SettingsView({
           globalFund={globalFund}
           taxSettings={taxSettings}
           unitSettings={unitSettings}
+          warehouses={warehouses}
+          stockMovements={stockMovements}
+          stockThresholds={stockThresholds}
           tenantName={tenantName}
           cloudSync={cloudSync}
         />
