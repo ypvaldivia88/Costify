@@ -1,20 +1,43 @@
 # Costify
 
-Calculadora de costos y precios de venta para micro y pequeñas empresas privadas (MIPYME) en Cuba. Permite crear fichas de costo, gestionar materias primas, calcular márgenes e impuestos, y sincronizar los datos en la nube con soporte offline.
+Calculadora de costos, precios de venta e inventario para micro y pequeñas empresas privadas (MIPYME) en Cuba. Permite controlar almacenes y stock, crear fichas de costo, gestionar materias primas, calcular márgenes e impuestos, y sincronizar los datos en la nube con soporte offline.
 
 ## Características
 
+### Almacenes e inventario
+- **Stock actual** — vista principal al abrir la app; valorización en CUP de insumos y productos terminados
+- **Múltiples almacenes** — bodega principal, punto de venta y área de producción
+- **Movimientos de stock** — entradas, salidas, transferencias, mermas, ajustes e inventario inicial
+- **Kardex** — historial de movimientos por ítem y almacén
+- **Producción** — registrar elaboración desde productos con receta (descuenta insumos, suma producto terminado)
+- **Alertas** — umbrales de stock mínimo configurables
+
+### Costos y precios
 - **Calculadora de precios** — productos simples o elaborados con recetas de insumos
-- **Materias primas** — catálogo de insumos, costo unitario y control de stock
-- **Historial** — productos guardados y resumen del negocio
+- **Materias primas** — catálogo de insumos, costo unitario y stock sincronizado con almacén
+- **Historial** — productos guardados, resumen del negocio e inventario físico valorizado
 - **Impuestos** — presets para TCP, MIPYME y CNA, editables por línea
 - **Gastos indirectos y fondo global** — distribución por unidades, costo directo, peso o manual
 - **Unidades de medida** — catálogo configurable (ud, gr, kg, lb, lt, ml…)
+
+### Plataforma
 - **Offline-first** — opera sin conexión con `localStorage` y sincroniza con MongoDB al reconectar
 - **Multi-tenant** — cada cliente tiene su negocio aislado con login propio
 - **Panel super admin** — registro de clientes, usuarios y gestión de accesos
 - **Cuenta del cliente** — editar perfil, cambiar contraseña, suspender o eliminar cuenta
 - **Respaldo manual** — exportar/importar datos por código o archivo JSON
+
+## Navegación de la app
+
+Al iniciar sesión, el admin del negocio entra en **Almacén → Stock actual**. El orden de las pestañas es:
+
+| Pestaña | Descripción |
+|---------|-------------|
+| **Almacén** | Stock actual, movimientos, gestión de bodegas y alertas |
+| **Insumos** | Materias primas y costos unitarios |
+| **Calcular** | Fichas de costo y precio de venta sugerido |
+| **Historial** | Productos guardados y resumen del negocio |
+| **Ajustes** | Impuestos, gastos, unidades, respaldo y cuenta |
 
 ## Stack tecnológico
 
@@ -63,7 +86,7 @@ Abre [http://localhost:3000](http://localhost:3000).
 | Rol | Ruta | Descripción |
 |-----|------|-------------|
 | Super admin | `/admin` | Registrar clientes y gestionar usuarios |
-| Cliente (`tenant_admin`, `tenant_user`) | `/` | Calculadora y gestión del negocio |
+| Cliente (`tenant_admin`, `tenant_user`) | `/` | Almacén, costos y gestión del negocio |
 | Todos | `/login` | Inicio de sesión |
 
 ## Despliegue en Vercel
@@ -98,20 +121,21 @@ En MongoDB Atlas, permite el acceso de red desde `0.0.0.0/0` o los rangos IP de 
 
 ```
 app/
-  admin/          Panel super administrador
-  login/          Inicio de sesión
-  api/            Auth, sync, cuenta y administración
+  admin/            Panel super administrador
+  login/            Inicio de sesión
+  api/              Auth, sync, cuenta y administración
 components/
-  calculator/     Calculadora de costos
-  inventory/      Historial y resumen
-  raw-materials/  Materias primas
-  settings/       Ajustes, cuenta y sincronización
-hooks/            Estado de la app y sincronización
+  warehouses/       Almacenes, stock, movimientos y alertas
+  raw-materials/    Materias primas
+  calculator/       Calculadora de costos
+  inventory/        Historial y resumen
+  settings/         Ajustes, cuenta y sincronización
+hooks/              Estado de la app y sincronización
 lib/
-  auth/           Usuarios, tenants, sesiones
-  db/             Conexión MongoDB
-  domain/         Lógica de negocio y tipos
-  sync/           Sincronización offline-first
+  auth/             Usuarios, tenants, sesiones
+  db/               Conexión MongoDB y workspace por tenant
+  domain/           Lógica de negocio, stock e impuestos
+  sync/             Sincronización offline-first
 ```
 
 ## Sincronización offline
@@ -119,7 +143,7 @@ lib/
 1. La app carga y guarda datos en `localStorage` (rápido, sin conexión)
 2. Al tener internet, sincroniza automáticamente con MongoDB
 3. Los cambios offline se marcan como pendientes y se suben al reconectar
-4. Cada tenant tiene su propio espacio de datos aislado
+4. Cada tenant tiene su propio espacio de datos aislado (inventario, almacenes, movimientos, insumos, etc.)
 
 ## Licencia
 
