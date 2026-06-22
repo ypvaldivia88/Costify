@@ -95,15 +95,19 @@ export function RawMaterialItem({
       )}
 
       <div className="mt-3 pt-3 border-t border-border">
-        <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-muted shrink-0" />
-          <label className="text-sm font-medium text-foreground shrink-0">Ajustar stock:</label>
-          <NumericField
-            value={material.stockQuantity}
-            onChange={onStockChange}
-            className="flex-1 min-h-11"
-          />
-          <span className="text-xs text-muted shrink-0">{unitLabel}</span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 shrink-0">
+            <Package className="w-4 h-4 text-muted shrink-0" />
+            <label className="text-sm font-medium text-foreground">Ajustar stock:</label>
+          </div>
+          <div className="flex items-center gap-2 flex-1 min-w-0 w-full sm:w-auto">
+            <NumericField
+              value={material.stockQuantity}
+              onChange={onStockChange}
+              className="flex-1 min-w-0 w-full min-h-11"
+            />
+            <span className="text-xs text-muted shrink-0">{unitLabel}</span>
+          </div>
         </div>
         {defaultWarehouse && (
           <p className="text-[11px] text-muted mt-1.5">
