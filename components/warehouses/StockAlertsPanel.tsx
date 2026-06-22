@@ -104,7 +104,7 @@ export function StockAlertsPanel({
                   setRefType(rt);
                   setRefId('');
                 }}
-                className={`px-3 py-2 rounded-xl text-sm font-semibold border ${
+                className={`min-h-11 px-4 py-2.5 rounded-xl text-sm font-semibold border active:scale-[0.98] transition-transform ${
                   refType === rt
                     ? 'border-brand bg-brand-muted text-brand-foreground'
                     : 'border-border text-muted'

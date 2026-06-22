@@ -189,7 +189,7 @@ export function DataSyncPanel({
             aria-selected={tab === value}
             onClick={() => setTab(value)}
             className={cn(
-              'flex-1 min-h-10 rounded-xl text-sm font-semibold border transition-colors active:scale-[0.98]',
+              'flex-1 min-h-11 rounded-xl text-sm font-semibold border transition-colors active:scale-[0.98]',
               tab === value
                 ? 'border-brand bg-brand-muted text-brand-foreground'
                 : 'border-border text-muted hover:text-foreground hover:bg-surface-muted'

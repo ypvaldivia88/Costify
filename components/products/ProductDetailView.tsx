@@ -121,7 +121,8 @@ export function ProductDetailView({
             key={id}
             type="button"
             onClick={() => setSection(id)}
-            className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+            aria-current={section === id ? 'true' : undefined}
+            className={`shrink-0 min-h-11 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors active:scale-[0.98] ${
               section === id
                 ? 'border-brand bg-brand-muted text-brand-foreground'
                 : 'border-border text-muted hover:text-foreground'

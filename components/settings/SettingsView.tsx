@@ -14,6 +14,7 @@ import type {
   Warehouse,
 } from '@/lib/domain/types';
 import { cn } from '@/lib/utils';
+import { segmentClassName } from '@/lib/ui/field-styles';
 import { DataSyncPanel } from './DataSyncPanel';
 import { AccountSettingsPanel } from './AccountSettingsPanel';
 import { GlobalFundSettingsPanel } from './GlobalFundSettings';
@@ -97,7 +98,7 @@ export function SettingsView({
               type="button"
               onClick={() => setActiveSection(id)}
               className={cn(
-                'inline-flex items-center gap-2 shrink-0 min-h-10 px-4 rounded-xl text-sm font-semibold border transition-colors',
+                segmentClassName,
                 active
                   ? 'border-brand bg-brand-muted text-brand-foreground'
                   : 'border-border text-muted hover:text-foreground hover:bg-surface-muted'

@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { segmentClassName } from '@/lib/ui/field-styles';
 
 export type WarehouseSubview = 'stock' | 'movements' | 'warehouses' | 'alerts';
 
@@ -33,7 +34,7 @@ export function WarehouseSubNav({ active, onChange, alertCount = 0 }: WarehouseS
             type="button"
             onClick={() => onChange(id)}
             className={cn(
-              'inline-flex items-center gap-1.5 shrink-0 min-h-10 px-4 rounded-xl text-sm font-semibold border transition-colors',
+              segmentClassName,
               isActive
                 ? 'border-brand bg-brand-muted text-brand-foreground'
                 : 'border-border text-muted hover:text-foreground hover:bg-surface-muted'

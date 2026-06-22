@@ -68,7 +68,7 @@ export function BottomNav({
                     </span>
                   )}
                 </span>
-                <span className={cn('text-[10px] font-semibold', active && 'text-brand')}>
+                <span className={cn('text-[11px] font-semibold', active && 'text-brand')}>
                   {label}
                 </span>
               </button>

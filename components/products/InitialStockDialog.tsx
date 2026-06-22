@@ -32,8 +32,8 @@ export function InitialStockDialog({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
-      <Card className="w-full max-w-md !p-5">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-0 sm:pb-4 bg-black/40">
+      <Card className="w-full max-w-md !p-5 rounded-t-2xl sm:rounded-2xl sheet-safe-bottom">
         <div className="flex items-center gap-2 mb-2">
           <Package className="w-5 h-5 text-brand" />
           <h2 className="text-lg font-bold text-foreground">Stock inicial</h2>

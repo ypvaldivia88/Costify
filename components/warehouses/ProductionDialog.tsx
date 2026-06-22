@@ -70,8 +70,8 @@ export function ProductionDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
-      <Card className="w-full max-w-md !p-5 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-0 sm:pb-4 bg-black/40">
+      <Card className="w-full max-w-md !p-5 max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl sheet-safe-bottom">
         <div className="flex items-center gap-2 mb-4">
           <Factory className="w-5 h-5 text-brand" />
           <h2 className="text-lg font-bold text-foreground">Registrar producción</h2>

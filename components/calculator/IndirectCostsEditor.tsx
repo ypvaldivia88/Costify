@@ -6,7 +6,7 @@ import type { DistributionCriteria, IndirectCost } from '@/lib/domain/types';
 import { DISTRIBUTION_CRITERIA_LABELS } from '@/lib/domain/constants';
 import { Button } from '@/components/ui/Button';
 import { NumericField } from '@/components/ui/NumericField';
-import { fieldClassNameCompact } from '@/lib/ui/field-styles';
+import { fieldClassNameCompact, iconButtonDangerClassName } from '@/lib/ui/field-styles';
 import { cn } from '@/lib/utils';
 
 interface IndirectCostsEditorProps {
@@ -118,7 +118,7 @@ export function IndirectCostsEditor({
                   <button
                     type="button"
                     onClick={() => removeCost(cost.id)}
-                    className="p-2 text-muted hover:text-red-500 transition-colors"
+                    className={iconButtonDangerClassName}
                     aria-label="Eliminar gasto"
                   >
                     <Trash2 className="w-4 h-4" />

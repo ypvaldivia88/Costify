@@ -14,7 +14,7 @@ import {
 import { formatCurrency } from '@/lib/format/currency';
 import { Button } from '@/components/ui/Button';
 import { NumericField } from '@/components/ui/NumericField';
-import { fieldClassNameCompact } from '@/lib/ui/field-styles';
+import { fieldClassNameCompact, iconButtonDangerClassName, iconButtonMutedClassName } from '@/lib/ui/field-styles';
 import { cn } from '@/lib/utils';
 
 interface RecipeEditorProps {
@@ -120,7 +120,7 @@ export function RecipeEditor({ recipe, rawMaterials, onChange, showStockHints = 
                 <button
                   type="button"
                   onClick={() => setShowPicker(false)}
-                  className="p-1.5 text-muted hover:text-foreground rounded-lg transition-colors"
+                  className={iconButtonMutedClassName}
                   aria-label="Cerrar listado"
                 >
                   <X className="w-4 h-4" />

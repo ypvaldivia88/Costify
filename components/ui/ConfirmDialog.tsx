@@ -49,7 +49,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4 pb-0 sm:pb-4 bg-black/50 backdrop-blur-[2px]"
             onClick={() => close(false)}
           >
             <motion.div
@@ -61,7 +61,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               aria-modal="true"
               aria-labelledby="confirm-title"
               aria-describedby="confirm-message"
-              className="w-full max-w-md rounded-2xl bg-surface border border-border shadow-xl p-5 sm:p-6"
+              className="w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-surface border border-border shadow-xl p-5 sm:p-6 sheet-safe-bottom"
               onClick={(event) => event.stopPropagation()}
             >
               <h3 id="confirm-title" className="text-lg font-bold text-foreground">

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { cn } from '@/lib/utils';
+import { iconButtonDangerClassName } from '@/lib/ui/field-styles';
 
 interface WarehouseListProps {
   warehouses: Warehouse[];
@@ -86,7 +87,7 @@ export function WarehouseList({ warehouses, onSave, onDelete }: WarehouseListPro
                   type="button"
                   onClick={() => setType(t)}
                   className={cn(
-                    'px-3 py-2 rounded-xl text-sm font-semibold border transition-colors',
+                    'min-h-11 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors active:scale-[0.98]',
                     type === t
                       ? 'border-brand bg-brand-muted text-brand-foreground'
                       : 'border-border text-muted hover:bg-surface-muted'
@@ -133,7 +134,7 @@ export function WarehouseList({ warehouses, onSave, onDelete }: WarehouseListPro
                   <button
                     type="button"
                     onClick={() => void handleDelete(warehouse)}
-                    className="p-2 text-muted hover:text-red-600 dark:hover:text-red-400 rounded-xl"
+                    className={iconButtonDangerClassName}
                     aria-label="Eliminar"
                   >
                     <Trash2 className="w-4 h-4" />

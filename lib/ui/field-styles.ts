@@ -13,3 +13,23 @@ export const fieldClassNameCompact = cn(
 );
 
 export const selectClassName = fieldClassName;
+
+/** Minimum 44×44px touch target for icon-only controls (mobile-friendly). */
+export const iconButtonClassName = cn(
+  'inline-flex items-center justify-center p-2.5 min-w-11 min-h-11 rounded-xl transition-colors active:scale-[0.97]'
+);
+
+export const iconButtonMutedClassName = cn(
+  iconButtonClassName,
+  'text-muted hover:text-foreground hover:bg-surface-muted'
+);
+
+export const iconButtonDangerClassName = cn(
+  iconButtonClassName,
+  'text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40'
+);
+
+/** Segmented nav / chip controls with comfortable tap area. */
+export const segmentClassName = cn(
+  'inline-flex items-center gap-1.5 shrink-0 min-h-11 px-4 rounded-xl text-sm font-semibold border transition-colors active:scale-[0.98]'
+);
