@@ -29,7 +29,7 @@ function LoadingScreen() {
 export function AppShell() {
   const { loading: authLoading } = useAuth();
   const data = useAppData();
-  const [activeTab, setActiveTab] = useState<AppTab>('calculator');
+  const [activeTab, setActiveTab] = useState<AppTab>('warehouses');
   const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
 
   if (authLoading || !data.hydrated) {
