@@ -12,7 +12,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   const { resolved, toggle, ready } = useTheme();
 
   if (!ready) {
-    return <div className={cn('w-10 h-10', className)} aria-hidden />;
+    return <div className={cn('w-11 h-11', className)} aria-hidden />;
   }
 
   return (
@@ -20,7 +20,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       onClick={toggle}
       className={cn(
-        'p-2.5 min-w-10 min-h-10 flex items-center justify-center rounded-xl transition-all duration-200',
+        'p-2.5 min-w-11 min-h-11 flex items-center justify-center rounded-xl transition-all duration-200',
         'text-muted hover:text-foreground hover:bg-surface-muted active:scale-95',
         className
       )}

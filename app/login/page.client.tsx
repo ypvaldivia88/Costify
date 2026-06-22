@@ -39,8 +39,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen mesh-bg grid-pattern text-foreground flex flex-col">
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
+      <div className="safe-fixed-top-right">
+        <ThemeToggle className="glass shadow-sm border border-border/60" />
       </div>
 
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
