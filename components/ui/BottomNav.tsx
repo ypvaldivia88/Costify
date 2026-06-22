@@ -23,7 +23,7 @@ export function BottomNav({
 }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden safe-bottom px-4 pb-3"
+      className="is-overlay fixed bottom-0 inset-x-0 z-50 md:hidden safe-bottom px-4 pb-3"
       aria-label="Navegación principal"
     >
       <div className="glass rounded-2xl shadow-float border border-border/60">
