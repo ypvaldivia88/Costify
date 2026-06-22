@@ -84,7 +84,7 @@ export function RawMaterialsManager({
         />
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         {materials.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
             <Card className="!p-3">
