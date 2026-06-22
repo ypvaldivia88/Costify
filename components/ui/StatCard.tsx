@@ -16,9 +16,14 @@ const valueVariants = {
 
 export function StatCard({ label, value, subtext, variant = 'default', className }: StatCardProps) {
   return (
-    <div className={cn('space-y-1', className)}>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</p>
-      <p className={cn('text-xl sm:text-2xl font-bold tabular-nums tracking-tight', valueVariants[variant])}>
+    <div className={cn('stat-card space-y-1', className)}>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted leading-snug">{label}</p>
+      <p
+        className={cn(
+          'stat-card-value font-bold tabular-nums tracking-tight',
+          valueVariants[variant]
+        )}
+      >
         {value}
       </p>
       {subtext && <p className="text-xs text-muted">{subtext}</p>}

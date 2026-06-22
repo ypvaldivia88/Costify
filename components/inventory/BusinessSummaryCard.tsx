@@ -19,7 +19,7 @@ export function BusinessSummaryCard({ summary, taxSettings }: BusinessSummaryCar
       <p className="text-xs font-bold uppercase tracking-wide text-brand mb-4">
         Resumen mensual del negocio
       </p>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4">
         <StatCard label="Ingresos proyectados" value={formatCurrency(summary.totalRevenue)} />
         <StatCard
           label="Utilidad bruta"
@@ -38,16 +38,23 @@ export function BusinessSummaryCard({ summary, taxSettings }: BusinessSummaryCar
       </div>
 
       {showTaxes && (
-        <div className="mt-4 pt-4 border-t border-emerald-200/60 space-y-1.5 text-sm">
+        <div className="mt-4 pt-4 border-t border-emerald-200/60 space-y-1.5">
           {summary.taxLineTotals.map((line) => (
-            <div key={line.id} className="flex justify-between text-brand-foreground/80">
-              <span>{line.name}</span>
-              <span>-{formatCurrency(line.amount)}</span>
+            <div
+              key={line.id}
+              className="flex items-baseline justify-between gap-3 text-brand-foreground/80"
+            >
+              <span className="min-w-0 flex-1 leading-snug">{line.name}</span>
+              <span className="summary-row-value shrink-0 tabular-nums whitespace-nowrap text-right">
+                -{formatCurrency(line.amount)}
+              </span>
             </div>
           ))}
-          <div className="flex justify-between font-bold text-foreground pt-1">
-            <span>Utilidad neta estimada</span>
-            <span>{formatCurrency(summary.totalNetProfit)}</span>
+          <div className="flex items-baseline justify-between gap-3 font-bold text-foreground pt-1">
+            <span className="min-w-0 flex-1 leading-snug">Utilidad neta estimada</span>
+            <span className="summary-row-value shrink-0 tabular-nums whitespace-nowrap text-right">
+              {formatCurrency(summary.totalNetProfit)}
+            </span>
           </div>
         </div>
       )}

@@ -151,6 +151,22 @@ body {
   z-index: 50;
 }
 
+/* Adaptive numeric display for stat cards and summary rows */
+.stat-card {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.stat-card-value {
+  font-size: clamp(0.75rem, 11cqi, 1.5rem);
+  line-height: 1.15;
+}
+
+.summary-row-value {
+  font-size: clamp(0.75rem, 3.5vw, 0.875rem);
+  line-height: 1.2;
+}
+
 /* Glass surface */
 .glass {
   background: var(--glass-bg);
