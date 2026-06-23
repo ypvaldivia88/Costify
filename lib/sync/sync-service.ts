@@ -7,6 +7,7 @@ import {
 } from '@/lib/domain/constants';
 import { migrateGlobalFundSettings } from '@/lib/domain/calculations/global-fund';
 import { migrateTaxSettings } from '@/lib/domain/migrate-tax-settings';
+import { migrateExchangeRateSettings } from '@/lib/domain/migrate-exchange-rates';
 import { migrateUnitSettings } from '@/lib/domain/unit-settings';
 import type { WorkspaceDocument } from '@/lib/db/workspace';
 import { loadFromStorage } from '@/lib/storage/local-storage';
@@ -43,6 +44,9 @@ export function collectLocalData(): AppBackupInput {
     warehouses: loadFromStorage(STORAGE_KEYS.warehouses, []),
     stockMovements: loadFromStorage(STORAGE_KEYS.stockMovements, []),
     stockThresholds: loadFromStorage(STORAGE_KEYS.stockThresholds, []),
+    exchangeRateSettings: migrateExchangeRateSettings(
+      loadFromStorage(STORAGE_KEYS.exchangeRates, null)
+    ),
   };
 }
 
@@ -64,6 +68,7 @@ function toWorkspacePayload(
     warehouses: data.warehouses,
     stockMovements: data.stockMovements,
     stockThresholds: data.stockThresholds,
+    exchangeRateSettings: data.exchangeRateSettings,
     updatedAt,
   };
 }
@@ -81,6 +86,7 @@ function workspaceToBackup(workspace: WorkspaceDocument | Omit<WorkspaceDocument
     warehouses: workspace.warehouses ?? [],
     stockMovements: workspace.stockMovements ?? [],
     stockThresholds: workspace.stockThresholds ?? [],
+    exchangeRateSettings: migrateExchangeRateSettings(workspace.exchangeRateSettings),
   };
 }
 

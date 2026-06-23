@@ -42,6 +42,7 @@ export function migrateProductInput(
     indirectCosts: product.indirectCosts ?? [],
     profitMargin: product.profitMargin ?? 0,
     marginType: product.marginType ?? 'markup',
+    purchaseMeta: product.purchaseMeta,
   };
 }
 

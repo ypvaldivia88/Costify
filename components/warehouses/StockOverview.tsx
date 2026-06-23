@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Package } from 'lucide-react';
 import type { ProductCalculation, RawMaterial, StockLevel, Warehouse } from '@/lib/domain/types';
 import { formatCurrency } from '@/lib/format/currency';
+import { useExchangeRatesContext } from '@/hooks/use-exchange-rates-context';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
@@ -28,6 +29,7 @@ export function StockOverview({
   onWarehouseChange,
 }: StockOverviewProps) {
   const unitCatalog = useUnitCatalog();
+  const { formatEquivalents } = useExchangeRatesContext();
   const [filter, setFilter] = useState<'all' | 'raw_material' | 'product'>('all');
 
   const items = useMemo(() => {
@@ -111,6 +113,11 @@ export function StockOverview({
         </Card>
         <Card className="!p-3 col-span-2 md:col-span-1">
           <StatCard label="Valor total" value={formatCurrency(valuation.totalValue)} />
+          {formatEquivalents(valuation.totalValue) && (
+            <p className="text-xs text-muted mt-1 tabular-nums">
+              {formatEquivalents(valuation.totalValue)}
+            </p>
+          )}
         </Card>
       </div>
 

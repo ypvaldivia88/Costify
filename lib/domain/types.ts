@@ -22,12 +22,29 @@ export type MarginType = 'markup' | 'margin';
 
 export type ProductType = 'simple' | 'elaborated';
 
+/** Moneda en que se registró el precio de compra */
+export type PurchaseCurrency = 'CUP' | 'USD' | 'EUR' | 'MLC';
+
+/** Metadata de conversión cuando la compra fue en divisa */
+export interface PurchaseCurrencyMeta {
+  originalCurrency: Exclude<PurchaseCurrency, 'CUP'>;
+  originalAmount: number;
+  /** Tasa real aplicada en esta compra (CUP por 1 unidad de divisa) */
+  exchangeRateUsed: number;
+  /** TRMI de elTOQUE al momento del registro, solo como referencia */
+  trmiReferenceRate?: number;
+  rateDate: string;
+  rateFetchedAt: number;
+}
+
 export interface RawMaterialInput {
   name: string;
   purchasePrice: number;
   unitType: UnitType;
   packageQuantity: number;
   stockQuantity: number;
+  /** Presente si el precio de compra se ingresó en divisa */
+  purchaseMeta?: PurchaseCurrencyMeta;
 }
 
 export interface RawMaterial extends RawMaterialInput {
@@ -73,6 +90,8 @@ export interface ProductInput {
   indirectCosts: IndirectCost[];
   profitMargin: number;
   marginType: MarginType;
+  /** Presente si el precio de compra se ingresó en divisa (productos simples) */
+  purchaseMeta?: PurchaseCurrencyMeta;
 }
 
 export interface IndirectCostBreakdown {
@@ -212,6 +231,8 @@ export interface StockMovement {
   note?: string;
   /** Producto elaborado asociado a movimientos de producción */
   productId?: string;
+  /** Tasa usada si la entrada implicó compra en divisa */
+  purchaseMeta?: PurchaseCurrencyMeta;
   timestamp: number;
 }
 

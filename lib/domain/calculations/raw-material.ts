@@ -14,6 +14,7 @@ export function migrateRawMaterialInput(material: LegacyRawMaterial): RawMateria
     unitType: material.unitType ?? 'kg',
     packageQuantity: material.packageQuantity ?? material.unitsPerPackage ?? 1,
     stockQuantity: material.stockQuantity ?? material.stockUnits ?? 0,
+    purchaseMeta: material.purchaseMeta,
   };
 }
 

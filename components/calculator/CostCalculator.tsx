@@ -8,6 +8,7 @@ import type {
   MarginType,
   ProductCalculation,
   ProductType,
+  PurchaseCurrency,
   RawMaterial,
   RecipeItem,
   TaxSettings,
@@ -16,9 +17,14 @@ import type {
 import { calculateProduct, migrateProductInput } from '@/lib/domain/calculations';
 import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
+import { useExchangeRatesContext } from '@/hooks/use-exchange-rates-context';
+import {
+  getPurchaseFormValuesFromMeta,
+  getSuggestedRate,
+  resolvePurchasePrice,
+} from '@/lib/domain/purchase-currency';
 import { fieldClassName } from '@/lib/ui/field-styles';
 import type { PurchasePriceMode } from '@/lib/ui/purchase-price';
-import { fromTotalPurchasePrice, toTotalPurchasePrice } from '@/lib/ui/purchase-price';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
@@ -44,13 +50,20 @@ interface CostCalculatorProps {
   onCancelEdit?: () => void;
 }
 
-type FormErrors = Partial<Record<'name' | 'purchasePrice' | 'packageQuantity' | 'purchaseUnit' | 'recipe' | 'productionUnits', string>>;
+type FormErrors = Partial<
+  Record<
+    'name' | 'purchasePrice' | 'packageQuantity' | 'purchaseUnit' | 'recipe' | 'productionUnits' | 'exchangeRate',
+    string
+  >
+>;
 
 const defaultForm = {
   name: '',
   productType: 'simple' as ProductType,
   purchasePrice: 0,
   purchasePriceMode: 'per-package' as PurchasePriceMode,
+  purchaseCurrency: 'CUP' as PurchaseCurrency,
+  exchangeRate: 0,
   purchaseUnit: 'unidad',
   packageQuantity: 1,
   recipe: [] as RecipeItem[],
@@ -73,21 +86,25 @@ export function CostCalculator({
 }: CostCalculatorProps) {
   const { showToast } = useToast();
   const unitCatalog = useUnitCatalog();
+  const { snapshot, markCostingRate } = useExchangeRatesContext();
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (editingProduct) {
       const migrated = migrateProductInput(editingProduct, unitSettings);
+      const fromMeta = getPurchaseFormValuesFromMeta(
+        editingProduct.purchasePrice,
+        migrated.packageQuantity,
+        editingProduct.purchaseMeta
+      );
       setForm({
         name: editingProduct.name,
         productType: editingProduct.productType ?? 'simple',
-        purchasePrice: fromTotalPurchasePrice(
-          editingProduct.purchasePrice,
-          'per-package',
-          migrated.packageQuantity
-        ),
-        purchasePriceMode: 'per-package',
+        purchasePrice: fromMeta.value,
+        purchasePriceMode: fromMeta.mode,
+        purchaseCurrency: fromMeta.currency,
+        exchangeRate: fromMeta.exchangeRate,
         purchaseUnit: migrated.purchaseUnit,
         packageQuantity: migrated.packageQuantity,
         recipe: editingProduct.recipe ?? [],
@@ -106,11 +123,24 @@ export function CostCalculator({
     ? inventory.filter((p) => p.id !== editingProduct.id)
     : inventory;
 
-  const totalPurchasePrice = toTotalPurchasePrice(
-    form.purchasePrice,
-    form.purchasePriceMode,
-    form.packageQuantity
-  );
+  const suggestedRate = getSuggestedRate(snapshot, form.purchaseCurrency);
+
+  const resolvedPurchase = (() => {
+    try {
+      return resolvePurchasePrice(
+        form.purchasePrice,
+        form.purchasePriceMode,
+        form.packageQuantity,
+        form.purchaseCurrency,
+        form.exchangeRate,
+        snapshot
+      );
+    } catch {
+      return { purchasePriceCup: 0, purchaseMeta: undefined };
+    }
+  })();
+
+  const totalPurchasePrice = resolvedPurchase.purchasePriceCup;
 
   const result = useMemo(
     () =>
@@ -126,6 +156,7 @@ export function CostCalculator({
           indirectCosts: form.indirectCosts,
           profitMargin: form.profitMargin,
           marginType: form.marginType,
+          purchaseMeta: resolvedPurchase.purchaseMeta,
         },
         otherProducts,
         rawMaterials,
@@ -134,7 +165,7 @@ export function CostCalculator({
         undefined,
         unitSettings
       ),
-    [form, otherProducts, rawMaterials, globalFund, unitSettings, totalPurchasePrice]
+    [form, otherProducts, rawMaterials, globalFund, unitSettings, totalPurchasePrice, resolvedPurchase.purchaseMeta]
   );
 
   const importGlobalCosts = () => {
@@ -183,6 +214,9 @@ export function CostCalculator({
             ? 'Ingresa un precio por unidad válido'
             : 'Ingresa un precio del lote válido';
       }
+      if (form.purchaseCurrency !== 'CUP' && form.exchangeRate <= 0) {
+        next.exchangeRate = 'Indica la tasa real que pagaste';
+      }
       if (form.packageQuantity <= 0) next.packageQuantity = 'Indica cuántas unidades incluye la compra';
       if (!form.purchaseUnit.trim()) next.purchaseUnit = 'Indica la unidad (unidad, caja, bolsa, kg…)';
     }
@@ -198,30 +232,50 @@ export function CostCalculator({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    const saved = calculateProduct(
-      {
-        name: form.name.trim(),
-        productType: form.productType,
-        purchasePrice: totalPurchasePrice,
-        purchaseUnit: form.purchaseUnit.trim(),
-        packageQuantity: form.packageQuantity,
-        recipe: isElaborated ? form.recipe : undefined,
-        productionUnits: form.productionUnits,
-        indirectCosts: form.indirectCosts,
-        profitMargin: form.profitMargin,
-        marginType: form.marginType,
-      },
-      otherProducts,
-      rawMaterials,
-      globalFund,
-      editingProduct?.id,
-      editingProduct?.timestamp,
-      unitSettings
-    );
+    try {
+      const resolved = resolvePurchasePrice(
+        form.purchasePrice,
+        form.purchasePriceMode,
+        form.packageQuantity,
+        form.purchaseCurrency,
+        form.exchangeRate,
+        snapshot
+      );
 
-    onSave(saved);
-    if (!editingProduct) setForm(defaultForm);
-    setErrors({});
+      if (snapshot?.rates.USD) {
+        markCostingRate(snapshot.rates.USD);
+      }
+
+      const saved = calculateProduct(
+        {
+          name: form.name.trim(),
+          productType: form.productType,
+          purchasePrice: resolved.purchasePriceCup,
+          purchaseUnit: form.purchaseUnit.trim(),
+          packageQuantity: form.packageQuantity,
+          recipe: isElaborated ? form.recipe : undefined,
+          productionUnits: form.productionUnits,
+          indirectCosts: form.indirectCosts,
+          profitMargin: form.profitMargin,
+          marginType: form.marginType,
+          purchaseMeta: isElaborated ? undefined : resolved.purchaseMeta,
+        },
+        otherProducts,
+        rawMaterials,
+        globalFund,
+        editingProduct?.id,
+        editingProduct?.timestamp,
+        unitSettings
+      );
+
+      onSave(saved);
+      if (!editingProduct) setForm(defaultForm);
+      setErrors({});
+    } catch (error) {
+      setErrors({
+        exchangeRate: error instanceof Error ? error.message : 'No se pudo convertir el precio',
+      });
+    }
   };
 
   return (
@@ -286,14 +340,31 @@ export function CostCalculator({
               <PurchasePriceInput
                 mode={form.purchasePriceMode}
                 onModeChange={(purchasePriceMode) => setForm((p) => ({ ...p, purchasePriceMode }))}
+                currency={form.purchaseCurrency}
+                onCurrencyChange={(purchaseCurrency) => {
+                  const nextRate = getSuggestedRate(snapshot, purchaseCurrency);
+                  setForm((p) => ({
+                    ...p,
+                    purchaseCurrency,
+                    exchangeRate: purchaseCurrency === 'CUP' ? 0 : nextRate,
+                  }));
+                }}
+                exchangeRate={form.exchangeRate}
+                onExchangeRateChange={(exchangeRate) => {
+                  setForm((p) => ({ ...p, exchangeRate }));
+                  if (errors.exchangeRate) setErrors((p) => ({ ...p, exchangeRate: undefined }));
+                }}
+                suggestedTrmiRate={suggestedRate}
                 value={form.purchasePrice}
                 error={errors.purchasePrice}
+                exchangeRateError={errors.exchangeRate}
                 onChange={(purchasePrice) => {
                   setForm((p) => ({ ...p, purchasePrice }));
                   if (errors.purchasePrice) setErrors((p) => ({ ...p, purchasePrice: undefined }));
                 }}
                 packageQuantity={form.packageQuantity}
                 unitLabel={form.purchaseUnit.trim() || 'unidad'}
+                snapshot={snapshot}
                 perUnitHint={`Costo por cada ${form.purchaseUnit.trim() || 'unidad'}`}
                 perPackageHint="Lo que pagaste por la compra completa"
               />

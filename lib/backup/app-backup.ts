@@ -9,6 +9,8 @@ import type {
   UnitSettings,
   Warehouse,
 } from '@/lib/domain/types';
+import type { ExchangeRateSettings } from '@/lib/domain/exchange-rates';
+import { migrateExchangeRateSettings } from '@/lib/domain/migrate-exchange-rates';
 import { migrateGlobalFundSettings } from '@/lib/domain/calculations/global-fund';
 import { migrateTaxSettings } from '@/lib/domain/migrate-tax-settings';
 import { migrateUnitSettings } from '@/lib/domain/unit-settings';
@@ -33,6 +35,7 @@ export interface AppBackupV1 {
   warehouses?: Warehouse[];
   stockMovements?: StockMovement[];
   stockThresholds?: StockThreshold[];
+  exchangeRateSettings?: ExchangeRateSettings;
 }
 
 export interface AppBackupInput {
@@ -45,6 +48,7 @@ export interface AppBackupInput {
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
+  exchangeRateSettings: ExchangeRateSettings;
 }
 
 function toBase64Url(text: string): string {
@@ -72,6 +76,7 @@ export function createBackupPayload(input: AppBackupInput): string {
     warehouses: input.warehouses,
     stockMovements: input.stockMovements,
     stockThresholds: input.stockThresholds,
+    exchangeRateSettings: input.exchangeRateSettings,
   };
   return BACKUP_PREFIX + toBase64Url(JSON.stringify(backup));
 }
@@ -110,6 +115,7 @@ export function parseBackupPayload(raw: string): AppBackupV1 {
     warehouses: Array.isArray(backup.warehouses) ? backup.warehouses : [],
     stockMovements: Array.isArray(backup.stockMovements) ? backup.stockMovements : [],
     stockThresholds: Array.isArray(backup.stockThresholds) ? backup.stockThresholds : [],
+    exchangeRateSettings: migrateExchangeRateSettings(backup.exchangeRateSettings),
   };
 }
 
@@ -123,6 +129,10 @@ export function applyBackupToStorage(backup: AppBackupV1): void {
   saveToStorage(STORAGE_KEYS.warehouses, backup.warehouses ?? []);
   saveToStorage(STORAGE_KEYS.stockMovements, backup.stockMovements ?? []);
   saveToStorage(STORAGE_KEYS.stockThresholds, backup.stockThresholds ?? []);
+  saveToStorage(
+    STORAGE_KEYS.exchangeRates,
+    migrateExchangeRateSettings(backup.exchangeRateSettings)
+  );
 }
 
 export function readBackupFromFile(file: File): Promise<string> {
@@ -155,6 +165,7 @@ export function readBackupFromFile(file: File): Promise<string> {
               warehouses: backup.warehouses ?? [],
               stockMovements: backup.stockMovements ?? [],
               stockThresholds: backup.stockThresholds ?? [],
+              exchangeRateSettings: migrateExchangeRateSettings(backup.exchangeRateSettings),
             })
           );
           return;

@@ -7,6 +7,7 @@ import { calculateMonthlyTaxProjection, hasActiveTaxes } from '@/lib/domain/calc
 import { DISTRIBUTION_CRITERIA_SHORT, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
+import { CurrencyEquivalentsOnly } from '@/components/ui/CurrencyEquivalents';
 import { Card } from '@/components/ui/Card';
 
 interface InventoryItemProps {
@@ -61,6 +62,7 @@ export function InventoryItem({
             <p className="text-xl font-black text-brand tabular-nums">
               {formatCurrency(item.suggestedPrice)}
             </p>
+            <CurrencyEquivalentsOnly cupAmount={item.suggestedPrice} className="mt-0.5" />
           </div>
         </div>
 
