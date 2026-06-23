@@ -5,7 +5,10 @@ import type {
   TaxSettings,
   WarehouseType,
 } from './types';
+import { DEFAULT_EXCHANGE_RATE_SETTINGS } from './exchange-rates';
 import { getPresetLines } from './tax-presets';
+
+export { DEFAULT_EXCHANGE_RATE_SETTINGS };
 
 export const DEFAULT_TAX_SETTINGS: TaxSettings = {
   enabled: true,
@@ -51,6 +54,7 @@ export const STORAGE_KEYS = {
   theme: 'costify_theme_v1',
   syncWorkspaceId: 'costify_workspace_id_v1',
   syncMetadata: 'costify_sync_metadata_v1',
+  exchangeRates: 'costify_exchange_rates_v1',
 } as const;
 
 export const WAREHOUSE_TYPE_LABELS: Record<WarehouseType, string> = {

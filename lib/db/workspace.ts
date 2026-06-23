@@ -9,6 +9,8 @@ import type {
   UnitSettings,
   Warehouse,
 } from '@/lib/domain/types';
+import type { ExchangeRateSettings } from '@/lib/domain/exchange-rates';
+import { migrateExchangeRateSettings } from '@/lib/domain/migrate-exchange-rates';
 
 export const WORKSPACES_COLLECTION = 'workspaces';
 
@@ -24,6 +26,7 @@ export interface WorkspaceDocument {
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
+  exchangeRateSettings?: ExchangeRateSettings;
   updatedAt: number;
   createdAt: number;
 }

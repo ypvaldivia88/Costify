@@ -12,6 +12,7 @@ import { useWarehouses } from '@/hooks/use-warehouses';
 import { useStockMovements } from '@/hooks/use-stock-movements';
 import { useStockThresholds } from '@/hooks/use-stock-thresholds';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
+import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import type { ProductCalculation, RawMaterialInput, StockMovement, Warehouse } from '@/lib/domain/types';
 import {
   calculateStockLevels,
@@ -37,6 +38,7 @@ export function useAppData() {
   const warehousesState = useWarehouses();
   const stockMovementsState = useStockMovements();
   const stockThresholdsState = useStockThresholds();
+  const exchangeRatesState = useExchangeRates();
   const migrationDone = useRef(false);
 
   const hydrated =
@@ -48,7 +50,8 @@ export function useAppData() {
     unitSettingsState.hydrated &&
     warehousesState.hydrated &&
     stockMovementsState.hydrated &&
-    stockThresholdsState.hydrated;
+    stockThresholdsState.hydrated &&
+    exchangeRatesState.hydrated;
 
   const stockLevels = useMemo(
     () => calculateStockLevels(stockMovementsState.movements),
@@ -96,6 +99,7 @@ export function useAppData() {
       warehouses: warehousesState.warehouses,
       stockMovements: stockMovementsState.movements,
       stockThresholds: stockThresholdsState.thresholds,
+      exchangeRateSettings: exchangeRatesState.exchangeSettings,
     }),
     [
       inventoryState.inventory,
@@ -107,6 +111,7 @@ export function useAppData() {
       warehousesState.warehouses,
       stockMovementsState.movements,
       stockThresholdsState.thresholds,
+      exchangeRatesState.exchangeSettings,
     ]
   );
 
@@ -427,6 +432,13 @@ export function useAppData() {
     stockValuation,
     stockAlerts,
     cloudSync,
+    exchangeSettings: exchangeRatesState.exchangeSettings,
+    exchangeSnapshot: exchangeRatesState.snapshot,
+    exchangeRefreshing: exchangeRatesState.refreshing,
+    exchangeError: exchangeRatesState.error,
+    refreshExchangeRates: exchangeRatesState.refreshRates,
+    updateExchangeSettings: exchangeRatesState.updateSettings,
+    markCostingRate: exchangeRatesState.markCostingRate,
     saveProduct: inventoryState.saveProduct,
     deleteProduct,
     recalculateAll: inventoryState.recalculateAll,

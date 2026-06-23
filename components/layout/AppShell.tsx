@@ -7,6 +7,8 @@ import { NAV_BY_ID } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
+import { ExchangeRatesProvider } from '@/hooks/use-exchange-rates-context';
+import { PriceReviewAlerts } from '@/components/settings/PriceReviewAlerts';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { BottomNav } from '@/components/ui/BottomNav';
@@ -40,6 +42,15 @@ export function AppShell() {
   const currentNav = NAV_BY_ID[activeTab];
 
   return (
+    <ExchangeRatesProvider
+      snapshot={data.exchangeSnapshot}
+      settings={data.exchangeSettings}
+      refreshing={data.exchangeRefreshing}
+      error={data.exchangeError}
+      refreshRates={data.refreshExchangeRates}
+      updateSettings={data.updateExchangeSettings}
+      markCostingRate={data.markCostingRate}
+    >
     <UnitCatalogProvider settings={data.unitSettings}>
       <div className="min-h-dvh mesh-bg text-foreground">
         <AppHeader
@@ -50,6 +61,8 @@ export function AppShell() {
         />
 
         <main className="max-w-5xl mx-auto px-4 pt-5 pb-32 md:pb-8">
+          <PriceReviewAlerts materials={data.materials} products={data.inventory} />
+
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 8 }}
@@ -129,6 +142,7 @@ export function AppShell() {
                 globalFund={data.globalFund}
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
+                exchangeRateSettings={data.exchangeSettings}
                 warehouses={data.warehouses}
                 stockMovements={data.stockMovements}
                 stockThresholds={data.stockThresholds}
@@ -154,5 +168,6 @@ export function AppShell() {
         />
       </div>
     </UnitCatalogProvider>
+    </ExchangeRatesProvider>
   );
 }

@@ -15,6 +15,8 @@ import { calculateMonthlyTaxProjection, hasActiveTaxes } from '@/lib/domain/calc
 import { DISTRIBUTION_CRITERIA_SHORT, PRODUCT_TYPE_LABELS } from '@/lib/domain/constants';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { formatCurrency, formatPercent } from '@/lib/format/currency';
+import { CurrencyEquivalentsOnly } from '@/components/ui/CurrencyEquivalents';
+import { MarginSensitivityTable } from '@/components/ui/MarginSensitivityTable';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProductionSection } from '@/components/products/ProductionSection';
@@ -111,6 +113,7 @@ export function ProductDetailView({
             <p className="text-2xl font-black text-brand tabular-nums">
               {formatCurrency(product.suggestedPrice)}
             </p>
+            <CurrencyEquivalentsOnly cupAmount={product.suggestedPrice} className="mt-0.5" />
           </div>
         </div>
       </Card>
@@ -176,6 +179,16 @@ export function ProductDetailView({
                 <span>{formatCurrency(product.totalUnitCost)}</span>
               </div>
             </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+              Sensibilidad al tipo de cambio
+            </p>
+            <p className="text-xs text-muted mb-3">
+              Escenarios si varía la referencia TRMI del USD. Tu tasa real de compra puede diferir.
+            </p>
+            <MarginSensitivityTable product={product} materials={materials} />
           </div>
 
           {product.productionUnits > 0 && (

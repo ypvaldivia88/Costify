@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Database, Percent, PiggyBank, Receipt, Ruler, User } from 'lucide-react';
+import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -13,6 +13,7 @@ import type {
   UnitSettings,
   Warehouse,
 } from '@/lib/domain/types';
+import type { ExchangeRateSettings } from '@/lib/domain/exchange-rates';
 import { cn } from '@/lib/utils';
 import { segmentClassName } from '@/lib/ui/field-styles';
 import { DataSyncPanel } from './DataSyncPanel';
@@ -21,10 +22,11 @@ import { GlobalFundSettingsPanel } from './GlobalFundSettings';
 import { IndirectCostsSettings } from './IndirectCostsSettings';
 import { TaxSettingsPanel } from './TaxSettingsPanel';
 import { UnitSettingsPanel } from './UnitSettingsPanel';
+import { ExchangeRatesPanel } from './ExchangeRatesPanel';
 import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 import type { SessionUser } from '@/lib/auth/types';
 
-type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'sync' | 'account';
+type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'exchange' | 'sync' | 'account';
 
 interface SettingsViewProps {
   inventory: ProductCalculation[];
@@ -33,6 +35,7 @@ interface SettingsViewProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  exchangeRateSettings: ExchangeRateSettings;
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
@@ -59,6 +62,7 @@ const sections: { id: SettingsSection; label: string; icon: typeof Database }[] 
   { id: 'fund', label: 'Fondo', icon: PiggyBank },
   { id: 'indirect', label: 'Gastos', icon: Percent },
   { id: 'units', label: 'Unidades', icon: Ruler },
+  { id: 'exchange', label: 'Tasas', icon: DollarSign },
   { id: 'sync', label: 'Respaldo', icon: Database },
   { id: 'account', label: 'Cuenta', icon: User },
 ];
@@ -70,6 +74,7 @@ export function SettingsView({
   globalFund,
   taxSettings,
   unitSettings,
+  exchangeRateSettings,
   warehouses,
   stockMovements,
   stockThresholds,
@@ -129,6 +134,7 @@ export function SettingsView({
           onReset={onResetUnitSettings}
         />
       )}
+      {activeSection === 'exchange' && <ExchangeRatesPanel />}
       {activeSection === 'sync' && (
         <DataSyncPanel
           inventory={inventory}
@@ -137,6 +143,7 @@ export function SettingsView({
           globalFund={globalFund}
           taxSettings={taxSettings}
           unitSettings={unitSettings}
+          exchangeRateSettings={exchangeRateSettings}
           warehouses={warehouses}
           stockMovements={stockMovements}
           stockThresholds={stockThresholds}

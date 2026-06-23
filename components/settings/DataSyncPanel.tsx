@@ -13,6 +13,7 @@ import type {
   UnitSettings,
   Warehouse,
 } from '@/lib/domain/types';
+import type { ExchangeRateSettings } from '@/lib/domain/exchange-rates';
 import {
   applyBackupToStorage,
   createBackupPayload,
@@ -36,6 +37,7 @@ interface DataSyncPanelProps {
   globalFund: GlobalFundSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  exchangeRateSettings: ExchangeRateSettings;
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
@@ -60,6 +62,7 @@ export function DataSyncPanel({
   globalFund,
   taxSettings,
   unitSettings,
+  exchangeRateSettings,
   warehouses,
   stockMovements,
   stockThresholds,
@@ -82,6 +85,7 @@ export function DataSyncPanel({
         globalFund,
         taxSettings,
         unitSettings,
+        exchangeRateSettings,
         warehouses,
         stockMovements,
         stockThresholds,
@@ -93,6 +97,7 @@ export function DataSyncPanel({
       globalFund,
       taxSettings,
       unitSettings,
+      exchangeRateSettings,
       warehouses,
       stockMovements,
       stockThresholds,

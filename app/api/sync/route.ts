@@ -12,6 +12,7 @@ import {
 } from '@/lib/domain/constants';
 import { migrateGlobalFundSettings } from '@/lib/domain/calculations/global-fund';
 import { migrateTaxSettings } from '@/lib/domain/migrate-tax-settings';
+import { migrateExchangeRateSettings } from '@/lib/domain/migrate-exchange-rates';
 import { migrateUnitSettings } from '@/lib/domain/unit-settings';
 
 function isValidWorkspaceId(value: unknown): value is string {
@@ -96,6 +97,7 @@ export async function PUT(request: Request) {
       warehouses: Array.isArray(body.warehouses) ? body.warehouses : [],
       stockMovements: Array.isArray(body.stockMovements) ? body.stockMovements : [],
       stockThresholds: Array.isArray(body.stockThresholds) ? body.stockThresholds : [],
+      exchangeRateSettings: migrateExchangeRateSettings(body.exchangeRateSettings),
       updatedAt,
       createdAt: existing?.createdAt ?? now,
     };
