@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import type { SessionUser } from '@/lib/auth/types';
 
@@ -42,15 +42,38 @@ export function getSessionCookieOptions() {
   };
 }
 
+function extractBearerToken(authHeader: string | null): string | null {
+  return authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+}
+
 export async function getServerSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  return verifySessionToken(token);
+  const cookieToken = cookieStore.get(SESSION_COOKIE)?.value;
+  if (cookieToken) {
+    const session = await verifySessionToken(cookieToken);
+    if (session) return session;
+  }
+
+  const headerStore = await headers();
+  const bearer = extractBearerToken(headerStore.get('authorization'));
+  if (bearer) {
+    return verifySessionToken(bearer);
+  }
+
+  return null;
 }
 
 export async function getSessionFromRequest(request: NextRequest): Promise<SessionUser | null> {
-  const token = request.cookies.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  return verifySessionToken(token);
+  const cookieToken = request.cookies.get(SESSION_COOKIE)?.value;
+  if (cookieToken) {
+    const session = await verifySessionToken(cookieToken);
+    if (session) return session;
+  }
+
+  const bearer = extractBearerToken(request.headers.get('authorization'));
+  if (bearer) {
+    return verifySessionToken(bearer);
+  }
+
+  return null;
 }

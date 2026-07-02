@@ -42,7 +42,7 @@ export async function PATCH(request: Request) {
 
     const updatedUser = await updateAccountProfile(session.userId, body);
     const token = await createSessionToken(updatedUser);
-    const response = NextResponse.json({ user: updatedUser });
+    const response = NextResponse.json({ user: updatedUser, token });
     response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions());
     return response;
   } catch (error) {
