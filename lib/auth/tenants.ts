@@ -216,3 +216,38 @@ export async function updateTenantStatus(
     createdAt: result.createdAt,
   };
 }
+
+export async function updateTenantUserPassword(
+  tenantId: string,
+  userId: string,
+  password: string
+): Promise<PublicUser | null> {
+  if (password.length < 8) {
+    throw new Error('La contraseña debe tener al menos 8 caracteres.');
+  }
+
+  const tenant = await findTenantById(tenantId);
+  if (!tenant) {
+    throw new Error('Cliente no encontrado.');
+  }
+
+  const db = await getDb();
+  const users = db.collection<UserDocument>(USERS_COLLECTION);
+  const result = await users.findOneAndUpdate(
+    { userId, tenantId },
+    { $set: { passwordHash: await hashPassword(password) } },
+    { returnDocument: 'after' }
+  );
+
+  if (!result) return null;
+
+  return {
+    userId: result.userId,
+    email: result.email,
+    role: result.role,
+    name: result.name,
+    tenantId: result.tenantId,
+    status: result.status,
+    createdAt: result.createdAt,
+  };
+}
