@@ -1,47 +1,26 @@
 {
-  "name": "ai-studio-applet",
+  "name": "costify",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "clean": "next clean",
-    "seed:admin": "tsx --env-file=.env.local scripts/seed-super-admin.ts"
-  },
-  "dependencies": {
-    "@google/genai": "^1.17.0",
-    "@hookform/resolvers": "^5.2.2",
-    "autoprefixer": "^10.4.21",
-    "bcryptjs": "^3.0.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "jose": "^6.2.3",
-    "lucide-react": "^0.553.0",
-    "mongodb": "^7.3.0",
-    "motion": "^12.34.3",
-    "next": "^15.4.9",
-    "postcss": "^8.5.6",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
-    "react-hook-form": "^7.71.2",
-    "tailwind-merge": "^3.5.0",
-    "zod": "^4.3.6"
+    "dev": "pnpm --filter @costify/web dev",
+    "dev:web": "pnpm --filter @costify/web dev",
+    "dev:mobile": "pnpm --filter costify-mobile start",
+    "build": "pnpm --filter @costify/web build",
+    "build:web": "pnpm --filter @costify/web build",
+    "start": "pnpm --filter @costify/web start",
+    "lint": "pnpm --filter @costify/web lint",
+    "seed:admin": "pnpm --filter @costify/web seed:admin",
+    "typecheck": "pnpm -r typecheck",
+    "typecheck:shared": "pnpm --filter @costify/shared typecheck"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "4.1.11",
-    "@tailwindcss/typography": "^0.5.19",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "9.39.1",
-    "eslint-config-next": "16.0.8",
-    "firebase-tools": "^15.0.0",
-    "tailwindcss": "4.1.11",
-    "tsx": "^4.20.3",
-    "tw-animate-css": "^1.4.0",
     "typescript": "5.9.3"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "react-dom": "19.2.3"
+    }
   }
 }

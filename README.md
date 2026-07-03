@@ -39,15 +39,18 @@ Al iniciar sesión, el admin del negocio entra en **Productos**. El orden de las
 
 ## Stack tecnológico
 
-- [Next.js 15](https://nextjs.org/) (App Router)
+- [Next.js 15](https://nextjs.org/) (App Router) — `apps/web`
+- [Expo SDK 56](https://docs.expo.dev/) / React Native — `apps/mobile`
+- Lógica compartida — `packages/shared` (`@costify/shared`)
 - [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS 4](https://tailwindcss.com/)
-- [MongoDB Atlas](https://www.mongodb.com/atlas) — persistencia y sincronización
+- [MongoDB Atlas](https://www.mongodb.com/atlas) — persistencia y sincronización (web)
 - Autenticación con JWT en cookie HTTP-only (`jose` + `bcryptjs`)
 
 ## Requisitos
 
 - Node.js 20+
+- [pnpm](https://pnpm.io/) 9+
 - Cuenta en MongoDB Atlas (o instancia MongoDB compatible)
 - Variables de entorno configuradas (ver abajo)
 
@@ -56,10 +59,10 @@ Al iniciar sesión, el admin del negocio entra en **Productos**. El orden de las
 ```bash
 git clone https://github.com/ypvaldivia88/Costify.git
 cd Costify
-npm install
+pnpm install
 ```
 
-Crea un archivo `.env.local` basado en `.env.example`:
+Crea `apps/web/.env.local` basado en `apps/web/.env.example`:
 
 ```env
 MONGODB_URI=mongodb+srv://USER:PASSWORD@cluster.example.net/costify?retryWrites=true&w=majority
@@ -70,14 +73,20 @@ SUPER_ADMIN_NAME=Super Admin
 APP_URL=http://localhost:3000
 ```
 
-Inicializa el super administrador y arranca la app:
+Inicializa el super administrador y arranca la app web:
 
 ```bash
-npm run seed:admin
-npm run dev
+pnpm seed:admin
+pnpm dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000).
+Para la app móvil (Expo):
+
+```bash
+pnpm dev:mobile
+```
+
+Abre [http://localhost:3000](http://localhost:3000) para la web.
 
 ## Roles y rutas
 
@@ -101,7 +110,9 @@ Abre [http://localhost:3000](http://localhost:3000).
 | `SUPER_ADMIN_NAME` | Nombre visible del super admin |
 | `APP_URL` | URL pública de la app (ej. `https://tu-app.vercel.app`) |
 
-3. Despliega y ejecuta `npm run seed:admin` si el super admin no se creó automáticamente en el primer login
+3. Despliega y ejecuta `pnpm seed:admin` si el super admin no se creó automáticamente en el primer login
+
+> **Nota Vercel:** configura el **Root Directory** del proyecto como `apps/web`.
 
 En MongoDB Atlas, permite el acceso de red desde `0.0.0.0/0` o los rangos IP de Vercel.
 
@@ -109,31 +120,38 @@ En MongoDB Atlas, permite el acceso de red desde `0.0.0.0/0` o los rangos IP de 
 
 | Comando | Descripción |
 |---------|-------------|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Build de producción |
-| `npm run start` | Servidor de producción |
-| `npm run lint` | Linter |
-| `npm run seed:admin` | Crear o sincronizar el super administrador |
+| `pnpm dev` / `pnpm dev:web` | Servidor de desarrollo (Next.js) |
+| `pnpm dev:mobile` | Expo dev server |
+| `pnpm build` | Build de producción (web) |
+| `pnpm start` | Servidor de producción (web) |
+| `pnpm lint` | Linter (web) |
+| `pnpm seed:admin` | Crear o sincronizar el super administrador |
+| `pnpm typecheck` | Type-check en todos los paquetes |
 
-## Estructura del proyecto
+## Estructura del monorepo
+
+```
+apps/
+  web/              Next.js — panel web, API y sync con MongoDB
+  mobile/           Expo — app Android offline-first
+packages/
+  shared/           @costify/shared — tipos, cálculos, backup y formatos
+```
+
+### Detalle de `apps/web`
 
 ```
 app/
   admin/            Panel super administrador
   login/            Inicio de sesión
   api/              Auth, sync, cuenta y administración
-components/
-  warehouses/       Almacenes, stock, movimientos y alertas
-  raw-materials/    Materias primas
-  calculator/       Calculadora de costos
-  inventory/        Historial y resumen
-  settings/         Ajustes, cuenta y sincronización
+components/         UI web (React DOM + Tailwind)
 hooks/              Estado de la app y sincronización
 lib/
   auth/             Usuarios, tenants, sesiones
   db/               Conexión MongoDB y workspace por tenant
-  domain/           Lógica de negocio, stock e impuestos
-  sync/             Sincronización offline-first
+  sync/             Sincronización offline-first (cliente)
+  storage/          localStorage
 ```
 
 ## Sincronización offline
