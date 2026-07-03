@@ -1,0 +1,81 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { SessionUser } from '@/auth/types';
+import { getApiBaseUrl, hasBackendApi } from '@/config/env';
+
+const TOKEN_KEY = 'costify_session_token';
+
+export { hasBackendApi };
+
+export async function getStoredToken(): Promise<string | null> {
+  return AsyncStorage.getItem(TOKEN_KEY);
+}
+
+export async function setStoredToken(token: string | null): Promise<void> {
+  if (token) {
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+    return;
+  }
+  await AsyncStorage.removeItem(TOKEN_KEY);
+}
+
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getStoredToken();
+  const headers = new Headers(options.headers);
+
+  if (!headers.has('Content-Type') && options.body) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return fetch(`${getApiBaseUrl()}${path}`, {
+    ...options,
+    headers,
+  });
+}
+
+export async function loginRequest(
+  email: string,
+  password: string
+): Promise<{ user: SessionUser; token: string }> {
+  const response = await apiFetch('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  const json = (await response.json()) as {
+    user?: SessionUser;
+    token?: string;
+    error?: string;
+  };
+  if (!response.ok || !json.user || !json.token) {
+    throw new Error(json.error || 'No se pudo iniciar sesión.');
+  }
+  await setStoredToken(json.token);
+  return { user: json.user, token: json.token };
+}
+
+export async function logoutRequest(): Promise<void> {
+  try {
+    await apiFetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // Ignorar errores de red al cerrar sesión.
+  }
+  await setStoredToken(null);
+}
+
+export async function fetchCurrentUser(): Promise<SessionUser | null> {
+  const token = await getStoredToken();
+  if (!token) return null;
+
+  const response = await apiFetch('/api/auth/me', { method: 'GET' });
+  if (!response.ok) {
+    if (response.status === 401) {
+      await setStoredToken(null);
+    }
+    return null;
+  }
+
+  const json = (await response.json()) as { user?: SessionUser };
+  return json.user ?? null;
+}

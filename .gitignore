@@ -5,3 +5,24 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Expo / React Native
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+android/
+ios/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.kotlin/
+
+# Legacy lockfile (use pnpm)
+package-lock.json
+
+# IDE
+.vscode/
