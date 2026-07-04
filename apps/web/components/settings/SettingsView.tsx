@@ -16,6 +16,7 @@ import type {
 import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
 import { cn } from '@/lib/utils';
 import { segmentClassName } from '@/lib/ui/field-styles';
+import { HorizontalScroll } from '@/components/ui/HorizontalScroll';
 import { DataSyncPanel } from './DataSyncPanel';
 import { AccountSettingsPanel } from './AccountSettingsPanel';
 import { GlobalFundSettingsPanel } from './GlobalFundSettings';
@@ -91,8 +92,9 @@ export function SettingsView({
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <nav
-        className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none"
+      <HorizontalScroll
+        as="nav"
+        className="flex gap-2 pb-1 -mx-1 px-1"
         aria-label="Secciones de ajustes"
       >
         {sections.map(({ id, label, icon: Icon }) => {
@@ -114,7 +116,7 @@ export function SettingsView({
             </button>
           );
         })}
-      </nav>
+      </HorizontalScroll>
 
       {activeSection === 'taxes' && (
         <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
