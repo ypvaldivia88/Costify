@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm exec next dev",
-    "build": "pnpm exec next build",
-    "start": "pnpm exec next start",
+    "dev": "node ../../node_modules/next/dist/bin/next dev",
+    "build": "node ../../node_modules/next/dist/bin/next build",
+    "start": "node ../../node_modules/next/dist/bin/next start",
     "lint": "eslint .",
-    "clean": "pnpm exec next clean",
+    "clean": "node ../../node_modules/next/dist/bin/next clean",
     "seed:admin": "tsx --env-file=.env.local scripts/seed-super-admin.ts",
     "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-tenant.ts",
     "typecheck": "tsc --noEmit"
