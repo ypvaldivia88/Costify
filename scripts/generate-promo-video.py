@@ -23,11 +23,14 @@ WHITE = "#FFFFFF"
 MUTED = "#D1FAE5"
 ACCENT = "#FEF3C7"
 VOICE = "es-CU-ManuelNeural"
-VOICE_RATE = "+8%"
+VOICE_RATE = "+18%"
 VOICE_PITCH = "-1Hz"
+BRAND_MARK = "Costify"
+BRAND_EN_VOICE = "en-US-AndrewNeural"
+BRAND_EN_RATE = "+12%"
 FPS = 30
-PAUSE_BETWEEN_SCENES = 0.35
-PAUSE_BETWEEN_PHRASES = 0.22
+PAUSE_BETWEEN_SCENES = 0.12
+PAUSE_BETWEEN_PHRASES = 0.08
 MUSIC_URL = "https://assets.mixkit.co/music/738/738.mp3"
 MUSIC_VOLUME = 0.09
 
@@ -356,14 +359,63 @@ def make_silence(seconds: float, output: Path) -> None:
     )
 
 
-async def synthesize_phrase(phrase: str, output: Path) -> None:
-    communicate = edge_tts.Communicate(
-        phrase,
-        VOICE,
-        rate=VOICE_RATE,
-        pitch=VOICE_PITCH,
-    )
+async def synthesize_tts(
+    text: str,
+    output: Path,
+    *,
+    voice: str = VOICE,
+    rate: str = VOICE_RATE,
+    pitch: str = VOICE_PITCH,
+) -> None:
+    communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     await communicate.save(str(output))
+
+
+async def synthesize_phrase(phrase: str, raw_output: Path) -> None:
+    if BRAND_MARK not in phrase:
+        await synthesize_tts(phrase, raw_output)
+        return
+
+    segments: list[Path] = []
+    parts = phrase.split(BRAND_MARK)
+    for idx, part in enumerate(parts):
+        if any(ch.isalnum() for ch in part):
+            seg = raw_output.with_name(f"{raw_output.stem}_es{idx}.mp3")
+            await synthesize_tts(part, seg)
+            segments.append(seg)
+        if idx < len(parts) - 1:
+            brand = raw_output.with_name(f"{raw_output.stem}_brand{idx}.mp3")
+            await synthesize_tts(
+                BRAND_MARK,
+                brand,
+                voice=BRAND_EN_VOICE,
+                rate=BRAND_EN_RATE,
+                pitch="+0Hz",
+            )
+            segments.append(brand)
+
+    if len(segments) == 1:
+        segments[0].replace(raw_output)
+        return
+
+    concat_file = raw_output.with_suffix(".txt")
+    concat_file.write_text("\n".join(f"file '{p}'" for p in segments) + "\n")
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(concat_file),
+            "-c:a",
+            "libmp3lame",
+            str(raw_output),
+        ],
+        capture_output=True,
+    )
 
 
 def warm_voice(input_path: Path, output: Path) -> None:
@@ -502,7 +554,7 @@ def build_voice_track(audio_clips: list[Path], durations: list[float], output: P
     for idx, (clip, duration) in enumerate(zip(audio_clips, durations)):
         padded = parts_dir / f"part_{idx:02d}.wav"
         clip_duration = media_duration(clip)
-        silence = max(0.12, duration - clip_duration)
+        silence = max(0.04, duration - clip_duration)
 
         run(
             [
@@ -603,7 +655,7 @@ async def main() -> None:
     audio_clips = await generate_narration_clips()
 
     durations = [
-        max(3.8, media_duration(clip) + PAUSE_BETWEEN_SCENES)
+        media_duration(clip) + PAUSE_BETWEEN_SCENES
         for clip in audio_clips
     ]
     total_duration = sum(durations)
