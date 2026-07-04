@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "pnpm exec next dev",
+    "build": "pnpm exec next build",
+    "start": "pnpm exec next start",
     "lint": "eslint .",
-    "clean": "next clean",
+    "clean": "pnpm exec next clean",
     "seed:admin": "tsx --env-file=.env.local scripts/seed-super-admin.ts",
     "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-tenant.ts",
     "typecheck": "tsc --noEmit"
