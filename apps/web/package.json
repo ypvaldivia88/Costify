@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@costify/client-data": "workspace:*",
     "@costify/shared": "workspace:*",
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.2",

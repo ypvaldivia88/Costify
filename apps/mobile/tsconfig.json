@@ -5,7 +5,8 @@
     "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
-      "@costify/shared/*": ["../../packages/shared/src/*"]
+      "@costify/shared/*": ["../../packages/shared/src/*"],
+      "@costify/client-data/*": ["../../packages/client-data/src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "src/types/env.d.ts"]

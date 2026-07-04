@@ -8,7 +8,7 @@ import {
   getSuggestedRate,
   resolvePurchasePrice,
 } from '@costify/shared/domain/purchase-currency';
-import type { PurchasePriceMode } from '@/ui/purchase-price';
+import type { PurchasePriceMode } from '@costify/shared/purchase-price';
 import { formatCurrency } from '@costify/shared/format/currency';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';

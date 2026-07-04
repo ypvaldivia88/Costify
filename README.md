@@ -136,6 +136,7 @@ apps/
   mobile/           Expo — app Android offline-first
 packages/
   shared/           @costify/shared — tipos, cálculos, backup y formatos
+  client-data/      @costify/client-data — hooks, sync y storage compartidos
 ```
 
 ### Detalle de `apps/web`

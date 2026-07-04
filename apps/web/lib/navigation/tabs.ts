@@ -1,48 +1,34 @@
-import type { LucideIcon } from 'lucide-react';
-import { Boxes, Package, Settings, Warehouse } from 'lucide-react';
+'use client';
 
-export type AppTab = 'products' | 'raw-materials' | 'warehouses' | 'settings';
+import { Boxes, Package, Settings, Warehouse, type LucideIcon } from 'lucide-react';
+import {
+  NAV_ITEMS as NAV_META,
+  NAV_BY_ID as NAV_META_BY_ID,
+  type AppTab,
+  type NavItemMeta,
+} from '@costify/client-data';
 
-export interface NavItem {
-  id: AppTab;
-  label: string;
-  title: string;
-  description: string;
+export type { AppTab };
+
+const ICONS: Record<AppTab, LucideIcon> = {
+  products: Package,
+  'raw-materials': Boxes,
+  warehouses: Warehouse,
+  settings: Settings,
+};
+
+export interface NavItem extends NavItemMeta {
   icon: LucideIcon;
 }
 
-export const NAV_ITEMS: NavItem[] = [
-  {
-    id: 'products',
-    label: 'Productos',
-    title: 'Productos',
-    description: 'Fichas de costo, precios sugeridos y stock por almacén',
-    icon: Package,
-  },
-  {
-    id: 'raw-materials',
-    label: 'Insumos',
-    title: 'Materias primas',
-    description: 'Registra insumos y controla el stock disponible',
-    icon: Boxes,
-  },
-  {
-    id: 'warehouses',
-    label: 'Almacén',
-    title: 'Almacenes',
-    description: 'Stock actual, movimientos y alertas de inventario',
-    icon: Warehouse,
-  },
-  {
-    id: 'settings',
-    label: 'Ajustes',
-    title: 'Ajustes',
-    description: 'Impuestos, gastos, unidades de medida y respaldo',
-    icon: Settings,
-  },
-];
+export const NAV_ITEMS: NavItem[] = NAV_META.map((item) => ({
+  ...item,
+  icon: ICONS[item.id],
+}));
 
 export const NAV_BY_ID = Object.fromEntries(NAV_ITEMS.map((item) => [item.id, item])) as Record<
   AppTab,
   NavItem
 >;
+
+export { NAV_META, NAV_META_BY_ID };

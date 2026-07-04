@@ -24,6 +24,7 @@ import {
 } from '@costify/shared/domain/calculations';
 import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
 import type { StockThreshold } from '@costify/shared/domain/types';
+import { onSyncReload, useSyncApi } from '@costify/client-data';
 import { useAuth } from '@/context/AuthContext';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
@@ -36,8 +37,6 @@ import { useStockThresholds } from '@/hooks/use-stock-thresholds';
 import { useTaxSettings } from '@/hooks/use-tax-settings';
 import { useUnitSettings } from '@/hooks/use-unit-settings';
 import { useWarehouses } from '@/hooks/use-warehouses';
-import { collectLocalData } from '@/sync/sync-service';
-import { onSyncReload } from '@/sync/sync-events';
 
 interface AppDataContextValue {
   hydrated: boolean;
@@ -121,6 +120,7 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const sync = useSyncApi();
   const inventoryState = useInventory();
   const rawMaterialsState = useRawMaterials();
   const globalCostsState = useGlobalCosts();
@@ -569,11 +569,11 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     return onSyncReload(() => {
       void (async () => {
-        const data = await collectLocalData();
+        const data = await sync.collectLocalData();
         reloadFromBackup(data);
       })();
     });
-  }, [reloadFromBackup]);
+  }, [reloadFromBackup, sync]);
 
   const value = useMemo<AppDataContextValue>(
     () => ({
