@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Generate Costify Facebook promo video (1080x1080)."""
+"""Generate Costify Facebook promo video (1080x1080) with narration."""
 
 from __future__ import annotations
 
+import asyncio
 import subprocess
+import wave
 from pathlib import Path
 
+import edge_tts
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,12 +19,21 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 W, H = 1080, 1080
 BRAND = "#059669"
 BRAND_DARK = "#047857"
-BRAND_LIGHT = "#10B981"
 WHITE = "#FFFFFF"
 MUTED = "#D1FAE5"
 ACCENT = "#FEF3C7"
-
+VOICE = "es-CU-BelkysNeural"
 FPS = 30
+PAUSE_BETWEEN_SCENES = 0.35
+
+NARRATION = [
+    "¿Sabes cuánto te cuesta lo que vendes? Muchos negocios pequeños pierden dinero sin darse cuenta.",
+    "¿Te suena familiar? Compras insumos y no sabes el costo real. Pones precios a ojo. Se acaba el stock y no te diste cuenta. Al final del mes no sabes si ganaste.",
+    "Conoce Costify. Costos, precios e inventario para tu negocio. La app para calcular costos, fijar precios y controlar inventario.",
+    "Todo en un solo lugar. Costos reales, precios con ganancia e inventario. Pensada para negocios pequeños en Cuba.",
+    "Funciona sin internet. Registra tus datos en el celular y sigue trabajando aunque falle la conexión.",
+    "Deja de adivinar precios. Empieza a controlar tu negocio. Descarga Costify hoy.",
+]
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -157,24 +169,30 @@ def slide_intro() -> Image.Image:
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
 
-    paste_icon(img, 180, 150)
+    paste_icon(img, 150, 110)
 
-    brand_font = load_font(72, bold=True)
-    title_font = load_font(50, bold=True)
-    sub_font = load_font(34)
+    brand_font = load_font(68, bold=True)
+    sub_font = load_font(30)
+    body_font = load_font(32, bold=True)
 
-    draw_centered_block(draw, ["Costify"], brand_font, 400)
-    draw_centered_block(
+    draw_centered_block(draw, ["Costify"], brand_font, 340)
+
+    tagline = wrap_text(draw, "Costos, precios e inventario para tu negocio", sub_font, 880)
+    draw_centered_block(draw, tagline, sub_font, 430, fill=MUTED)
+
+    body_lines = wrap_text(
         draw,
-        ["Costos, precios e inventario para tu negocio"],
-        sub_font,
-        500,
-        fill=MUTED,
+        "La app para calcular costos, fijar precios y controlar inventario.",
+        body_font,
+        860,
     )
+    line_gap = 12
+    line_height = body_font.size + line_gap
+    card_h = max(170, len(body_lines) * line_height + 48)
+    card_y = 540
 
-    rounded_rect(draw, (70, 590, 1010, 760), 24, "#ffffff22")
-    draw_centered_block(draw, ["La app para calcular costos,"], title_font, 640)
-    draw_centered_block(draw, ["fijar precios y controlar inventario."], title_font, 710)
+    rounded_rect(draw, (70, card_y, 1010, card_y + card_h), 24, WHITE)
+    draw_centered_block(draw, body_lines, body_font, card_y + card_h // 2, fill=BRAND_DARK, line_gap=line_gap)
     return img
 
 
@@ -218,10 +236,7 @@ def slide_offline() -> Image.Image:
     draw_centered_block(draw, ["Funciona sin internet"], title_font, 500)
     draw_centered_block(
         draw,
-        [
-            "Registra tus datos en el celular",
-            "y sigue trabajando aunque falle la conexión.",
-        ],
+        wrap_text(draw, "Registra tus datos en el celular y sigue trabajando aunque falle la conexión.", body_font, 880),
         body_font,
         640,
         fill=MUTED,
@@ -265,28 +280,68 @@ def slide_cta() -> Image.Image:
     return img
 
 
-def save_slides() -> list[tuple[Path, float]]:
-    slides = [
-        (slide_hook(), 4.0),
-        (slide_problem(), 5.0),
-        (slide_intro(), 4.5),
-        (slide_features(), 5.5),
-        (slide_offline(), 4.0),
-        (slide_cta(), 5.0),
-    ]
+SLIDE_BUILDERS = [
+    slide_hook,
+    slide_problem,
+    slide_intro,
+    slide_features,
+    slide_offline,
+    slide_cta,
+]
+
+
+def wav_duration(path: Path) -> float:
+    with wave.open(str(path), "rb") as wf:
+        return wf.getnframes() / float(wf.getframerate())
+
+
+async def generate_narration_clips() -> list[Path]:
+    audio_dir = OUT_DIR / "audio"
+    audio_dir.mkdir(exist_ok=True)
+    paths: list[Path] = []
+
+    for idx, text in enumerate(NARRATION, start=1):
+        out = audio_dir / f"narration_{idx:02d}.mp3"
+        communicate = edge_tts.Communicate(text, VOICE)
+        await communicate.save(str(out))
+        paths.append(out)
+        print(f"Generated narration {out.name} ({wav_duration_mp3(out):.1f}s)")
+    return paths
+
+
+def wav_duration_mp3(path: Path) -> float:
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            str(path),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return float(result.stdout.strip())
+
+
+def save_slides(durations: list[float]) -> list[tuple[Path, float]]:
     frames_dir = OUT_DIR / "frames"
     frames_dir.mkdir(exist_ok=True)
 
     manifest: list[tuple[Path, float]] = []
-    for idx, (slide, duration) in enumerate(slides, start=1):
+    for idx, (builder, duration) in enumerate(zip(SLIDE_BUILDERS, durations), start=1):
         path = frames_dir / f"slide_{idx:02d}.png"
-        slide.save(path, "PNG")
+        builder().save(path, "PNG")
         manifest.append((path, duration))
-        print(f"Saved {path} ({duration}s)")
+        print(f"Saved {path} ({duration:.1f}s)")
     return manifest
 
 
-def build_video(manifest: list[tuple[Path, float]], output: Path) -> None:
+def build_silent_video(manifest: list[tuple[Path, float]], output: Path) -> None:
     concat_file = OUT_DIR / "concat.txt"
     lines: list[str] = []
     for path, duration in manifest:
@@ -312,15 +367,118 @@ def build_video(manifest: list[tuple[Path, float]], output: Path) -> None:
         "yuv420p",
         "-r",
         str(FPS),
-        "-movflags",
-        "+faststart",
+        "-an",
         str(output),
     ]
     subprocess.run(cmd, check=True)
 
 
-if __name__ == "__main__":
-    manifest = save_slides()
+def build_audio_track(audio_clips: list[Path], durations: list[float], output: Path) -> None:
+    parts_dir = OUT_DIR / "audio_parts"
+    parts_dir.mkdir(exist_ok=True)
+    part_files: list[Path] = []
+
+    for idx, (clip, duration) in enumerate(zip(audio_clips, durations)):
+        padded = parts_dir / f"part_{idx:02d}.wav"
+        silence = duration - wav_duration_mp3(clip)
+        if silence < 0:
+            silence = 0.1
+
+        filter_complex = (
+            f"[0:a]apad=pad_dur={silence:.3f},atrim=0:{duration:.3f}[a]"
+        )
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(clip),
+                "-filter_complex",
+                filter_complex,
+                "-map",
+                "[a]",
+                "-ar",
+                "44100",
+                "-ac",
+                "2",
+                str(padded),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        part_files.append(padded)
+
+    concat_list = OUT_DIR / "audio_concat.txt"
+    concat_list.write_text("\n".join(f"file '{p}'" for p in part_files) + "\n")
+
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(concat_list),
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            str(output),
+        ],
+        check=True,
+    )
+
+
+def mux_video_audio(video: Path, audio: Path, output: Path) -> None:
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(video),
+            "-i",
+            str(audio),
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-shortest",
+            "-movflags",
+            "+faststart",
+            str(output),
+        ],
+        check=True,
+    )
+
+
+async def main() -> None:
+    audio_clips = await generate_narration_clips()
+
+    durations = [
+        max(3.5, wav_duration_mp3(clip) + PAUSE_BETWEEN_SCENES)
+        for clip in audio_clips
+    ]
+
+    manifest = save_slides(durations)
+
+    silent_video = OUT_DIR / "video_silent.mp4"
+    build_silent_video(manifest, silent_video)
+
+    audio_track = OUT_DIR / "narration.m4a"
+    build_audio_track(audio_clips, durations, audio_track)
+
     output = OUT_DIR / "costify-promo-facebook.mp4"
-    build_video(manifest, output)
+    mux_video_audio(silent_video, audio_track, output)
+
+    final_copy = Path("/opt/cursor/artifacts/costify-promo-facebook.mp4")
+    subprocess.run(["cp", str(output), str(final_copy)], check=True)
     print(f"\nVideo ready: {output}")
+    print(f"Copied to: {final_copy}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
