@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Generate Costify Facebook promo video (1080x1080) with narration."""
+"""Generate Costify Facebook promo video (1080x1080) with narration and music."""
 
 from __future__ import annotations
 
 import asyncio
 import subprocess
-import wave
 from pathlib import Path
 
 import edge_tts
@@ -13,6 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "apps/mobile/assets"
+SCRIPT_ASSETS = Path(__file__).resolve().parent / "promo-assets"
 OUT_DIR = Path("/opt/cursor/artifacts/costify-promo")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -22,17 +22,43 @@ BRAND_DARK = "#047857"
 WHITE = "#FFFFFF"
 MUTED = "#D1FAE5"
 ACCENT = "#FEF3C7"
-VOICE = "es-CU-BelkysNeural"
+VOICE = "es-CU-ManuelNeural"
+VOICE_RATE = "+8%"
+VOICE_PITCH = "-1Hz"
 FPS = 30
 PAUSE_BETWEEN_SCENES = 0.35
+PAUSE_BETWEEN_PHRASES = 0.22
+MUSIC_URL = "https://assets.mixkit.co/music/738/738.mp3"
+MUSIC_VOLUME = 0.09
 
-NARRATION = [
-    "¿Sabes cuánto te cuesta lo que vendes? Muchos negocios pequeños pierden dinero sin darse cuenta.",
-    "¿Te suena familiar? Compras insumos y no sabes el costo real. Pones precios a ojo. Se acaba el stock y no te diste cuenta. Al final del mes no sabes si ganaste.",
-    "Conoce Costify. Costos, precios e inventario para tu negocio. La app para calcular costos, fijar precios y controlar inventario.",
-    "Todo en un solo lugar. Costos reales, precios con ganancia e inventario. Pensada para negocios pequeños en Cuba.",
-    "Funciona sin internet. Registra tus datos en el celular y sigue trabajando aunque falle la conexión.",
-    "Deja de adivinar precios. Empieza a controlar tu negocio. Descarga Costify hoy.",
+# Frases cortas, tono conversacional cubano.
+NARRATION_SCENES: list[list[str]] = [
+    [
+        "Oye, ¿tú sabes cuánto te cuesta lo que vendes?",
+        "En los negocios chiquitos, eso pasa mucho.",
+    ],
+    [
+        "¿Te ha pasado?",
+        "Compras insumos y no sabes el costo real.",
+        "Pones precio a ojo, se acaba el stock…",
+        "y a fin de mes no sabes si ganaste.",
+    ],
+    [
+        "Ahí entra Costify.",
+        "Te calcula costos, precios y el inventario.",
+    ],
+    [
+        "Todo en un solo lugar.",
+        "Pa' los negocios pequeños en Cuba.",
+    ],
+    [
+        "Y funciona sin internet.",
+        "Sigues trabajando aunque se caiga la conexión.",
+    ],
+    [
+        "Deja de adivinar precios.",
+        "Descarga Costify.",
+    ],
 ]
 
 
@@ -290,26 +316,11 @@ SLIDE_BUILDERS = [
 ]
 
 
-def wav_duration(path: Path) -> float:
-    with wave.open(str(path), "rb") as wf:
-        return wf.getnframes() / float(wf.getframerate())
+def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, check=True, **kwargs)
 
 
-async def generate_narration_clips() -> list[Path]:
-    audio_dir = OUT_DIR / "audio"
-    audio_dir.mkdir(exist_ok=True)
-    paths: list[Path] = []
-
-    for idx, text in enumerate(NARRATION, start=1):
-        out = audio_dir / f"narration_{idx:02d}.mp3"
-        communicate = edge_tts.Communicate(text, VOICE)
-        await communicate.save(str(out))
-        paths.append(out)
-        print(f"Generated narration {out.name} ({wav_duration_mp3(out):.1f}s)")
-    return paths
-
-
-def wav_duration_mp3(path: Path) -> float:
+def media_duration(path: Path) -> float:
     result = subprocess.run(
         [
             "ffprobe",
@@ -326,6 +337,112 @@ def wav_duration_mp3(path: Path) -> float:
         check=True,
     )
     return float(result.stdout.strip())
+
+
+def make_silence(seconds: float, output: Path) -> None:
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=44100:cl=stereo",
+            "-t",
+            f"{seconds:.3f}",
+            str(output),
+        ],
+        capture_output=True,
+    )
+
+
+async def synthesize_phrase(phrase: str, output: Path) -> None:
+    communicate = edge_tts.Communicate(
+        phrase,
+        VOICE,
+        rate=VOICE_RATE,
+        pitch=VOICE_PITCH,
+    )
+    await communicate.save(str(output))
+
+
+def warm_voice(input_path: Path, output: Path) -> None:
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(input_path),
+            "-af",
+            "highpass=f=90,lowpass=f=9000,compand=attacks=0.03:decays=0.25:points=-80/-80|-24/-18|-10/-8|0/-4,equalizer=f=2500:t=q:w=1.5:g=-2,volume=1.05",
+            "-ar",
+            "44100",
+            "-ac",
+            "2",
+            str(output),
+        ],
+        capture_output=True,
+    )
+
+
+def concat_audio(parts: list[Path], output: Path) -> None:
+    concat_file = output.with_suffix(".txt")
+    concat_file.write_text("\n".join(f"file '{p}'" for p in parts) + "\n")
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(concat_file),
+            "-c:a",
+            "pcm_s16le",
+            str(output),
+        ],
+        capture_output=True,
+    )
+
+
+async def generate_scene_audio(scene_idx: int, phrases: list[str]) -> Path:
+    scene_dir = OUT_DIR / "audio" / f"scene_{scene_idx:02d}"
+    scene_dir.mkdir(parents=True, exist_ok=True)
+    parts: list[Path] = []
+
+    for phrase_idx, phrase in enumerate(phrases, start=1):
+        raw = scene_dir / f"phrase_{phrase_idx:02d}_raw.mp3"
+        warm = scene_dir / f"phrase_{phrase_idx:02d}.wav"
+        await synthesize_phrase(phrase, raw)
+        warm_voice(raw, warm)
+        parts.append(warm)
+
+        if phrase_idx < len(phrases):
+            pause = scene_dir / f"pause_{phrase_idx:02d}.wav"
+            make_silence(PAUSE_BETWEEN_PHRASES, pause)
+            parts.append(pause)
+
+    scene_wav = scene_dir / "scene.wav"
+    concat_audio(parts, scene_wav)
+    print(f"Scene {scene_idx}: {media_duration(scene_wav):.1f}s — {len(phrases)} frases")
+    return scene_wav
+
+
+async def generate_narration_clips() -> list[Path]:
+    clips: list[Path] = []
+    for idx, phrases in enumerate(NARRATION_SCENES, start=1):
+        clips.append(await generate_scene_audio(idx, phrases))
+    return clips
+
+
+def ensure_background_music() -> Path:
+    SCRIPT_ASSETS.mkdir(parents=True, exist_ok=True)
+    music_path = SCRIPT_ASSETS / "bg-music.mp3"
+    if not music_path.exists():
+        run(["curl", "-sL", MUSIC_URL, "-o", str(music_path)])
+        print(f"Downloaded background music: {music_path}")
+    return music_path
 
 
 def save_slides(durations: list[float]) -> list[tuple[Path, float]]:
@@ -350,68 +467,8 @@ def build_silent_video(manifest: list[tuple[Path, float]], output: Path) -> None
     lines.append(f"file '{manifest[-1][0]}'")
     concat_file.write_text("\n".join(lines) + "\n")
 
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-f",
-        "concat",
-        "-safe",
-        "0",
-        "-i",
-        str(concat_file),
-        "-vf",
-        "scale=1080:1080:force_original_aspect_ratio=decrease,pad=1080:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p",
-        "-c:v",
-        "libx264",
-        "-pix_fmt",
-        "yuv420p",
-        "-r",
-        str(FPS),
-        "-an",
-        str(output),
-    ]
-    subprocess.run(cmd, check=True)
-
-
-def build_audio_track(audio_clips: list[Path], durations: list[float], output: Path) -> None:
-    parts_dir = OUT_DIR / "audio_parts"
-    parts_dir.mkdir(exist_ok=True)
-    part_files: list[Path] = []
-
-    for idx, (clip, duration) in enumerate(zip(audio_clips, durations)):
-        padded = parts_dir / f"part_{idx:02d}.wav"
-        silence = duration - wav_duration_mp3(clip)
-        if silence < 0:
-            silence = 0.1
-
-        filter_complex = (
-            f"[0:a]apad=pad_dur={silence:.3f},atrim=0:{duration:.3f}[a]"
-        )
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-y",
-                "-i",
-                str(clip),
-                "-filter_complex",
-                filter_complex,
-                "-map",
-                "[a]",
-                "-ar",
-                "44100",
-                "-ac",
-                "2",
-                str(padded),
-            ],
-            check=True,
-            capture_output=True,
-        )
-        part_files.append(padded)
-
-    concat_list = OUT_DIR / "audio_concat.txt"
-    concat_list.write_text("\n".join(f"file '{p}'" for p in part_files) + "\n")
-
-    subprocess.run(
+    total = sum(d for _, d in manifest)
+    run(
         [
             "ffmpeg",
             "-y",
@@ -420,19 +477,107 @@ def build_audio_track(audio_clips: list[Path], durations: list[float], output: P
             "-safe",
             "0",
             "-i",
-            str(concat_list),
+            str(concat_file),
+            "-vf",
+            "scale=1080:1080:force_original_aspect_ratio=decrease,pad=1080:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-r",
+            str(FPS),
+            "-t",
+            f"{total:.3f}",
+            "-an",
+            str(output),
+        ]
+    )
+
+
+def build_voice_track(audio_clips: list[Path], durations: list[float], output: Path) -> None:
+    parts_dir = OUT_DIR / "audio_parts"
+    parts_dir.mkdir(exist_ok=True)
+    part_files: list[Path] = []
+
+    for idx, (clip, duration) in enumerate(zip(audio_clips, durations)):
+        padded = parts_dir / f"part_{idx:02d}.wav"
+        clip_duration = media_duration(clip)
+        silence = max(0.12, duration - clip_duration)
+
+        run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(clip),
+                "-f",
+                "lavfi",
+                "-i",
+                f"anullsrc=r=44100:cl=stereo:d={silence:.3f}",
+                "-filter_complex",
+                f"[0:a][1:a]concat=n=2:v=0:a=1,atrim=0:{duration:.3f}[a]",
+                "-map",
+                "[a]",
+                str(padded),
+            ],
+            capture_output=True,
+        )
+        part_files.append(padded)
+
+    concat_audio(part_files, output.with_suffix(".wav"))
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(output.with_suffix(".wav")),
             "-c:a",
             "aac",
             "-b:a",
             "192k",
             str(output),
         ],
-        check=True,
+        capture_output=True,
+    )
+
+
+def build_mixed_audio(voice_track: Path, total_duration: float, output: Path) -> None:
+    music_src = ensure_background_music()
+    fade_out_start = max(0.0, total_duration - 3.0)
+
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(voice_track),
+            "-stream_loop",
+            "-1",
+            "-i",
+            str(music_src),
+            "-filter_complex",
+            (
+                f"[0:a]volume=1.0[voice];"
+                f"[1:a]atrim=0:{total_duration:.3f},asetpts=PTS-STARTPTS,"
+                f"volume={MUSIC_VOLUME},"
+                f"afade=t=in:st=0:d=2.5,"
+                f"afade=t=out:st={fade_out_start:.3f}:d=3[music];"
+                f"[voice][music]amix=inputs=2:duration=first:dropout_transition=2[aout]"
+            ),
+            "-map",
+            "[aout]",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            str(output),
+        ],
+        capture_output=True,
     )
 
 
 def mux_video_audio(video: Path, audio: Path, output: Path) -> None:
-    subprocess.run(
+    run(
         [
             "ffmpeg",
             "-y",
@@ -450,8 +595,7 @@ def mux_video_audio(video: Path, audio: Path, output: Path) -> None:
             "-movflags",
             "+faststart",
             str(output),
-        ],
-        check=True,
+        ]
     )
 
 
@@ -459,24 +603,29 @@ async def main() -> None:
     audio_clips = await generate_narration_clips()
 
     durations = [
-        max(3.5, wav_duration_mp3(clip) + PAUSE_BETWEEN_SCENES)
+        max(3.8, media_duration(clip) + PAUSE_BETWEEN_SCENES)
         for clip in audio_clips
     ]
+    total_duration = sum(durations)
 
     manifest = save_slides(durations)
 
     silent_video = OUT_DIR / "video_silent.mp4"
     build_silent_video(manifest, silent_video)
 
-    audio_track = OUT_DIR / "narration.m4a"
-    build_audio_track(audio_clips, durations, audio_track)
+    voice_track = OUT_DIR / "voice.m4a"
+    build_voice_track(audio_clips, durations, voice_track)
+
+    mixed_audio = OUT_DIR / "final_audio.m4a"
+    build_mixed_audio(voice_track, total_duration, mixed_audio)
 
     output = OUT_DIR / "costify-promo-facebook.mp4"
-    mux_video_audio(silent_video, audio_track, output)
+    mux_video_audio(silent_video, mixed_audio, output)
 
     final_copy = Path("/opt/cursor/artifacts/costify-promo-facebook.mp4")
-    subprocess.run(["cp", str(output), str(final_copy)], check=True)
+    run(["cp", str(output), str(final_copy)])
     print(f"\nVideo ready: {output}")
+    print(f"Duration: {media_duration(output):.1f}s")
     print(f"Copied to: {final_copy}")
 
 
