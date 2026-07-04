@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { StockThreshold } from '@costify/shared/domain/types';
 import { STORAGE_KEYS } from '@costify/shared/domain/constants';
+import { randomId } from '@costify/shared/random-id';
 import { useStorage } from '../context/ClientDataProvider';
 import { useAsyncPersistedResource } from './use-persisted-state';
 
@@ -24,7 +25,7 @@ export function useStockThresholds() {
 
   const saveThreshold = useCallback(
     (input: Omit<StockThreshold, 'id'>, id?: string) => {
-      const threshold: StockThreshold = { ...input, id: id ?? crypto.randomUUID() };
+      const threshold: StockThreshold = { ...input, id: id ?? randomId() };
       setThresholds((prev) => {
         const exists = prev.some((t) => t.id === threshold.id);
         return exists

@@ -1,6 +1,7 @@
 import type { RawMaterial, RawMaterialInput, UnitSettings } from '../types';
 import { calculateUnitDirectCost } from './direct-cost';
 import { DEFAULT_UNIT_SETTINGS, isValidUnitType as isConfiguredUnitType } from '../unit-settings';
+import { randomId } from '../../random-id';
 
 type LegacyRawMaterial = Partial<RawMaterialInput> & {
   unitsPerPackage?: number;
@@ -39,7 +40,7 @@ export function buildRawMaterial(
 ): RawMaterial {
   return {
     ...input,
-    id: id ?? crypto.randomUUID(),
+    id: id ?? randomId(),
     unitCost: calculateRawMaterialUnitCost(input.purchasePrice, input.packageQuantity),
     timestamp: timestamp ?? Date.now(),
   };

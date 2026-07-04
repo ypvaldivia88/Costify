@@ -175,6 +175,8 @@ export {
   useExchangeRatesContext,
   useOptionalExchangeRates,
   usePriceReviewAlerts,
+  useActivePriceReviewAlerts,
+  getTabForPriceReviewTarget,
   parseTrmiApiResponse,
   NAV_ITEMS,
   NAV_BY_ID,

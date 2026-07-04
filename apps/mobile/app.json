@@ -18,6 +18,7 @@
     },
     "android": {
       "package": "com.costify.app",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#059669",
         "foregroundImage": "./assets/android-icon-foreground.png",

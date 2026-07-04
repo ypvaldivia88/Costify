@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Boxes } from 'lucide-react-native';
 import type { RawMaterial } from '@costify/shared/domain/types';
@@ -13,6 +13,8 @@ import { useTheme } from '@/context/ThemeContext';
 
 interface RawMaterialsManagerProps {
   materials: RawMaterial[];
+  focusMaterialId?: string;
+  onFocusConsumed?: () => void;
   onSave: (
     data: {
       name: string;
@@ -31,6 +33,8 @@ interface RawMaterialsManagerProps {
 
 export function RawMaterialsManager({
   materials,
+  focusMaterialId,
+  onFocusConsumed,
   onSave,
   onDelete,
   onStockChange,
@@ -39,6 +43,16 @@ export function RawMaterialsManager({
   const { confirm } = useConfirm();
   const scrollRef = useRef<ScrollView>(null);
   const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
+
+  useEffect(() => {
+    if (!focusMaterialId) return;
+    const material = materials.find((item) => item.id === focusMaterialId);
+    if (material) {
+      setEditingMaterial(material);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+    onFocusConsumed?.();
+  }, [focusMaterialId, materials, onFocusConsumed]);
 
   const totalStockValue = materials.reduce((sum, m) => sum + m.unitCost * m.stockQuantity, 0);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Boxes } from 'lucide-react';
 import type { RawMaterial, StockLevel, Warehouse } from '@costify/shared/domain/types';
 import { formatCurrency } from '@costify/shared/format/currency';
@@ -16,6 +16,8 @@ interface RawMaterialsManagerProps {
   warehouses: Warehouse[];
   stockLevels: StockLevel[];
   defaultWarehouse?: Warehouse;
+  focusMaterialId?: string;
+  onFocusConsumed?: () => void;
   onSave: (
     data: {
       name: string;
@@ -36,12 +38,24 @@ export function RawMaterialsManager({
   warehouses,
   stockLevels,
   defaultWarehouse,
+  focusMaterialId,
+  onFocusConsumed,
   onSave,
   onDelete,
   onStockChange,
 }: RawMaterialsManagerProps) {
   const { confirm } = useConfirm();
   const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
+
+  useEffect(() => {
+    if (!focusMaterialId) return;
+    const material = materials.find((item) => item.id === focusMaterialId);
+    if (material) {
+      setEditingMaterial(material);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    onFocusConsumed?.();
+  }, [focusMaterialId, materials, onFocusConsumed]);
 
   const totalStockValue = materials.reduce((sum, m) => sum + m.unitCost * m.stockQuantity, 0);
 

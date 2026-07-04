@@ -12,6 +12,7 @@ import type {
 } from '../types';
 import { DEFAULT_UNIT_SETTINGS } from '../unit-settings';
 import { getUnitShortLabel } from '../unit-settings';
+import { randomId } from '../../random-id';
 
 function stockKey(refType: StockRefType, refId: string, warehouseId: string): string {
   return `${refType}:${refId}:${warehouseId}`;
@@ -133,7 +134,7 @@ export function buildStockMovement(
 ): StockMovement {
   return {
     ...input,
-    id: id ?? crypto.randomUUID(),
+    id: id ?? randomId(),
     timestamp: timestamp ?? Date.now(),
   };
 }
@@ -145,7 +146,7 @@ export function buildWarehouse(
 ): Warehouse {
   return {
     ...input,
-    id: id ?? crypto.randomUUID(),
+    id: id ?? randomId(),
     timestamp: timestamp ?? Date.now(),
   };
 }

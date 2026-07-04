@@ -31,5 +31,9 @@ export {
   useOptionalExchangeRates,
   usePriceReviewAlerts,
 } from './hooks/use-exchange-rates-context';
+export {
+  useActivePriceReviewAlerts,
+  getTabForPriceReviewTarget,
+} from './hooks/use-price-review-alerts-state';
 export { useNumericField } from './hooks/use-numeric-field';
 export { UnitCatalogProvider, useUnitCatalog } from './hooks/use-unit-catalog';

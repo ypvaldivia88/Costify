@@ -10,7 +10,8 @@
     "./format/*": "./src/format/*",
     "./backup/*": "./src/backup/*",
     "./sync/*": "./src/sync/*",
-    "./purchase-price": "./src/purchase-price.ts"
+    "./purchase-price": "./src/purchase-price.ts",
+    "./random-id": "./src/random-id.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
