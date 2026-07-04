@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import { AuthProvider } from '@/components/auth/AuthProvider';
+import { WebClientDataProvider } from '@/components/client-data/WebClientDataProvider';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -48,7 +49,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className="antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <WebClientDataProvider>{children}</WebClientDataProvider>
+        </AuthProvider>
       </body>
     </html>
   );

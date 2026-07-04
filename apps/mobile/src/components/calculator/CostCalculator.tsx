@@ -21,7 +21,7 @@ import {
   getSuggestedRate,
   resolvePurchasePrice,
 } from '@costify/shared/domain/purchase-currency';
-import type { PurchasePriceMode } from '@/ui/purchase-price';
+import type { PurchasePriceMode } from '@costify/shared/purchase-price';
 import { IndirectCostsEditor } from '@/components/calculator/IndirectCostsEditor';
 import { PricingResults } from '@/components/calculator/PricingResults';
 import { RecipeEditor } from '@/components/calculator/RecipeEditor';

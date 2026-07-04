@@ -55,6 +55,7 @@ export const STORAGE_KEYS = {
   syncWorkspaceId: 'costify_workspace_id_v1',
   syncMetadata: 'costify_sync_metadata_v1',
   exchangeRates: 'costify_exchange_rates_v1',
+  dismissedPriceAlerts: 'costify_dismissed_price_alerts_v1',
 } as const;
 
 export const WAREHOUSE_TYPE_LABELS: Record<WarehouseType, string> = {

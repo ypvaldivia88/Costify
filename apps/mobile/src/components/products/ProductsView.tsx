@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type {
   GlobalFundSettings,
   MovementType,
@@ -27,6 +27,8 @@ interface ProductsViewProps {
   stockLevels: StockLevel[];
   stockValuation?: { rawMaterialsValue: number; productsValue: number; totalValue: number };
   defaultWarehouseId?: string;
+  focusProductId?: string;
+  onFocusConsumed?: () => void;
   onSaveProduct: (product: ProductCalculation) => void;
   onDeleteProduct: (id: string) => void;
   onRecalculateAll: () => void;
@@ -64,6 +66,8 @@ export function ProductsView({
   stockLevels,
   stockValuation,
   defaultWarehouseId,
+  focusProductId,
+  onFocusConsumed,
   onSaveProduct,
   onDeleteProduct,
   onRecalculateAll,
@@ -75,6 +79,17 @@ export function ProductsView({
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductCalculation | null>(null);
   const [pendingStockProduct, setPendingStockProduct] = useState<ProductCalculation | null>(null);
+
+  useEffect(() => {
+    if (!focusProductId) return;
+    const product = inventory.find((item) => item.id === focusProductId);
+    if (product) {
+      setEditingProduct(product);
+      setSelectedProductId(product.id);
+      setMode('edit');
+    }
+    onFocusConsumed?.();
+  }, [focusProductId, inventory, onFocusConsumed]);
 
   const selectedProduct = inventory.find((p) => p.id === selectedProductId) ?? null;
 

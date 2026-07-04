@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import type { PriceReviewAlertTarget } from '@costify/shared/domain/exchange-rates';
 import type { ProductCalculation } from '@costify/shared/domain/types';
+import { getTabForPriceReviewTarget } from '@/hooks/use-exchange-rates-context';
 import { NAV_BY_ID } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -33,6 +35,12 @@ export function AppShell() {
   const { loading: authLoading } = useAuth();
   const data = useAppData();
   const [activeTab, setActiveTab] = useState<AppTab>('products');
+  const [focusTarget, setFocusTarget] = useState<PriceReviewAlertTarget | null>(null);
+
+  const handleNavigateToTarget = (target: PriceReviewAlertTarget) => {
+    setActiveTab(getTabForPriceReviewTarget(target));
+    setFocusTarget(target);
+  };
 
   if (authLoading || !data.hydrated) {
     return <LoadingScreen />;
@@ -61,7 +69,12 @@ export function AppShell() {
         />
 
         <main className="max-w-5xl mx-auto px-4 pt-5 pb-32 md:pb-8">
-          <PriceReviewAlerts materials={data.materials} products={data.inventory} />
+          <PriceReviewAlerts
+            materials={data.materials}
+            products={data.inventory}
+            onNavigateToTarget={handleNavigateToTarget}
+            className="mb-4"
+          />
 
           <motion.div
             key={activeTab}
@@ -83,6 +96,8 @@ export function AppShell() {
                 stockLevels={data.stockLevels}
                 stockValuation={data.stockValuation}
                 defaultWarehouseId={defaultWarehouse?.id}
+                focusProductId={focusTarget?.refType === 'product' ? focusTarget.refId : undefined}
+                onFocusConsumed={() => setFocusTarget(null)}
                 onSaveProduct={(product) =>
                   data.saveProduct(product, data.materials, data.globalFund, data.unitSettings)
                 }
@@ -110,6 +125,10 @@ export function AppShell() {
                 warehouses={data.warehouses}
                 stockLevels={data.stockLevels}
                 defaultWarehouse={defaultWarehouse}
+                focusMaterialId={
+                  focusTarget?.refType === 'raw_material' ? focusTarget.refId : undefined
+                }
+                onFocusConsumed={() => setFocusTarget(null)}
                 onSave={data.saveMaterial}
                 onDelete={data.deleteMaterial}
                 onStockChange={data.updateStock}

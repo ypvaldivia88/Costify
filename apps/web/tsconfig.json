@@ -21,7 +21,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@costify/shared/*": ["../../packages/shared/src/*"]
+      "@costify/shared/*": ["../../packages/shared/src/*"],
+      "@costify/client-data/*": ["../../packages/client-data/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

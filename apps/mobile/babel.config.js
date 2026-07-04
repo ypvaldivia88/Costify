@@ -10,6 +10,7 @@ module.exports = function (api) {
           alias: {
             '@': './src',
             '@costify/shared': '../../packages/shared/src',
+            '@costify/client-data': '../../packages/client-data/src',
           },
         },
       ],

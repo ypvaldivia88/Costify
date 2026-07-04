@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { PurchasePriceMode } from '@/ui/purchase-price';
-import { switchPurchasePriceMode } from '@/ui/purchase-price';
+import type { PurchasePriceMode } from '@costify/shared/purchase-price';
+import { switchPurchasePriceMode } from '@costify/shared/purchase-price';
 import type { PurchaseCurrency } from '@costify/shared/domain/types';
 import type { ExchangeRateSnapshot } from '@costify/shared/domain/exchange-rates';
 import { PURCHASE_CURRENCY_LABELS, toCup, TRMI_DISCLAIMER } from '@costify/shared/domain/exchange-rates';

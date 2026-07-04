@@ -4,7 +4,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 
 ## Monorepo
 
-This app lives at `apps/mobile` inside the Costify monorepo. Shared business logic is in `packages/shared` (`@costify/shared`).
+This app lives at `apps/mobile` inside the Costify monorepo. Shared business logic is in `packages/shared` (`@costify/shared`) and client hooks/sync in `packages/client-data` (`@costify/client-data`).
 
 From the repo root:
 

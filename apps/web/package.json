@@ -3,15 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node ../../node_modules/next/dist/bin/next dev",
+    "build": "node ../../node_modules/next/dist/bin/next build",
+    "start": "node ../../node_modules/next/dist/bin/next start",
     "lint": "eslint .",
-    "clean": "next clean",
+    "clean": "node ../../node_modules/next/dist/bin/next clean",
     "seed:admin": "tsx --env-file=.env.local scripts/seed-super-admin.ts",
+    "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-tenant.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@costify/client-data": "workspace:*",
     "@costify/shared": "workspace:*",
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.2",

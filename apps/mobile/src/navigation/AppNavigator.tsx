@@ -4,7 +4,10 @@ import {
   NavigationContainer,
   DefaultTheme,
   DarkTheme,
+  createNavigationContainerRef,
 } from '@react-navigation/native';
+import type { PriceReviewAlertTarget } from '@costify/shared/domain/exchange-rates';
+import { getTabForPriceReviewTarget } from '@/hooks/use-exchange-rates-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -31,6 +34,7 @@ import { NAV_BY_ID, type AppTab } from '@/navigation/tabs';
 type RootTabParamList = Record<AppTab, undefined>;
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const navigationRef = createNavigationContainerRef<RootTabParamList>();
 
 function LoadingScreen({ message = 'Cargando…' }: { message?: string }) {
   const { colors } = useTheme();
@@ -156,7 +160,17 @@ function MainTabs({
   const data = useAppData();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<AppTab>('products');
+  const [focusTarget, setFocusTarget] = useState<PriceReviewAlertTarget | null>(null);
   const defaultWarehouse = data.getDefaultWarehouse();
+
+  const handleNavigateToTarget = (target: PriceReviewAlertTarget) => {
+    const tab = getTabForPriceReviewTarget(target);
+    setFocusTarget(target);
+    setActiveTab(tab);
+    if (navigationRef.isReady()) {
+      navigationRef.navigate(tab);
+    }
+  };
 
   if (!data.hydrated) return <LoadingScreen message="Cargando tus datos…" />;
 
@@ -166,7 +180,12 @@ function MainTabs({
     <UnitCatalogProvider settings={data.unitSettings}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <AppHeader title={screenTitle} />
-        <PriceReviewAlerts materials={data.materials} products={data.inventory} />
+        <PriceReviewAlerts
+          materials={data.materials}
+          products={data.inventory}
+          onNavigateToTarget={handleNavigateToTarget}
+          style={styles.alerts}
+        />
         <Tab.Navigator
           screenListeners={{
             state: (e) => {
@@ -210,6 +229,8 @@ function MainTabs({
                 stockLevels={data.stockLevels}
                 stockValuation={data.stockValuation}
                 defaultWarehouseId={defaultWarehouse?.id}
+                focusProductId={focusTarget?.refType === 'product' ? focusTarget.refId : undefined}
+                onFocusConsumed={() => setFocusTarget(null)}
                 onSaveProduct={(product) => data.saveProduct(product)}
                 onDeleteProduct={data.deleteProduct}
                 onRecalculateAll={data.recalculateAll}
@@ -223,6 +244,10 @@ function MainTabs({
             {() => (
               <RawMaterialsManager
                 materials={data.materials}
+                focusMaterialId={
+                  focusTarget?.refType === 'raw_material' ? focusTarget.refId : undefined
+                }
+                onFocusConsumed={() => setFocusTarget(null)}
                 onSave={data.saveMaterial}
                 onDelete={data.deleteMaterial}
                 onStockChange={data.updateStock}
@@ -287,7 +312,7 @@ function NavigationRoot() {
         };
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <AppDataProvider key={storageScope ?? 'guest'}>
         <ExchangeRatesBridge>
@@ -348,6 +373,7 @@ export function AppNavigator() {
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  alerts: { paddingHorizontal: 16, paddingBottom: 8 },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,

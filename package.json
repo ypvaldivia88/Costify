@@ -11,8 +11,10 @@
     "start": "pnpm --filter @costify/web start",
     "lint": "pnpm --filter @costify/web lint",
     "seed:admin": "pnpm --filter @costify/web seed:admin",
+    "seed:demo": "pnpm --filter @costify/web seed:demo",
     "typecheck": "pnpm -r typecheck",
-    "typecheck:shared": "pnpm --filter @costify/shared typecheck"
+    "typecheck:shared": "pnpm --filter @costify/shared typecheck",
+    "typecheck:client-data": "pnpm --filter @costify/client-data typecheck"
   },
   "devDependencies": {
     "typescript": "5.9.3"

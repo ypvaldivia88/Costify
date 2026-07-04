@@ -49,11 +49,19 @@ export interface MarginSensitivityRow {
   marginPercent: number;
 }
 
+export interface PriceReviewAlertTarget {
+  refType: 'raw_material' | 'product';
+  refId: string;
+  name: string;
+}
+
 export interface PriceReviewAlert {
   id: string;
   message: string;
   severity: 'warning' | 'info';
   affectedCount: number;
+  target?: PriceReviewAlertTarget;
+  actionLabel?: string;
 }
 
 export const PURCHASE_CURRENCY_LABELS: Record<PurchaseCurrency, string> = {
@@ -218,6 +226,39 @@ export function calculateMarginSensitivity(
   });
 }
 
+function itemHasForeignPurchase(
+  item: RawMaterial | ProductCalculation,
+  currentUsd: number,
+  threshold: number
+): boolean {
+  const meta = item.purchaseMeta;
+  if (!meta) return false;
+  const reference = meta.trmiReferenceRate ?? meta.exchangeRateUsed;
+  if (reference <= 0) return false;
+  const diff = Math.abs(currentUsd - reference) / reference;
+  return diff >= threshold;
+}
+
+function buildForeignPurchaseAlert(
+  item: RawMaterial | ProductCalculation,
+  refType: PriceReviewAlertTarget['refType'],
+  currentUsd: number
+): PriceReviewAlert {
+  const meta = item.purchaseMeta!;
+  const reference = meta.trmiReferenceRate ?? meta.exchangeRateUsed;
+  const pct = ((Math.abs(currentUsd - reference) / reference) * 100).toFixed(1);
+  const currencyLabel = PURCHASE_CURRENCY_LABELS[meta.originalCurrency];
+
+  return {
+    id: `foreign-purchase:${refType}:${item.id}`,
+    message: `${item.name}: compra en ${currencyLabel} a ${reference.toFixed(0)} CUP; la TRMI hoy está en ${currentUsd.toFixed(0)} CUP (±${pct}%).`,
+    severity: 'info',
+    affectedCount: 1,
+    target: { refType, refId: item.id, name: item.name },
+    actionLabel: refType === 'raw_material' ? 'Ver insumo' : 'Ver producto',
+  };
+}
+
 export function getPriceReviewAlerts(
   materials: RawMaterial[],
   products: ProductCalculation[],
@@ -244,25 +285,16 @@ export function getPriceReviewAlerts(
     }
   }
 
-  const itemsWithForeignCost = [
-    ...materials.filter((m) => m.purchaseMeta),
-    ...products.filter((p) => p.purchaseMeta),
-  ];
+  for (const material of materials) {
+    if (itemHasForeignPurchase(material, currentUsd, threshold)) {
+      alerts.push(buildForeignPurchaseAlert(material, 'raw_material', currentUsd));
+    }
+  }
 
-  const divergedFromMarket = itemsWithForeignCost.filter((item) => {
-    const meta = item.purchaseMeta!;
-    const reference = meta.trmiReferenceRate ?? meta.exchangeRateUsed;
-    const diff = Math.abs(currentUsd - reference) / reference;
-    return diff >= threshold;
-  });
-
-  if (divergedFromMarket.length > 0) {
-    alerts.push({
-      id: 'market-reference-shift',
-      message: `${divergedFromMarket.length} compra${divergedFromMarket.length > 1 ? 's' : ''} en divisa registrada${divergedFromMarket.length > 1 ? 's' : ''} cuando la TRMI era distinta (±${settings.alertThresholdPercent}% respecto a hoy).`,
-      severity: 'info',
-      affectedCount: divergedFromMarket.length,
-    });
+  for (const product of products) {
+    if (itemHasForeignPurchase(product, currentUsd, threshold)) {
+      alerts.push(buildForeignPurchaseAlert(product, 'product', currentUsd));
+    }
   }
 
   return alerts;
