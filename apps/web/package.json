@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "clean": "next clean",
     "seed:admin": "tsx --env-file=.env.local scripts/seed-super-admin.ts",
+    "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-tenant.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
