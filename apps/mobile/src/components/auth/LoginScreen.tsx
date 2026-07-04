@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -28,10 +28,29 @@ export function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const passwordRef = useRef<TextInput>(null);
+  const passwordYRef = useRef(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const scrollToPassword = () => {
     requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ y: 180, animated: true });
+      scrollRef.current?.scrollTo({ y: Math.max(0, passwordYRef.current - 24), animated: true });
     });
   };
 
@@ -70,7 +89,10 @@ export function LoginScreen() {
 
         <ScrollView
           ref={scrollRef}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            keyboardHeight > 0 ? { paddingBottom: keyboardHeight + 24 } : null,
+          ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
@@ -101,17 +123,23 @@ export function LoginScreen() {
               onSubmitEditing={() => passwordRef.current?.focus()}
               blurOnSubmit={false}
             />
-            <PasswordInput
-              ref={passwordRef}
-              label="Contraseña"
-              value={password}
-              onChangeText={setPassword}
-              autoComplete="password"
-              placeholder="••••••••"
-              returnKeyType="done"
-              onFocus={scrollToPassword}
-              onSubmitEditing={() => void handleSubmit()}
-            />
+            <View
+              onLayout={(event) => {
+                passwordYRef.current = event.nativeEvent.layout.y;
+              }}
+            >
+              <PasswordInput
+                ref={passwordRef}
+                label="Contraseña"
+                value={password}
+                onChangeText={setPassword}
+                autoComplete="password"
+                placeholder="••••••••"
+                returnKeyType="done"
+                onFocus={scrollToPassword}
+                onSubmitEditing={() => void handleSubmit()}
+              />
+            </View>
             {error ? (
               <Text style={[styles.error, { color: colors.danger, backgroundColor: colors.dangerMuted }]}>
                 {error}

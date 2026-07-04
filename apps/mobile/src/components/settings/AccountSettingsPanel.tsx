@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { AlertTriangle, KeyRound, LogOut, User } from 'lucide-react-native';
 import { apiFetch } from '@/api/client';
 import type { AccountDetails, SessionUser } from '@/auth/types';
@@ -10,6 +10,7 @@ import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 
 interface AccountSettingsPanelProps {
@@ -182,7 +183,7 @@ export function AccountSettingsPanel({ user }: AccountSettingsPanelProps) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <View style={styles.content}>
       <Card>
         <SectionHeader
           icon={User}
@@ -228,24 +229,27 @@ export function AccountSettingsPanel({ user }: AccountSettingsPanelProps) {
           title="Contraseña"
           description="Cambia la contraseña de acceso a tu cuenta"
         />
-        <Input
+        <PasswordInput
           label="Contraseña actual"
           value={passwords.currentPassword}
           onChangeText={(currentPassword) => setPasswords((prev) => ({ ...prev, currentPassword }))}
-          secureTextEntry
+          autoComplete="password"
+          returnKeyType="next"
         />
-        <Input
+        <PasswordInput
           label="Nueva contraseña"
           value={passwords.newPassword}
           onChangeText={(newPassword) => setPasswords((prev) => ({ ...prev, newPassword }))}
-          secureTextEntry
+          autoComplete="password-new"
           hint="Mínimo 8 caracteres"
+          returnKeyType="next"
         />
-        <Input
+        <PasswordInput
           label="Confirmar nueva contraseña"
           value={passwords.confirmPassword}
           onChangeText={(confirmPassword) => setPasswords((prev) => ({ ...prev, confirmPassword }))}
-          secureTextEntry
+          autoComplete="password-new"
+          returnKeyType="done"
         />
         <Button variant="outline" onPress={() => void handleChangePassword()} disabled={savingPassword}>
           {savingPassword ? 'Actualizando…' : 'Cambiar contraseña'}
@@ -258,11 +262,12 @@ export function AccountSettingsPanel({ user }: AccountSettingsPanelProps) {
           title="Zona de riesgo"
           description="Acciones irreversibles sobre tu cuenta"
         />
-        <Input
+        <PasswordInput
           label="Confirma con tu contraseña"
           value={dangerPassword}
           onChangeText={setDangerPassword}
-          secureTextEntry
+          autoComplete="password"
+          returnKeyType="done"
         />
         <View style={styles.row}>
           <Button variant="outline" onPress={() => void handleSuspend()}>
@@ -281,7 +286,7 @@ export function AccountSettingsPanel({ user }: AccountSettingsPanelProps) {
         <LogOut size={16} color={colors.foreground} />
         {' Cerrar sesión'}
       </Button>
-    </ScrollView>
+    </View>
   );
 }
 
