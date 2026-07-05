@@ -12,6 +12,11 @@ import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { findTenantById } from '@/lib/auth/tenants';
 import { findUserByEmail, findUserById } from '@/lib/auth/users';
 import { WORKSPACES_COLLECTION } from '@/lib/db/workspace';
+import {
+  changeSubscriptionPlan,
+  ensureTenantSubscription,
+  type SubscriptionPlan,
+} from '@costify/shared/domain/subscription';
 
 export interface AccountDetails {
   user: PublicUser;
@@ -38,7 +43,7 @@ function toPublicTenant(tenant: TenantDocument): PublicTenant {
     workspaceId: tenant.workspaceId,
     status: tenant.status,
     createdAt: tenant.createdAt,
-    subscription: tenant.subscription,
+    subscription: ensureTenantSubscription(tenant.subscription),
   };
 }
 
@@ -131,6 +136,34 @@ export async function updateAccountProfile(
   }
 
   return buildSessionUser(updated);
+}
+
+export async function requestSubscriptionPlanChange(
+  userId: string,
+  plan: SubscriptionPlan
+): Promise<AccountDetails> {
+  const user = await findUserById(userId);
+  if (!user?.tenantId || user.role !== 'tenant_admin') {
+    throw new Error('Solo el administrador del negocio puede gestionar la suscripción.');
+  }
+
+  const tenant = await findTenantById(user.tenantId);
+  if (!tenant) {
+    throw new Error('Negocio no encontrado.');
+  }
+
+  const subscription = changeSubscriptionPlan(ensureTenantSubscription(tenant.subscription), plan);
+
+  const db = await getDb();
+  await db
+    .collection<TenantDocument>(TENANTS_COLLECTION)
+    .updateOne({ tenantId: user.tenantId }, { $set: { subscription } });
+
+  const account = await getAccountDetails(userId);
+  if (!account) {
+    throw new Error('No se pudo actualizar la suscripción.');
+  }
+  return account;
 }
 
 export async function changeAccountPassword(

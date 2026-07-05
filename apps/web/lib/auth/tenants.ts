@@ -18,7 +18,11 @@ import {
 import { DEFAULT_UNIT_SETTINGS } from '@costify/shared/domain/unit-settings';
 import {
   activateSubscription,
+  applySubscriptionAdminAction,
   buildPendingSubscription,
+  changeSubscriptionPlan,
+  ensureTenantSubscription,
+  type SubscriptionAdminAction,
   type SubscriptionPlan,
   type TenantSubscription,
 } from '@costify/shared/domain/subscription';
@@ -31,7 +35,7 @@ function toPublicTenant(tenant: TenantDocument): PublicTenant {
     workspaceId: tenant.workspaceId,
     status: tenant.status,
     createdAt: tenant.createdAt,
-    subscription: tenant.subscription,
+    subscription: ensureTenantSubscription(tenant.subscription),
   };
 }
 
@@ -302,6 +306,30 @@ export async function rejectPendingTenant(tenantId: string): Promise<boolean> {
   await db.collection(WORKSPACES_COLLECTION).deleteOne({ workspaceId: tenant.workspaceId });
   const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).deleteOne({ tenantId });
   return result.deletedCount === 1;
+}
+
+export async function updateTenantSubscription(
+  tenantId: string,
+  action: SubscriptionAdminAction,
+  plan?: SubscriptionPlan
+): Promise<PublicTenant | null> {
+  const tenant = await findTenantById(tenantId);
+  if (!tenant) {
+    throw new Error('Cliente no encontrado.');
+  }
+
+  const current = ensureTenantSubscription(tenant.subscription);
+  const subscription = applySubscriptionAdminAction(current, action, plan);
+
+  const db = await getDb();
+  const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOneAndUpdate(
+    { tenantId },
+    { $set: { subscription } },
+    { returnDocument: 'after' }
+  );
+
+  if (!result) return null;
+  return toPublicTenant(result);
 }
 
 export async function updateTenantUserPassword(

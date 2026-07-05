@@ -110,6 +110,19 @@ export async function logoutRequest(): Promise<void> {
   await setStoredToken(null);
 }
 
+export async function requestSubscriptionPlanChange(
+  plan: import('@costify/shared/domain/subscription').SubscriptionPlan
+): Promise<void> {
+  const response = await apiFetch('/api/account/subscription', {
+    method: 'PATCH',
+    body: JSON.stringify({ plan }),
+  });
+  const json = (await response.json()) as { error?: string };
+  if (!response.ok) {
+    throw new Error(json.error || 'No se pudo actualizar la suscripción.');
+  }
+}
+
 export async function fetchCurrentUser(): Promise<SessionUser | null> {
   const token = await getStoredToken();
   if (!token) return null;

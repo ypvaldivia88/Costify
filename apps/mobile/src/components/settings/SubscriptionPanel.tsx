@@ -1,12 +1,15 @@
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CreditCard, MessageCircle } from 'lucide-react-native';
-import type { TenantSubscription } from '@costify/shared/domain/subscription';
+import type { SubscriptionPlan, TenantSubscription } from '@costify/shared/domain/subscription';
 import {
   buildWhatsAppPaymentMessage,
   buildWhatsAppPaymentUrl,
   formatSubscriptionExpiry,
+  getSubscriptionPlanPriceUsd,
   getSubscriptionStatusLabel,
   SUBSCRIPTION_PLAN_LABELS,
+  SUBSCRIPTION_PLANS,
   WHATSAPP_SUPPORT_NUMBER,
 } from '@costify/shared/domain/subscription';
 import { useTheme } from '@/context/ThemeContext';
@@ -19,6 +22,8 @@ interface SubscriptionPanelProps {
   contactName: string;
   contactEmail: string;
   subscription?: TenantSubscription | null;
+  manageable?: boolean;
+  onChangePlan?: (plan: SubscriptionPlan) => Promise<void>;
 }
 
 function statusColors(
@@ -42,8 +47,14 @@ export function SubscriptionPanel({
   contactName,
   contactEmail,
   subscription,
+  manageable = false,
+  onChangePlan,
 }: SubscriptionPanelProps) {
   const { colors, scheme } = useTheme();
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(subscription?.plan ?? 'monthly');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   if (!subscription) {
     return (
@@ -80,12 +91,31 @@ export function SubscriptionPanel({
     void Linking.openURL(whatsappUrl);
   };
 
+  async function handleChangePlan() {
+    if (!subscription || !onChangePlan || selectedPlan === subscription.plan) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await onChangePlan(selectedPlan);
+      setSuccess('Plan actualizado. Envía el comprobante por WhatsApp para activarlo.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cambiar el plan.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <Card>
       <SectionHeader
         icon={CreditCard}
         title="Plan de suscripción"
-        description="Estado de tu plan y opciones de pago o renovación"
+        description={
+          manageable
+            ? 'Gestiona tu plan y envía el pago por WhatsApp.'
+            : 'Estado de tu plan y opciones de pago o renovación'
+        }
       />
 
       <View style={styles.stack}>
@@ -138,6 +168,45 @@ export function SubscriptionPanel({
           </View>
         </View>
 
+        {manageable && onChangePlan ? (
+          <View style={styles.planSection}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Cambiar plan</Text>
+            <View style={styles.planGrid}>
+              {SUBSCRIPTION_PLANS.map((planId) => {
+                const selected = selectedPlan === planId;
+                return (
+                  <Pressable
+                    key={planId}
+                    onPress={() => setSelectedPlan(planId)}
+                    style={[
+                      styles.planOption,
+                      {
+                        borderColor: selected ? colors.brand : colors.border,
+                        backgroundColor: selected ? colors.brandMuted : colors.surfaceMuted,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.planOptionLabel, { color: colors.foreground }]}>
+                      {SUBSCRIPTION_PLAN_LABELS[planId]}
+                    </Text>
+                    <Text style={[styles.planOptionPrice, { color: colors.muted }]}>
+                      {getSubscriptionPlanPriceUsd(planId).toFixed(2)} USD
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Button
+              onPress={() => void handleChangePlan()}
+              disabled={saving || selectedPlan === subscription.plan}
+            >
+              {saving ? 'Guardando…' : 'Solicitar cambio de plan'}
+            </Button>
+            {error ? <Text style={[styles.feedback, { color: colors.danger }]}>{error}</Text> : null}
+            {success ? <Text style={[styles.feedback, { color: colors.brand }]}>{success}</Text> : null}
+          </View>
+        ) : null}
+
         {needsPayment ? (
           <View style={[styles.cta, { borderColor: colors.brand, backgroundColor: colors.brandMuted }]}>
             <Text style={[styles.ctaText, { color: colors.foreground }]}>
@@ -177,6 +246,21 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 15, fontWeight: '700' },
   statHint: { fontSize: 12, lineHeight: 16 },
+  planSection: { gap: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: '700' },
+  planGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  planOption: {
+    flex: 1,
+    minWidth: 90,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    gap: 4,
+    alignItems: 'center',
+  },
+  planOptionLabel: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  planOptionPrice: { fontSize: 11, textAlign: 'center' },
+  feedback: { fontSize: 12, lineHeight: 16 },
   cta: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 10 },
   ctaText: { fontSize: 13, lineHeight: 18 },
   ctaBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },

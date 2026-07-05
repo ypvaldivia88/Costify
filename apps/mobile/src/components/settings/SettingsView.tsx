@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User } from 'lucide-react-native';
+import { CreditCard, Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User } from 'lucide-react-native';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -16,6 +16,7 @@ import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates
 import type { AppBackupV1 } from '@/backup/app-backup';
 import type { SessionUser } from '@/auth/types';
 import { AccountSettingsPanel } from '@/components/settings/AccountSettingsPanel';
+import { SubscriptionSettingsPanel } from '@/components/settings/SubscriptionSettingsPanel';
 import { DataSyncPanel } from '@/components/settings/DataSyncPanel';
 import { ExchangeRatesPanel } from '@/components/settings/ExchangeRatesPanel';
 import { GlobalFundSettingsPanel } from '@/components/settings/GlobalFundSettings';
@@ -25,7 +26,7 @@ import { UnitSettingsPanel } from '@/components/settings/UnitSettingsPanel';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTheme } from '@/context/ThemeContext';
 
-type SettingsSection = 'account' | 'taxes' | 'fund' | 'indirect' | 'units' | 'exchange' | 'sync';
+type SettingsSection = 'account' | 'subscription' | 'taxes' | 'fund' | 'indirect' | 'units' | 'exchange' | 'sync';
 
 interface SettingsViewProps {
   user: SessionUser | null;
@@ -48,7 +49,7 @@ interface SettingsViewProps {
   onBackupImported?: (backup: AppBackupV1) => void;
 }
 
-const sections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
+const baseSections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
   { id: 'account', label: 'Cuenta', icon: User },
   { id: 'taxes', label: 'Impuestos', icon: Receipt },
   { id: 'fund', label: 'Fondo', icon: PiggyBank },
@@ -79,6 +80,14 @@ export function SettingsView({
   onBackupImported,
 }: SettingsViewProps) {
   const { colors } = useTheme();
+  const isTenantAdmin = user?.role === 'tenant_admin';
+  const sections = isTenantAdmin
+    ? [
+        baseSections[0],
+        { id: 'subscription' as const, label: 'Suscripción', icon: CreditCard },
+        ...baseSections.slice(1),
+      ]
+    : baseSections;
   const [activeSection, setActiveSection] = useState<SettingsSection>('account');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
@@ -139,6 +148,9 @@ export function SettingsView({
       </ScrollView>
 
       {activeSection === 'account' ? <AccountSettingsPanel user={user} /> : null}
+      {activeSection === 'subscription' && isTenantAdmin ? (
+        <SubscriptionSettingsPanel user={user} />
+      ) : null}
       {activeSection === 'taxes' ? (
         <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
       ) : null}

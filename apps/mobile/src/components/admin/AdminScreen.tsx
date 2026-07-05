@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { AdminSubscriptionPanel } from '@/components/admin/AdminSubscriptionPanel';
 
 function tenantStatusLabel(status: PublicTenant['status']): string {
   if (status === 'pending') return 'Pendiente';
@@ -448,6 +449,15 @@ export function AdminScreen() {
                   </View>
                 )}
               </View>
+
+              <AdminSubscriptionPanel
+                tenant={selectedTenant}
+                onUpdated={() => {
+                  void loadTenants().catch((err) => {
+                    setError(err instanceof Error ? err.message : 'Error al actualizar.');
+                  });
+                }}
+              />
 
               {showUserForm ? (
                 <View style={[styles.userForm, { borderColor: colors.border }]}>

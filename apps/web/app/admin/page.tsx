@@ -12,6 +12,7 @@ import {
   SUBSCRIPTION_STATUS_LABELS,
 } from '@costify/shared/domain/subscription';
 import { cn } from '@/lib/utils';
+import { AdminSubscriptionPanel } from '@/components/admin/AdminSubscriptionPanel';
 
 function tenantStatusLabel(status: PublicTenant['status']): string {
   if (status === 'pending') return 'Pendiente';
@@ -463,6 +464,15 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+
+                <AdminSubscriptionPanel
+                  tenant={selectedTenant}
+                  onUpdated={() => {
+                    void loadTenants().catch((err) => {
+                      setError(err instanceof Error ? err.message : 'Error al actualizar.');
+                    });
+                  }}
+                />
 
                 {showUserForm && (
                   <form onSubmit={handleCreateUser} className="space-y-3 border border-border rounded-xl p-3">

@@ -1,15 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import { CreditCard, MessageCircle } from 'lucide-react';
-import type { TenantSubscription } from '@costify/shared/domain/subscription';
+import type { SubscriptionPlan, TenantSubscription } from '@costify/shared/domain/subscription';
 import {
   buildWhatsAppPaymentMessage,
   buildWhatsAppPaymentUrl,
   formatSubscriptionExpiry,
+  getSubscriptionPlanPriceUsd,
   getSubscriptionStatusLabel,
   SUBSCRIPTION_PLAN_LABELS,
+  SUBSCRIPTION_PLANS,
   WHATSAPP_SUPPORT_NUMBER,
 } from '@costify/shared/domain/subscription';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { cn } from '@/lib/utils';
@@ -19,6 +23,8 @@ interface SubscriptionPanelProps {
   contactName: string;
   contactEmail: string;
   subscription?: TenantSubscription | null;
+  manageable?: boolean;
+  onChangePlan?: (plan: SubscriptionPlan) => Promise<void>;
 }
 
 function statusStyles(subscription: TenantSubscription): string {
@@ -39,7 +45,14 @@ export function SubscriptionPanel({
   contactName,
   contactEmail,
   subscription,
+  manageable = false,
+  onChangePlan,
 }: SubscriptionPanelProps) {
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(subscription?.plan ?? 'monthly');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
   if (!subscription) {
     return (
       <Card>
@@ -68,12 +81,31 @@ export function SubscriptionPanel({
     })
   );
 
+  async function handleChangePlan() {
+    if (!subscription || !onChangePlan || selectedPlan === subscription.plan) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await onChangePlan(selectedPlan);
+      setSuccess('Plan actualizado. Envía el comprobante por WhatsApp para activarlo.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cambiar el plan.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <Card>
       <SectionHeader
         icon={CreditCard}
         title="Plan de suscripción"
-        description="Estado de tu plan y opciones de pago o renovación"
+        description={
+          manageable
+            ? 'Gestiona tu plan y envía el pago por WhatsApp.'
+            : 'Estado de tu plan y opciones de pago o renovación'
+        }
       />
 
       <div className="space-y-4">
@@ -114,6 +146,42 @@ export function SubscriptionPanel({
             </dd>
           </div>
         </dl>
+
+        {manageable && onChangePlan ? (
+          <div className="space-y-3">
+            <p className="text-sm font-semibold">Cambiar plan</p>
+            <div className="grid grid-cols-3 gap-2">
+              {SUBSCRIPTION_PLANS.map((planId) => {
+                const selected = selectedPlan === planId;
+                return (
+                  <button
+                    key={planId}
+                    type="button"
+                    onClick={() => setSelectedPlan(planId)}
+                    className={cn(
+                      'rounded-xl border px-3 py-2 text-sm font-semibold transition-colors',
+                      selected ? 'border-brand bg-brand-muted' : 'border-border hover:bg-surface-muted'
+                    )}
+                  >
+                    <span className="block">{SUBSCRIPTION_PLAN_LABELS[planId]}</span>
+                    <span className="block text-xs text-muted mt-1">
+                      {getSubscriptionPlanPriceUsd(planId).toFixed(2)} USD
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <Button
+              type="button"
+              disabled={saving || selectedPlan === subscription.plan}
+              onClick={() => void handleChangePlan()}
+            >
+              {saving ? 'Guardando…' : 'Solicitar cambio de plan'}
+            </Button>
+            {error ? <p className="text-xs text-danger">{error}</p> : null}
+            {success ? <p className="text-xs text-brand">{success}</p> : null}
+          </div>
+        ) : null}
 
         {needsPayment ? (
           <div className="rounded-xl border border-brand/30 bg-brand-muted/40 p-4 space-y-3">

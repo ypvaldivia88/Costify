@@ -111,6 +111,92 @@ export function buildWhatsAppPaymentMessage(input: {
   ].join('\n');
 }
 
+export function markSubscriptionPendingPayment(subscription: TenantSubscription): TenantSubscription {
+  return { ...subscription, status: 'pending_payment', requestedAt: Date.now() };
+}
+
+export function markSubscriptionExpired(subscription: TenantSubscription): TenantSubscription {
+  return { ...subscription, status: 'expired' };
+}
+
+export function changeSubscriptionPlan(
+  subscription: TenantSubscription,
+  plan: SubscriptionPlan,
+  options?: { keepStatus?: boolean }
+): TenantSubscription {
+  return {
+    ...subscription,
+    plan,
+    priceUsd: getSubscriptionPlanPriceUsd(plan),
+    discountPercent: getSubscriptionDiscountPercent(plan),
+    monthlyPriceUsd: SUBSCRIPTION_MONTHLY_PRICE_USD,
+    status: options?.keepStatus ? subscription.status : 'pending_payment',
+    requestedAt: Date.now(),
+  };
+}
+
+export function renewSubscription(
+  subscription: TenantSubscription,
+  referenceAt = Date.now()
+): TenantSubscription {
+  const base =
+    subscription.status === 'active' &&
+    subscription.expiresAt &&
+    subscription.expiresAt > referenceAt
+      ? subscription.expiresAt
+      : referenceAt;
+  const months = SUBSCRIPTION_PLAN_MONTHS[subscription.plan];
+  const expiresAt = new Date(base);
+  expiresAt.setMonth(expiresAt.getMonth() + months);
+
+  return {
+    ...subscription,
+    status: 'active',
+    activatedAt: subscription.activatedAt ?? referenceAt,
+    expiresAt: expiresAt.getTime(),
+  };
+}
+
+export function ensureTenantSubscription(subscription?: TenantSubscription | null): TenantSubscription {
+  if (!subscription) {
+    return buildPendingSubscription('monthly');
+  }
+  if (
+    subscription.status === 'active' &&
+    subscription.expiresAt &&
+    subscription.expiresAt < Date.now()
+  ) {
+    return { ...subscription, status: 'expired' };
+  }
+  return subscription;
+}
+
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['monthly', 'semiannual', 'annual'];
+
+export type SubscriptionAdminAction = 'activate' | 'renew' | 'expire' | 'pending' | 'set_plan';
+
+export function applySubscriptionAdminAction(
+  subscription: TenantSubscription,
+  action: SubscriptionAdminAction,
+  plan?: SubscriptionPlan
+): TenantSubscription {
+  switch (action) {
+    case 'activate':
+      return activateSubscription(plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription);
+    case 'renew':
+      return renewSubscription(plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription);
+    case 'expire':
+      return markSubscriptionExpired(subscription);
+    case 'pending':
+      return markSubscriptionPendingPayment(subscription);
+    case 'set_plan':
+      if (!plan) throw new Error('Plan requerido.');
+      return changeSubscriptionPlan(subscription, plan);
+    default:
+      return subscription;
+  }
+}
+
 export function buildWhatsAppPaymentUrl(message: string): string {
   return `${WHATSAPP_SUPPORT_URL}?text=${encodeURIComponent(message)}`;
 }

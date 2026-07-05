@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User } from 'lucide-react';
+import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User, CreditCard } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -19,6 +19,7 @@ import { segmentClassName } from '@/lib/ui/field-styles';
 import { HorizontalScroll } from '@/components/ui/HorizontalScroll';
 import { DataSyncPanel } from './DataSyncPanel';
 import { AccountSettingsPanel } from './AccountSettingsPanel';
+import { SubscriptionSettingsPanel } from './SubscriptionSettingsPanel';
 import { GlobalFundSettingsPanel } from './GlobalFundSettings';
 import { IndirectCostsSettings } from './IndirectCostsSettings';
 import { TaxSettingsPanel } from './TaxSettingsPanel';
@@ -27,7 +28,7 @@ import { ExchangeRatesPanel } from './ExchangeRatesPanel';
 import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 import type { SessionUser } from '@/lib/auth/types';
 
-type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'exchange' | 'sync' | 'account';
+type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'exchange' | 'sync' | 'account' | 'subscription';
 
 interface SettingsViewProps {
   inventory: ProductCalculation[];
@@ -58,7 +59,7 @@ interface SettingsViewProps {
   onResetUnitSettings: () => void;
 }
 
-const sections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
+const baseSections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
   { id: 'taxes', label: 'Impuestos', icon: Receipt },
   { id: 'fund', label: 'Fondo', icon: PiggyBank },
   { id: 'indirect', label: 'Gastos', icon: Percent },
@@ -88,6 +89,14 @@ export function SettingsView({
   onSaveUnitSettings,
   onResetUnitSettings,
 }: SettingsViewProps) {
+  const isTenantAdmin = user?.role === 'tenant_admin';
+  const sections = isTenantAdmin
+    ? [
+        ...baseSections.slice(0, -1),
+        { id: 'subscription' as const, label: 'Suscripción', icon: CreditCard },
+        baseSections[baseSections.length - 1],
+      ]
+    : baseSections;
   const [activeSection, setActiveSection] = useState<SettingsSection>('taxes');
 
   return (
@@ -154,6 +163,9 @@ export function SettingsView({
         />
       )}
       {activeSection === 'account' && <AccountSettingsPanel user={user} />}
+      {activeSection === 'subscription' && isTenantAdmin && (
+        <SubscriptionSettingsPanel user={user} />
+      )}
     </div>
   );
 }
