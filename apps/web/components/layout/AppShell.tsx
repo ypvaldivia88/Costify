@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import type { PriceReviewAlertTarget } from '@costify/shared/domain/exchange-rates';
 import type { ProductCalculation } from '@costify/shared/domain/types';
 import { getTabForPriceReviewTarget } from '@/hooks/use-exchange-rates-context';
 import { NAV_BY_ID } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { TrialBanner } from '@/components/layout/TrialBanner';
+import { getNavItemsForAccess } from '@costify/client-data';
 import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
 import { ExchangeRatesProvider } from '@/hooks/use-exchange-rates-context';
 import { PriceReviewAlerts } from '@/components/settings/PriceReviewAlerts';
@@ -35,7 +36,17 @@ export function AppShell() {
   const { loading: authLoading } = useAuth();
   const data = useAppData();
   const [activeTab, setActiveTab] = useState<AppTab>('products');
+  const [settingsSection, setSettingsSection] = useState<
+    'subscription' | undefined
+  >(undefined);
   const [focusTarget, setFocusTarget] = useState<PriceReviewAlertTarget | null>(null);
+  const navItems = getNavItemsForAccess(data.user?.accessLevel);
+
+  useEffect(() => {
+    if (!navItems.some((item) => item.id === activeTab)) {
+      setActiveTab('products');
+    }
+  }, [activeTab, navItems]);
 
   const handleNavigateToTarget = (target: PriceReviewAlertTarget) => {
     setActiveTab(getTabForPriceReviewTarget(target));
@@ -66,9 +77,18 @@ export function AppShell() {
           onTabChange={setActiveTab}
           cloudSync={data.cloudSync}
           user={data.user}
+          navItems={navItems}
         />
 
         <main className="max-w-5xl mx-auto px-4 pt-5 pb-32 md:pb-8">
+          <TrialBanner
+            user={data.user}
+            className="mb-4"
+            onOpenSubscription={() => {
+              setActiveTab('settings');
+              setSettingsSection('subscription');
+            }}
+          />
           <PriceReviewAlerts
             materials={data.materials}
             products={data.inventory}
@@ -168,6 +188,8 @@ export function AppShell() {
                 tenantName={data.user?.tenantName}
                 user={data.user}
                 cloudSync={data.cloudSync}
+                initialSection={settingsSection}
+                onInitialSectionConsumed={() => setSettingsSection(undefined)}
                 onSaveCosts={data.saveCosts}
                 onUpdateGlobalFund={data.updateGlobalFund}
                 onUpdateTaxSettings={data.updateTaxSettings}
@@ -184,6 +206,7 @@ export function AppShell() {
           productsCount={data.inventory.length}
           rawMaterialsCount={data.materials.length}
           alertCount={data.stockAlerts.length}
+          navItems={navItems}
         />
       </div>
     </UnitCatalogProvider>

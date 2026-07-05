@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   NavigationContainer,
@@ -30,7 +30,8 @@ import { ToastProvider } from '@/context/ToastContext';
 import { ExchangeRatesProvider } from '@/hooks/use-exchange-rates-context';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
-import { NAV_BY_ID, type AppTab } from '@/navigation/tabs';
+import { NAV_BY_ID, type AppTab, getNavItemsForAccess } from '@/navigation/tabs';
+import { TrialBanner } from '@/components/layout/TrialBanner';
 
 type RootTabParamList = Record<AppTab, undefined>;
 
@@ -47,7 +48,13 @@ function LoadingScreen({ message = 'Cargando…' }: { message?: string }) {
   );
 }
 
-function SettingsTab() {
+function SettingsTab({
+  initialSection,
+  onInitialSectionConsumed,
+}: {
+  initialSection?: 'subscription';
+  onInitialSectionConsumed?: () => void;
+}) {
   const data = useAppData();
   const { user } = useAuth();
 
@@ -58,6 +65,8 @@ function SettingsTab() {
   return (
     <SettingsView
       user={user}
+      initialSection={initialSection}
+      onInitialSectionConsumed={onInitialSectionConsumed}
       inventory={data.inventory}
       rawMaterials={data.materials}
       globalCosts={data.globalCosts}
@@ -159,10 +168,18 @@ function MainTabs({
   onRouteChange: (route: AppTab) => void;
 }) {
   const data = useAppData();
+  const { user, refresh } = useAuth();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<AppTab>('products');
+  const [settingsSection, setSettingsSection] = useState<'subscription' | undefined>();
   const [focusTarget, setFocusTarget] = useState<PriceReviewAlertTarget | null>(null);
   const defaultWarehouse = data.getDefaultWarehouse();
+  const navItems = getNavItemsForAccess(user?.accessLevel);
+  const visibleTabs = new Set(navItems.map((item) => item.id));
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const handleNavigateToTarget = (target: PriceReviewAlertTarget) => {
     const tab = getTabForPriceReviewTarget(target);
@@ -181,6 +198,18 @@ function MainTabs({
     <UnitCatalogProvider settings={data.unitSettings}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <AppHeader title={screenTitle} />
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          <TrialBanner
+            user={user}
+            onOpenSubscription={() => {
+              setSettingsSection('subscription');
+              setActiveTab('settings');
+              if (navigationRef.isReady()) {
+                navigationRef.navigate('settings');
+              }
+            }}
+          />
+        </View>
         <PriceReviewAlerts
           materials={data.materials}
           products={data.inventory}
@@ -255,6 +284,7 @@ function MainTabs({
               />
             )}
           </Tab.Screen>
+          {visibleTabs.has('warehouses') ? (
           <Tab.Screen name="warehouses" options={{ title: NAV_BY_ID.warehouses.label }}>
             {() => (
               <WarehousesView
@@ -274,8 +304,14 @@ function MainTabs({
               />
             )}
           </Tab.Screen>
+          ) : null}
           <Tab.Screen name="settings" options={{ title: NAV_BY_ID.settings.label }}>
-            {() => <SettingsTab />}
+            {() => (
+              <SettingsTab
+                initialSection={settingsSection}
+                onInitialSectionConsumed={() => setSettingsSection(undefined)}
+              />
+            )}
           </Tab.Screen>
         </Tab.Navigator>
       </View>

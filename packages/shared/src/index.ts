@@ -11,5 +11,7 @@ export * from './domain/calculations';
 export * from './format/currency';
 export * from './format/numeric-input';
 export * from './purchase-price';
+export * from './domain/subscription';
+export * from './domain/access';
 export * from './backup/backup-core';
 export * from './sync/workspace-id';

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useToast } from '@/components/ui/Toast';
+import { createWorkspaceAccessGates } from '@costify/client-data';
 import { useInventory } from '@/hooks/use-inventory';
 import { useRawMaterials } from '@/hooks/use-raw-materials';
 import { useGlobalCosts } from '@/hooks/use-global-costs';
@@ -13,7 +15,16 @@ import { useStockMovements } from '@/hooks/use-stock-movements';
 import { useStockThresholds } from '@/hooks/use-stock-thresholds';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import type { ProductCalculation, RawMaterialInput, StockMovement, Warehouse } from '@costify/shared/domain/types';
+import type {
+  ProductCalculation,
+  RawMaterialInput,
+  StockMovement,
+  Warehouse,
+  IndirectCost,
+  GlobalFundSettings,
+  TaxSettings,
+  UnitSettings,
+} from '@costify/shared/domain/types';
 import {
   calculateStockLevels,
   createInitialStockMovements,
@@ -29,6 +40,14 @@ import {
 
 export function useAppData() {
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const access = useMemo(() => createWorkspaceAccessGates(user?.accessLevel), [user?.accessLevel]);
+  const denyWrite = useCallback(
+    (message: string) => {
+      showToast(message, 'error');
+    },
+    [showToast]
+  );
   const inventoryState = useInventory();
   const rawMaterialsState = useRawMaterials();
   const globalCostsState = useGlobalCosts();
@@ -116,7 +135,7 @@ export function useAppData() {
   );
 
   const cloudSync = useCloudSync({
-    enabled: hydrated && Boolean(user?.workspaceId && user?.tenantId),
+    enabled: hydrated && Boolean(user?.workspaceId && user?.tenantId && access.canSync),
     data: syncData,
     tenantId: user?.tenantId,
     workspaceId: user?.workspaceId,
@@ -199,15 +218,12 @@ export function useAppData() {
     hydrated,
   ]);
 
-  const registerMovement = useCallback(
-    (input: Omit<StockMovement, 'id' | 'timestamp'>) => {
-      return stockMovementsState.addMovement(input);
-    },
-    [stockMovementsState]
-  );
-
   const updateStock = useCallback(
     (id: string, stockQuantity: number) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        return;
+      }
       const warehouse = getDefaultWarehouse();
       if (!warehouse) {
         rawMaterialsState.updateStock(id, stockQuantity);
@@ -229,7 +245,7 @@ export function useAppData() {
         stockMovementsState.addMovement(adjustment);
       }
     },
-    [getDefaultWarehouse, stockLevels, rawMaterialsState, stockMovementsState]
+    [access, denyWrite, getDefaultWarehouse, stockLevels, rawMaterialsState, stockMovementsState]
   );
 
   const registerProduction = useCallback(
@@ -239,6 +255,10 @@ export function useAppData() {
       warehouseId?: string,
       note?: string
     ) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        throw new Error(access.warehousesMessage);
+      }
       if (!product.recipe || product.recipe.length === 0) {
         throw new Error('El producto no tiene receta definida.');
       }
@@ -271,6 +291,8 @@ export function useAppData() {
       return stockMovementsState.addMovement(movement);
     },
     [
+      access,
+      denyWrite,
       warehousesState.warehouses,
       getDefaultWarehouse,
       rawMaterialsState.materials,
@@ -290,6 +312,10 @@ export function useAppData() {
         note?: string;
       }
     ) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        throw new Error(access.warehousesMessage);
+      }
       const { type, warehouseId, sourceWarehouseId, quantity, note } = input;
 
       return stockMovementsState.addMovement({
@@ -307,11 +333,15 @@ export function useAppData() {
         ],
       });
     },
-    [stockMovementsState]
+    [access, denyWrite, stockMovementsState]
   );
 
   const registerProductInitialStock = useCallback(
     (product: ProductCalculation, quantity: number, warehouseId: string) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        return;
+      }
       if (quantity <= 0) return;
 
       return stockMovementsState.addMovement({
@@ -328,7 +358,7 @@ export function useAppData() {
         ],
       });
     },
-    [stockMovementsState]
+    [access, denyWrite, stockMovementsState]
   );
 
   const purgeStockReferences = useCallback(
@@ -351,14 +381,28 @@ export function useAppData() {
 
   const saveMaterial = useCallback(
     (input: RawMaterialInput, id?: string, timestamp?: number) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        throw new Error(access.readonlyMessage);
+      }
       const isNew = !id;
+      if (
+        isNew &&
+        !access.canAddRawMaterial(
+          rawMaterialsState.materials.length,
+          user?.trialRawMaterialLimit
+        )
+      ) {
+        denyWrite(access.trialMaterialLimitMessage(user?.trialRawMaterialLimit));
+        throw new Error(access.trialMaterialLimitMessage(user?.trialRawMaterialLimit));
+      }
       const previous = id
         ? rawMaterialsState.materials.find((material) => material.id === id)
         : undefined;
       const material = rawMaterialsState.saveMaterial(input, id, timestamp);
 
       const warehouse = getDefaultWarehouse();
-      if (!warehouse) return material;
+      if (!warehouse || !access.canManageWarehouses) return material;
 
       if (isNew && input.stockQuantity > 0) {
         stockMovementsState.addMovement({
@@ -392,15 +436,51 @@ export function useAppData() {
 
       return material;
     },
-    [rawMaterialsState, getDefaultWarehouse, stockMovementsState, stockLevels]
+    [
+      access,
+      denyWrite,
+      rawMaterialsState,
+      getDefaultWarehouse,
+      stockMovementsState,
+      stockLevels,
+      user?.trialRawMaterialLimit,
+    ]
   );
 
   const deleteMaterial = useCallback(
     (id: string) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
       rawMaterialsState.deleteMaterial(id);
       purgeStockReferences('raw_material', id);
     },
-    [rawMaterialsState, purgeStockReferences]
+    [access, denyWrite, rawMaterialsState, purgeStockReferences]
+  );
+
+  const saveProduct = useCallback(
+    (
+      product: ProductCalculation,
+      rawMaterials: Parameters<typeof inventoryState.saveProduct>[1],
+      globalFund: Parameters<typeof inventoryState.saveProduct>[2],
+      unitSettings: Parameters<typeof inventoryState.saveProduct>[3]
+    ) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      const isNew = !inventoryState.inventory.some((item) => item.id === product.id);
+      if (
+        isNew &&
+        !access.canAddProduct(inventoryState.inventory.length, user?.trialProductLimit)
+      ) {
+        denyWrite(access.trialProductLimitMessage(user?.trialProductLimit));
+        return;
+      }
+      inventoryState.saveProduct(product, rawMaterials, globalFund, unitSettings);
+    },
+    [access, denyWrite, inventoryState, user?.trialProductLimit]
   );
 
   const deleteProduct = useCallback(
@@ -410,11 +490,99 @@ export function useAppData() {
       globalFund: Parameters<typeof inventoryState.deleteProduct>[2],
       unitSettings: Parameters<typeof inventoryState.deleteProduct>[3]
     ) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
       inventoryState.deleteProduct(id, rawMaterials, globalFund, unitSettings);
       purgeStockReferences('product', id);
     },
-    [inventoryState, purgeStockReferences]
+    [access, denyWrite, inventoryState, purgeStockReferences]
   );
+
+  const guardWarehouse = useCallback(() => {
+    if (!access.canManageWarehouses) {
+      denyWrite(access.warehousesMessage);
+      return false;
+    }
+    return true;
+  }, [access, denyWrite]);
+
+  const saveWarehouse = useCallback(
+    (...args: Parameters<typeof warehousesState.saveWarehouse>) => {
+      if (!guardWarehouse()) throw new Error(access.warehousesMessage);
+      return warehousesState.saveWarehouse(...args);
+    },
+    [guardWarehouse, access.warehousesMessage, warehousesState]
+  );
+
+  const deleteWarehouse = useCallback(
+    (id: string) => {
+      if (!guardWarehouse()) return;
+      warehousesState.deleteWarehouse(id);
+    },
+    [guardWarehouse, warehousesState]
+  );
+
+  const registerMovement = useCallback(
+    (input: Parameters<typeof stockMovementsState.addMovement>[0]) => {
+      if (!guardWarehouse()) throw new Error(access.warehousesMessage);
+      return stockMovementsState.addMovement(input);
+    },
+    [guardWarehouse, access.warehousesMessage, stockMovementsState]
+  );
+
+  const saveCosts = useCallback(
+    (costs: IndirectCost[]) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      globalCostsState.saveCosts(costs);
+    },
+    [access, denyWrite, globalCostsState]
+  );
+
+  const updateGlobalFund = useCallback(
+    (updates: Partial<GlobalFundSettings>) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      globalFundState.updateGlobalFund(updates);
+    },
+    [access, denyWrite, globalFundState]
+  );
+
+  const updateTaxSettings = useCallback(
+    (updates: Partial<TaxSettings>) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      taxSettingsState.updateTaxSettings(updates);
+    },
+    [access, denyWrite, taxSettingsState]
+  );
+
+  const saveUnitSettings = useCallback(
+    (settings: UnitSettings) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      unitSettingsState.updateUnitSettings(settings);
+    },
+    [access, denyWrite, unitSettingsState]
+  );
+
+  const resetUnitSettings = useCallback(() => {
+    if (!access.canWrite) {
+      denyWrite(access.readonlyMessage);
+      return;
+    }
+    unitSettingsState.resetUnitSettings();
+  }, [access, denyWrite, unitSettingsState]);
 
   return {
     hydrated,
@@ -439,19 +607,19 @@ export function useAppData() {
     refreshExchangeRates: exchangeRatesState.refreshRates,
     updateExchangeSettings: exchangeRatesState.updateSettings,
     markCostingRate: exchangeRatesState.markCostingRate,
-    saveProduct: inventoryState.saveProduct,
+    saveProduct,
     deleteProduct,
     recalculateAll: inventoryState.recalculateAll,
     saveMaterial,
     deleteMaterial,
     updateStock,
-    saveCosts: globalCostsState.saveCosts,
-    updateGlobalFund: globalFundState.updateGlobalFund,
-    updateTaxSettings: taxSettingsState.updateTaxSettings,
-    saveUnitSettings: unitSettingsState.updateUnitSettings,
-    resetUnitSettings: unitSettingsState.resetUnitSettings,
-    saveWarehouse: warehousesState.saveWarehouse,
-    deleteWarehouse: warehousesState.deleteWarehouse,
+    saveCosts,
+    updateGlobalFund,
+    updateTaxSettings,
+    saveUnitSettings,
+    resetUnitSettings,
+    saveWarehouse,
+    deleteWarehouse,
     registerMovement,
     deleteMovement: stockMovementsState.deleteMovement,
     saveStockThreshold: stockThresholdsState.saveThreshold,
@@ -460,5 +628,6 @@ export function useAppData() {
     registerProductMovement,
     registerProductInitialStock,
     getDefaultWarehouse,
+    access,
   };
 }

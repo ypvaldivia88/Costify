@@ -1,5 +1,6 @@
 export type UserRole = 'super_admin' | 'tenant_admin' | 'tenant_user';
 export type AccountStatus = 'pending' | 'active' | 'suspended';
+export type AccessLevel = 'trial' | 'readonly' | 'full';
 
 export type {
   SubscriptionPlan,
@@ -15,6 +16,12 @@ export interface SessionUser {
   tenantId?: string;
   tenantName?: string;
   workspaceId?: string;
+  accessLevel?: AccessLevel;
+  trialEndsAt?: number;
+  trialProductLimit?: number;
+  trialRawMaterialLimit?: number;
+  tenantPending?: boolean;
+  subscriptionStatus?: import('@costify/shared/domain/subscription').SubscriptionStatus;
 }
 
 export interface PublicUser {

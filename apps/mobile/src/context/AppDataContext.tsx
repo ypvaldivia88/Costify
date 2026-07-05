@@ -24,8 +24,9 @@ import {
 } from '@costify/shared/domain/calculations';
 import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
 import type { StockThreshold } from '@costify/shared/domain/types';
-import { onSyncReload, useSyncApi } from '@costify/client-data';
+import { onSyncReload, useSyncApi, createWorkspaceAccessGates } from '@costify/client-data';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { useGlobalCosts } from '@/hooks/use-global-costs';
@@ -114,12 +115,15 @@ interface AppDataContextValue {
     exchangeRateSettings?: ExchangeRateSettings;
   }) => void;
   cloudSync: ReturnType<typeof useCloudSync>;
+  access: ReturnType<typeof createWorkspaceAccessGates>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const access = useMemo(() => createWorkspaceAccessGates(user?.accessLevel), [user?.accessLevel]);
   const sync = useSyncApi();
   const inventoryState = useInventory();
   const rawMaterialsState = useRawMaterials();
@@ -208,11 +212,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   );
 
   const cloudSync = useCloudSync({
-    enabled: hydrated && Boolean(user?.workspaceId && user?.tenantId),
+    enabled: hydrated && Boolean(user?.workspaceId && user?.tenantId && access.canSync),
     data: syncData,
     tenantId: user?.tenantId,
     workspaceId: user?.workspaceId,
   });
+
+  const denyWrite = useCallback(
+    (message: string) => {
+      showToast(message, 'error');
+      return true;
+    },
+    [showToast]
+  );
 
   const getDefaultWarehouse = useCallback((): Warehouse | undefined => {
     const active = warehousesState.warehouses.filter((w) => w.active);
@@ -290,12 +302,22 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   ]);
 
   const registerMovement = useCallback(
-    (input: Omit<StockMovement, 'id' | 'timestamp'>) => stockMovementsState.addMovement(input),
-    [stockMovementsState]
+    (input: Omit<StockMovement, 'id' | 'timestamp'>) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        throw new Error(access.warehousesMessage);
+      }
+      return stockMovementsState.addMovement(input);
+    },
+    [access, denyWrite, stockMovementsState]
   );
 
   const updateStock = useCallback(
     (id: string, stockQuantity: number) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        return;
+      }
       const warehouse = getDefaultWarehouse();
       if (!warehouse) {
         rawMaterialsState.updateStock(id, stockQuantity);
@@ -327,6 +349,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       warehouseId?: string,
       note?: string
     ) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        throw new Error(access.warehousesMessage);
+      }
       if (!product.recipe || product.recipe.length === 0) {
         throw new Error('El producto no tiene receta definida.');
       }
@@ -359,6 +385,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       return stockMovementsState.addMovement(movement);
     },
     [
+      access,
+      denyWrite,
       warehousesState.warehouses,
       getDefaultWarehouse,
       rawMaterialsState.materials,
@@ -378,6 +406,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         note?: string;
       }
     ) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        throw new Error(access.warehousesMessage);
+      }
       const { type, warehouseId, sourceWarehouseId, quantity, note } = input;
 
       return stockMovementsState.addMovement({
@@ -395,11 +427,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         ],
       });
     },
-    [stockMovementsState]
+    [access, denyWrite, stockMovementsState]
   );
 
   const registerProductInitialStock = useCallback(
     (product: ProductCalculation, quantity: number, warehouseId: string) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        return;
+      }
       if (quantity <= 0) return;
 
       return stockMovementsState.addMovement({
@@ -416,7 +452,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         ],
       });
     },
-    [stockMovementsState]
+    [access, denyWrite, stockMovementsState]
   );
 
   const purgeStockReferences = useCallback(
@@ -439,14 +475,28 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const saveMaterial = useCallback(
     (input: RawMaterialInput, id?: string, timestamp?: number) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        throw new Error(access.readonlyMessage);
+      }
       const isNew = !id;
+      if (
+        isNew &&
+        !access.canAddRawMaterial(
+          rawMaterialsState.materials.length,
+          user?.trialRawMaterialLimit
+        )
+      ) {
+        denyWrite(access.trialMaterialLimitMessage(user?.trialRawMaterialLimit));
+        throw new Error(access.trialMaterialLimitMessage(user?.trialRawMaterialLimit));
+      }
       const previous = id
         ? rawMaterialsState.materials.find((material) => material.id === id)
         : undefined;
       const material = rawMaterialsState.saveMaterial(input, id, timestamp);
 
       const warehouse = getDefaultWarehouse();
-      if (!warehouse) return material;
+      if (!warehouse || !access.canManageWarehouses) return material;
 
       if (isNew && input.stockQuantity > 0) {
         stockMovementsState.addMovement({
@@ -480,15 +530,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       return material;
     },
-    [rawMaterialsState, getDefaultWarehouse, stockMovementsState, stockLevels]
+    [access, denyWrite, rawMaterialsState, getDefaultWarehouse, stockMovementsState, stockLevels, user?.trialRawMaterialLimit]
   );
 
   const deleteMaterial = useCallback(
     (id: string) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
       rawMaterialsState.deleteMaterial(id);
       purgeStockReferences('raw_material', id);
     },
-    [rawMaterialsState, purgeStockReferences]
+    [access, denyWrite, rawMaterialsState, purgeStockReferences]
   );
 
   const saveProduct = useCallback(
@@ -498,13 +552,40 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       globalFund: GlobalFundSettings = globalFundState.globalFund,
       unitSettings: UnitSettings = unitSettingsState.unitSettings
     ) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      const isNew = !inventoryState.inventory.some((item) => item.id === product.id);
+      if (
+        isNew &&
+        !access.canAddProduct(
+          inventoryState.inventory.length,
+          user?.trialProductLimit
+        )
+      ) {
+        denyWrite(access.trialProductLimitMessage(user?.trialProductLimit));
+        return;
+      }
       inventoryState.saveProduct(product, rawMaterials, globalFund, unitSettings);
     },
-    [inventoryState, rawMaterialsState.materials, globalFundState.globalFund, unitSettingsState.unitSettings]
+    [
+      access,
+      denyWrite,
+      inventoryState,
+      rawMaterialsState.materials,
+      globalFundState.globalFund,
+      unitSettingsState.unitSettings,
+      user?.trialProductLimit,
+    ]
   );
 
   const deleteProduct = useCallback(
     (id: string) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
       inventoryState.deleteProduct(
         id,
         rawMaterialsState.materials,
@@ -513,8 +594,82 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       );
       purgeStockReferences('product', id);
     },
-    [inventoryState, rawMaterialsState.materials, globalFundState.globalFund, unitSettingsState.unitSettings, purgeStockReferences]
+    [access, denyWrite, inventoryState, rawMaterialsState.materials, globalFundState.globalFund, unitSettingsState.unitSettings, purgeStockReferences]
   );
+
+  const saveWarehouse = useCallback(
+    (...args: Parameters<typeof warehousesState.saveWarehouse>) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        throw new Error(access.warehousesMessage);
+      }
+      return warehousesState.saveWarehouse(...args);
+    },
+    [access, denyWrite, warehousesState]
+  );
+
+  const deleteWarehouse = useCallback(
+    (id: string) => {
+      if (!access.canManageWarehouses) {
+        denyWrite(access.warehousesMessage);
+        return;
+      }
+      warehousesState.deleteWarehouse(id);
+    },
+    [access, denyWrite, warehousesState]
+  );
+
+  const saveCosts = useCallback(
+    (costs: IndirectCost[]) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      globalCostsState.saveCosts(costs);
+    },
+    [access, denyWrite, globalCostsState]
+  );
+
+  const updateGlobalFund = useCallback(
+    (updates: Partial<GlobalFundSettings>) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      globalFundState.updateGlobalFund(updates);
+    },
+    [access, denyWrite, globalFundState]
+  );
+
+  const updateTaxSettings = useCallback(
+    (updates: Partial<TaxSettings>) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      taxSettingsState.updateTaxSettings(updates);
+    },
+    [access, denyWrite, taxSettingsState]
+  );
+
+  const saveUnitSettings = useCallback(
+    (settings: UnitSettings) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      unitSettingsState.updateUnitSettings(settings);
+    },
+    [access, denyWrite, unitSettingsState]
+  );
+
+  const resetUnitSettings = useCallback(() => {
+    if (!access.canWrite) {
+      denyWrite(access.readonlyMessage);
+      return;
+    }
+    unitSettingsState.resetUnitSettings();
+  }, [access, denyWrite, unitSettingsState]);
 
   const recalculateAll = useCallback(() => {
     inventoryState.recalculateAll(
@@ -597,13 +752,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       saveMaterial,
       deleteMaterial,
       updateStock,
-      saveCosts: globalCostsState.saveCosts,
-      updateGlobalFund: globalFundState.updateGlobalFund,
-      updateTaxSettings: taxSettingsState.updateTaxSettings,
-      saveUnitSettings: unitSettingsState.updateUnitSettings,
-      resetUnitSettings: unitSettingsState.resetUnitSettings,
-      saveWarehouse: warehousesState.saveWarehouse,
-      deleteWarehouse: warehousesState.deleteWarehouse,
+      saveCosts,
+      updateGlobalFund,
+      updateTaxSettings,
+      saveUnitSettings,
+      resetUnitSettings,
+      saveWarehouse,
+      deleteWarehouse,
       registerMovement,
       deleteMovement: stockMovementsState.deleteMovement,
       saveStockThreshold: stockThresholdsState.saveThreshold,
@@ -614,6 +769,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       getDefaultWarehouse,
       reloadFromBackup,
       cloudSync,
+      access,
     }),
     [
       hydrated,
@@ -636,6 +792,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       saveMaterial,
       deleteMaterial,
       updateStock,
+      saveCosts,
+      updateGlobalFund,
+      updateTaxSettings,
+      saveUnitSettings,
+      resetUnitSettings,
+      saveWarehouse,
+      deleteWarehouse,
       registerMovement,
       registerProduction,
       registerProductMovement,
@@ -643,6 +806,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       getDefaultWarehouse,
       reloadFromBackup,
       cloudSync,
+      access,
     ]
   );
 

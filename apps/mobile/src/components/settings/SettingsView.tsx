@@ -47,6 +47,8 @@ interface SettingsViewProps {
   onSaveUnitSettings: (settings: UnitSettings) => void;
   onResetUnitSettings: () => void;
   onBackupImported?: (backup: AppBackupV1) => void;
+  initialSection?: SettingsSection;
+  onInitialSectionConsumed?: () => void;
 }
 
 const baseSections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
@@ -78,6 +80,8 @@ export function SettingsView({
   onSaveUnitSettings,
   onResetUnitSettings,
   onBackupImported,
+  initialSection,
+  onInitialSectionConsumed,
 }: SettingsViewProps) {
   const { colors } = useTheme();
   const isTenantAdmin = user?.role === 'tenant_admin';
@@ -88,8 +92,14 @@ export function SettingsView({
         ...baseSections.slice(1),
       ]
     : baseSections;
-  const [activeSection, setActiveSection] = useState<SettingsSection>('account');
+  const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection ?? 'account');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (!initialSection) return;
+    setActiveSection(initialSection);
+    onInitialSectionConsumed?.();
+  }, [initialSection, onInitialSectionConsumed]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';

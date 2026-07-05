@@ -3,6 +3,7 @@
 import { Calculator } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
+import type { NavItemMeta } from '@costify/client-data';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -13,6 +14,7 @@ interface AppHeaderProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
   user?: SessionUser | null;
+  navItems?: NavItemMeta[];
   cloudSync?: {
     status: 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
     direction: 'none' | 'pull' | 'push';
@@ -23,7 +25,7 @@ interface AppHeaderProps {
   };
 }
 
-export function AppHeader({ activeTab, onTabChange, cloudSync, user }: AppHeaderProps) {
+export function AppHeader({ activeTab, onTabChange, cloudSync, user, navItems = NAV_ITEMS }: AppHeaderProps) {
   const { logout } = useAuth();
   return (
     <header className="sticky top-0 z-40 glass border-b border-border/60 safe-top">
@@ -42,7 +44,7 @@ export function AppHeader({ activeTab, onTabChange, cloudSync, user }: AppHeader
 
         <div className="flex items-center gap-1 shrink-0">
           <nav className="hidden md:flex items-center gap-1" aria-label="Navegación principal">
-            {NAV_ITEMS.map(({ id, label }) => (
+            {navItems.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"

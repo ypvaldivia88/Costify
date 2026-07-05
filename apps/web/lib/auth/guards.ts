@@ -1,4 +1,6 @@
 import { getServerSession } from '@/lib/auth/session';
+import { enrichSessionUser } from '@/lib/auth/session-access';
+import { canSyncToCloud } from '@costify/shared/domain/access';
 import type { SessionUser, UserRole } from '@/lib/auth/types';
 
 export class AuthError extends Error {
@@ -38,6 +40,20 @@ export async function requireTenantAccess(workspaceId: string): Promise<SessionU
   }
 
   return session;
+}
+
+export async function requireCloudSyncAccess(): Promise<SessionUser> {
+  const session = await requireSession();
+  const enriched = await enrichSessionUser(session);
+
+  if (!canSyncToCloud(enriched.accessLevel ?? 'readonly')) {
+    throw new AuthError(
+      'La sincronización en la nube requiere una suscripción activa. Activa tu plan para continuar.',
+      403
+    );
+  }
+
+  return enriched;
 }
 
 export function isTenantRole(role: UserRole): boolean {

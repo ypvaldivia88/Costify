@@ -2,6 +2,7 @@
 
 import { NAV_ITEMS } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
+import type { NavItemMeta } from '@costify/client-data';
 import { cn } from '@/lib/utils';
 
 export type { AppTab };
@@ -12,6 +13,7 @@ interface BottomNavProps {
   productsCount: number;
   rawMaterialsCount?: number;
   alertCount?: number;
+  navItems?: NavItemMeta[];
 }
 
 export function BottomNav({
@@ -20,7 +22,11 @@ export function BottomNav({
   productsCount,
   rawMaterialsCount = 0,
   alertCount = 0,
+  navItems = NAV_ITEMS,
 }: BottomNavProps) {
+  const visibleIds = new Set(navItems.map((item) => item.id));
+  const items = NAV_ITEMS.filter((item) => visibleIds.has(item.id));
+
   return (
     <nav
       className="is-overlay fixed bottom-0 inset-x-0 z-50 md:hidden safe-bottom px-4 pb-3"
@@ -28,7 +34,7 @@ export function BottomNav({
     >
       <div className="glass rounded-2xl shadow-float border border-border/60">
         <div className="flex items-stretch">
-          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+          {items.map(({ id, label, icon: Icon }) => {
             const active = activeTab === id;
             const count =
               id === 'products'

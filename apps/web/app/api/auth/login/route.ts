@@ -7,6 +7,7 @@ import {
   SESSION_COOKIE,
 } from '@/lib/auth/session';
 import { findTenantById } from '@/lib/auth/tenants';
+import { enrichSessionUser } from '@/lib/auth/session-access';
 import type { SessionUser } from '@/lib/auth/types';
 
 export async function POST(request: Request) {
@@ -31,18 +32,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: message }, { status: 401 });
     }
 
-    if (user.status === 'pending') {
-      return NextResponse.json(
-        {
-          error:
-            'Tu cuenta está pendiente de aprobación. Completa el pago por WhatsApp y espera la activación por el administrador.',
-        },
-        { status: 403 }
-      );
-    }
-
-    if (user.status !== 'active') {
-      return NextResponse.json({ error: 'Credenciales inválidas.' }, { status: 401 });
+    if (user.status === 'suspended') {
+      return NextResponse.json({ error: 'Tu cuenta está suspendida. Contacta al administrador.' }, { status: 403 });
     }
 
     const valid = await verifyPassword(password, user.passwordHash);
@@ -62,16 +53,7 @@ export async function POST(request: Request) {
       if (!tenant) {
         return NextResponse.json({ error: 'El negocio asociado no existe.' }, { status: 403 });
       }
-      if (tenant.status === 'pending') {
-        return NextResponse.json(
-          {
-            error:
-              'Tu negocio está pendiente de aprobación. Escríbenos por WhatsApp para completar el pago y activar la cuenta.',
-          },
-          { status: 403 }
-        );
-      }
-      if (tenant.status !== 'active') {
+      if (tenant.status === 'suspended') {
         return NextResponse.json({ error: 'El negocio asociado está suspendido.' }, { status: 403 });
       }
       sessionUser.tenantId = tenant.tenantId;
@@ -79,8 +61,9 @@ export async function POST(request: Request) {
       sessionUser.workspaceId = tenant.workspaceId;
     }
 
-    const token = await createSessionToken(sessionUser);
-    const response = NextResponse.json({ user: sessionUser, token });
+    const enriched = await enrichSessionUser(sessionUser);
+    const token = await createSessionToken(enriched);
+    const response = NextResponse.json({ user: enriched, token });
     response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions());
     return response;
   } catch (error) {

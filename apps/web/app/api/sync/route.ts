@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AuthError, requireTenantAccess } from '@/lib/auth/guards';
+import { AuthError, requireTenantAccess, requireCloudSyncAccess } from '@/lib/auth/guards';
 import { getDb } from '@/lib/db/mongodb';
 import {
   WORKSPACES_COLLECTION,
@@ -68,7 +68,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'updatedAt inválido.' }, { status: 400 });
     }
 
-    const session = await requireTenantAccess(workspaceId);
+    const session = await requireCloudSyncAccess();
+    if (session.workspaceId !== workspaceId) {
+      throw new AuthError('No tienes acceso a este negocio.', 403);
+    }
 
     const db = await getDb();
     const collection = db.collection<WorkspaceDocument>(WORKSPACES_COLLECTION);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User, CreditCard } from 'lucide-react';
 import type {
   GlobalFundSettings,
@@ -57,6 +57,8 @@ interface SettingsViewProps {
   onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
   onSaveUnitSettings: (settings: UnitSettings) => void;
   onResetUnitSettings: () => void;
+  initialSection?: SettingsSection;
+  onInitialSectionConsumed?: () => void;
 }
 
 const baseSections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
@@ -88,6 +90,8 @@ export function SettingsView({
   onUpdateTaxSettings,
   onSaveUnitSettings,
   onResetUnitSettings,
+  initialSection,
+  onInitialSectionConsumed,
 }: SettingsViewProps) {
   const isTenantAdmin = user?.role === 'tenant_admin';
   const sections = isTenantAdmin
@@ -97,7 +101,13 @@ export function SettingsView({
         baseSections[baseSections.length - 1],
       ]
     : baseSections;
-  const [activeSection, setActiveSection] = useState<SettingsSection>('taxes');
+  const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection ?? 'taxes');
+
+  useEffect(() => {
+    if (!initialSection) return;
+    setActiveSection(initialSection);
+    onInitialSectionConsumed?.();
+  }, [initialSection, onInitialSectionConsumed]);
 
   return (
     <div className="space-y-4 max-w-2xl">

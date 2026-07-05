@@ -38,3 +38,10 @@ export const NAV_BY_ID = Object.fromEntries(NAV_ITEMS.map((item) => [item.id, it
   AppTab,
   NavItemMeta
 >;
+
+export function getNavItemsForAccess(accessLevel?: import('../auth/types').AccessLevel): NavItemMeta[] {
+  if (!accessLevel || accessLevel === 'full') {
+    return NAV_ITEMS;
+  }
+  return NAV_ITEMS.filter((item) => item.id !== 'warehouses');
+}

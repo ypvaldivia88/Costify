@@ -29,4 +29,4 @@ export const NAV_BY_ID = Object.fromEntries(NAV_ITEMS.map((item) => [item.id, it
   NavItem
 >;
 
-export { NAV_META, NAV_META_BY_ID };
+export { getNavItemsForAccess } from '@costify/client-data';
