@@ -123,7 +123,29 @@ export async function requestSubscriptionPlanChange(
   }
 }
 
+export async function refreshSessionRequest(): Promise<SessionUser | null> {
+  const token = await getStoredToken();
+  if (!token) return null;
+
+  const response = await apiFetch('/api/auth/refresh', { method: 'POST' });
+  if (!response.ok) {
+    if (response.status === 401) {
+      await setStoredToken(null);
+    }
+    return null;
+  }
+
+  const json = (await response.json()) as { user?: SessionUser; token?: string };
+  if (json.token) {
+    await setStoredToken(json.token);
+  }
+  return json.user ?? null;
+}
+
 export async function fetchCurrentUser(): Promise<SessionUser | null> {
+  const refreshed = await refreshSessionRequest();
+  if (refreshed) return refreshed;
+
   const token = await getStoredToken();
   if (!token) return null;
 

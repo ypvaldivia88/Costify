@@ -44,15 +44,13 @@ export function resolveTenantAccess(input: TenantAccessContext): ResolvedTenantA
     };
   }
 
-  const subscriptionActive =
-    subscription.status === 'active' &&
-    (!subscription.expiresAt || subscription.expiresAt > now);
+  const subscriptionActive = isSubscriptionActive(subscription, now);
 
-  if (subscriptionActive && input.tenantStatus === 'active' && input.userStatus === 'active') {
+  if (subscriptionActive) {
     return {
       level: 'full',
       subscriptionStatus: subscription.status,
-      tenantPending: false,
+      tenantPending,
     };
   }
 
@@ -126,4 +124,21 @@ export function formatTrialRemaining(trialEndsAt: number, now = Date.now()): str
   if (days <= 0) return 'Prueba finalizada';
   if (days === 1) return '1 día restante';
   return `${days} días restantes`;
+}
+
+export function isSubscriptionActive(
+  subscription?: TenantSubscription | null,
+  now = Date.now()
+): boolean {
+  const sub = ensureTenantSubscription(subscription);
+  return sub.status === 'active' && (!sub.expiresAt || sub.expiresAt > now);
+}
+
+export function shouldShowAccessBanner(
+  user: { role?: string; accessLevel?: AccessLevel; subscriptionStatus?: SubscriptionStatus } | null | undefined
+): boolean {
+  if (!user || user.role === 'super_admin') return false;
+  if (user.accessLevel === 'full') return false;
+  if (user.subscriptionStatus === 'active') return false;
+  return user.accessLevel === 'trial' || user.accessLevel === 'readonly';
 }

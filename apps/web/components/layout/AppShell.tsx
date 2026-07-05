@@ -20,6 +20,7 @@ import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsMana
 import { SettingsView } from '@/components/settings/SettingsView';
 import { WarehousesView } from '@/components/warehouses/WarehousesView';
 import { useAppData } from '@/hooks/use-app-data';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 function LoadingScreen() {
   return (
@@ -33,7 +34,7 @@ function LoadingScreen() {
 }
 
 export function AppShell() {
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, refresh } = useAuth();
   const data = useAppData();
   const [activeTab, setActiveTab] = useState<AppTab>('products');
   const [settingsSection, setSettingsSection] = useState<
@@ -84,6 +85,7 @@ export function AppShell() {
           <TrialBanner
             user={data.user}
             className="mb-4"
+            onRefresh={refresh}
             onOpenSubscription={() => {
               setActiveTab('settings');
               setSettingsSection('subscription');

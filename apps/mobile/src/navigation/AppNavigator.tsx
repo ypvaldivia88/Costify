@@ -201,6 +201,7 @@ function MainTabs({
         <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
           <TrialBanner
             user={user}
+            onRefresh={refresh}
             onOpenSubscription={() => {
               setSettingsSection('subscription');
               setActiveTab('settings');

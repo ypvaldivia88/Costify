@@ -40,10 +40,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const response = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    });
     if (!response.ok) {
-      setUser(null);
-      applySessionScope(null);
+      const fallback = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
+      if (!fallback.ok) {
+        setUser(null);
+        applySessionScope(null);
+        return;
+      }
+      const json = (await fallback.json()) as { user: SessionUser };
+      setUser(json.user);
+      applySessionScope(json.user);
       return;
     }
     const json = (await response.json()) as { user: SessionUser };
