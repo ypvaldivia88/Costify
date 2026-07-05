@@ -224,9 +224,10 @@ cd apps/mobile && pnpm build:preview
 | Release | APK | Notas |
 |---------|-----|-------|
 | `v1.0.0-preview-android` | ❌ Sin API URL | No usar |
-| **`v1.0.0-preview-android-2`** | ✅ `costify-preview-1.0.0-android-iota.apk` | Apunta a `costify-iota.vercel.app` |
+| `v1.0.0-preview-android-2` | ⚠️ Parcial | Puede fallar si `Constants.expoConfig` no carga a tiempo |
+| **`v1.0.0-preview-android-3`** | ✅ Recomendada | Fallback runtime a `costify-iota.vercel.app` (API en `apps/web`) |
 
-Descarga: https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.0-preview-android-2
+Descarga actual: https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.0-preview-android-3
 
 ---
 
@@ -243,8 +244,9 @@ Descarga: https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.0-preview-an
 ## Problemas conocidos y soluciones
 
 ### APK muestra "EXPO_PUBLIC_API_URL no está configurada"
-- Rebuild con `EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app`
-- O usar release `v1.0.0-preview-android-2` o posterior
+- Usar release `v1.0.0-preview-android-3` o posterior (fallback runtime en `apps/mobile/src/config/env.ts`)
+- La API vive en `apps/web` → desplegada en `https://costify-iota.vercel.app`
+- Rebuild con `EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app` si compilas localmente
 
 ### Alertas de revisión de precios parpadean al cerrar
 - Corregido en `packages/client-data/src/hooks/use-persisted-state.ts` (merge al recargar + refs estables)

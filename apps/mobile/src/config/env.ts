@@ -1,8 +1,9 @@
 import Constants from 'expo-constants';
+import { COSTIFY_API_BASE_URL } from '@costify/shared/config/api';
 
 /**
  * Variables de entorno de la app móvil.
- * Se leen de process.env (Metro) y de app.config.js → extra (release APK).
+ * El backend es `apps/web` (Next.js). La URL por defecto apunta al despliegue en Vercel.
  */
 
 function readFromProcess(name: string): string | undefined {
@@ -11,31 +12,52 @@ function readFromProcess(name: string): string | undefined {
 }
 
 function readFromExtra(key: 'apiUrl' | 'eltoqueApiToken'): string | undefined {
-  const extra = Constants.expoConfig?.extra as Record<string, unknown> | undefined;
-  const value = extra?.[key];
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  const candidates: Array<Record<string, unknown> | undefined> = [
+    Constants.expoConfig?.extra as Record<string, unknown> | undefined,
+    (Constants as { manifest?: { extra?: Record<string, unknown> } }).manifest?.extra,
+    (Constants.manifest2 as { extra?: Record<string, unknown> } | null)?.extra,
+  ];
+
+  for (const extra of candidates) {
+    const value = extra?.[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return undefined;
 }
 
-export const env = {
-  apiUrl: readFromProcess('EXPO_PUBLIC_API_URL') ?? readFromExtra('apiUrl'),
-  eltoqueApiToken:
-    readFromProcess('EXPO_PUBLIC_ELTOQUE_API_TOKEN') ?? readFromExtra('eltoqueApiToken'),
-} as const;
+function resolveApiUrl(): string {
+  return readFromProcess('EXPO_PUBLIC_API_URL') ?? readFromExtra('apiUrl') ?? COSTIFY_API_BASE_URL;
+}
+
+function resolveEltoqueApiToken(): string | undefined {
+  return readFromProcess('EXPO_PUBLIC_ELTOQUE_API_TOKEN') ?? readFromExtra('eltoqueApiToken');
+}
 
 export function getApiBaseUrl(): string {
-  const base = env.apiUrl;
-  if (!base) {
-    throw new Error(
-      'EXPO_PUBLIC_API_URL no está configurada. Define la URL del backend Costify en .env y vuelve a generar el APK.'
-    );
-  }
-  return base.replace(/\/$/, '');
+  return resolveApiUrl().replace(/\/$/, '');
 }
 
 export function hasBackendApi(): boolean {
-  return Boolean(env.apiUrl);
+  return Boolean(resolveApiUrl());
+}
+
+export function getEltoqueApiToken(): string | undefined {
+  return resolveEltoqueApiToken();
 }
 
 export function hasDirectEltoqueAccess(): boolean {
-  return Boolean(env.eltoqueApiToken);
+  return Boolean(resolveEltoqueApiToken());
 }
+
+/** @deprecated Usar getApiBaseUrl() / getEltoqueApiToken() — se resuelven en runtime. */
+export const env = {
+  get apiUrl() {
+    return resolveApiUrl();
+  },
+  get eltoqueApiToken() {
+    return resolveEltoqueApiToken();
+  },
+} as const;

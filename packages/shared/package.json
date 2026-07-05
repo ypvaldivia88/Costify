@@ -10,6 +10,7 @@
     "./format/*": "./src/format/*",
     "./backup/*": "./src/backup/*",
     "./sync/*": "./src/sync/*",
+    "./config/*": "./src/config/*",
     "./purchase-price": "./src/purchase-price.ts",
     "./random-id": "./src/random-id.ts"
   },
