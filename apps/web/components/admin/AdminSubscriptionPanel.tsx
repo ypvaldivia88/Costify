@@ -24,7 +24,9 @@ interface AdminSubscriptionPanelProps {
 export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionPanelProps) {
   const { showToast } = useToast();
   const subscription = tenant.subscription;
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(subscription?.plan ?? 'monthly');
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(
+    subscription?.requestedPlan ?? subscription?.plan ?? 'monthly'
+  );
   const [saving, setSaving] = useState(false);
 
   if (!subscription) {
@@ -77,6 +79,11 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
               ? ` · Vence: ${formatSubscriptionExpiry(subscription.expiresAt)}`
               : ''}
           </p>
+          {subscription.requestedPlan && subscription.requestedPlan !== subscription.plan ? (
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-2 font-medium">
+              Solicitud del cliente: cambio a {SUBSCRIPTION_PLAN_LABELS[subscription.requestedPlan]}
+            </p>
+          ) : null}
         </div>
 
         <div>

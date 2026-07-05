@@ -13,8 +13,8 @@ import { findTenantById } from '@/lib/auth/tenants';
 import { findUserByEmail, findUserById } from '@/lib/auth/users';
 import { WORKSPACES_COLLECTION } from '@/lib/db/workspace';
 import {
-  changeSubscriptionPlan,
   ensureTenantSubscription,
+  requestClientPlanChange,
   type SubscriptionPlan,
 } from '@costify/shared/domain/subscription';
 
@@ -152,7 +152,10 @@ export async function requestSubscriptionPlanChange(
     throw new Error('Negocio no encontrado.');
   }
 
-  const subscription = changeSubscriptionPlan(ensureTenantSubscription(tenant.subscription), plan);
+  const subscription = requestClientPlanChange(
+    ensureTenantSubscription(tenant.subscription),
+    plan
+  );
 
   const db = await getDb();
   await db

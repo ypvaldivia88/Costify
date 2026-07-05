@@ -26,7 +26,7 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
   const { showToast } = useToast();
   const subscription = tenant.subscription;
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(
-    subscription?.plan ?? 'monthly'
+    subscription?.requestedPlan ?? subscription?.plan ?? 'monthly'
   );
   const [saving, setSaving] = useState(false);
 
@@ -78,6 +78,11 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
               ? ` · Vence: ${formatSubscriptionExpiry(subscription.expiresAt)}`
               : ''}
           </Text>
+          {subscription.requestedPlan && subscription.requestedPlan !== subscription.plan ? (
+            <Text style={[styles.requestedPlan, { color: colors.warning }]}>
+              Solicitud del cliente: cambio a {SUBSCRIPTION_PLAN_LABELS[subscription.requestedPlan]}
+            </Text>
+          ) : null}
         </View>
 
         <Text style={[styles.label, { color: colors.foreground }]}>Plan a aplicar</Text>
@@ -132,6 +137,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '700' },
   value: { fontSize: 15, fontWeight: '700' },
   hint: { fontSize: 12, lineHeight: 16 },
+  requestedPlan: { fontSize: 12, lineHeight: 16, marginTop: 4, fontWeight: '600' },
   planGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   planCard: {
     flex: 1,

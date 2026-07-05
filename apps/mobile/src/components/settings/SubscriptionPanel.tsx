@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CreditCard } from 'lucide-react-native';
 import type { SubscriptionPlan, TenantSubscription } from '@costify/shared/domain/subscription';
@@ -50,9 +50,16 @@ export function SubscriptionPanel({
   onChangePlan,
 }: SubscriptionPanelProps) {
   const { colors, scheme } = useTheme();
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(subscription?.plan ?? 'monthly');
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(
+    subscription?.requestedPlan ?? subscription?.plan ?? 'monthly'
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!subscription) return;
+    setSelectedPlan(subscription.requestedPlan ?? subscription.plan);
+  }, [subscription?.plan, subscription?.requestedPlan, subscription]);
 
   if (!subscription) {
     return (
@@ -74,6 +81,8 @@ export function SubscriptionPanel({
   const pendingPaymentBg = scheme === 'dark' ? '#172554' : '#dbeafe';
   const pendingPaymentText = scheme === 'dark' ? '#dbeafe' : '#1e40af';
   const planChanged = selectedPlan !== subscription.plan;
+  const hasPendingPlanChange =
+    Boolean(subscription.requestedPlan) && subscription.requestedPlan !== subscription.plan;
   const canRequestPlan = needsPayment || planChanged;
 
   function openWhatsAppForPlan(plan: SubscriptionPlan) {
@@ -147,6 +156,13 @@ export function SubscriptionPanel({
           </Text>
         </View>
 
+        {hasPendingPlanChange && subscription.requestedPlan ? (
+          <Text style={[styles.pendingPlan, { color: colors.muted }]}>
+            Cambio solicitado: {SUBSCRIPTION_PLAN_LABELS[subscription.requestedPlan]} (pendiente de
+            confirmación)
+          </Text>
+        ) : null}
+
         <View style={styles.grid}>
           <View style={[styles.stat, { borderColor: colors.border, backgroundColor: colors.surfaceMuted }]}>
             <Text style={[styles.statLabel, { color: colors.muted }]}>Precio del plan</Text>
@@ -218,6 +234,7 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   badgeText: { fontSize: 12, fontWeight: '700' },
   planLabel: { fontSize: 14, fontWeight: '700' },
+  pendingPlan: { fontSize: 12, lineHeight: 16 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   stat: {
     flex: 1,

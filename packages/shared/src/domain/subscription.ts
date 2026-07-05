@@ -40,6 +40,8 @@ export interface TenantSubscription {
   requestedAt: number;
   activatedAt?: number;
   expiresAt?: number;
+  /** Plan solicitado por el cliente; no aplica hasta confirmación del super admin. */
+  requestedPlan?: SubscriptionPlan;
 }
 
 export function getSubscriptionPlanPriceUsd(plan: SubscriptionPlan): number {
@@ -132,7 +134,44 @@ export function changeSubscriptionPlan(
     monthlyPriceUsd: SUBSCRIPTION_MONTHLY_PRICE_USD,
     status: options?.keepStatus ? subscription.status : 'pending_payment',
     requestedAt: Date.now(),
+    requestedPlan: undefined,
   };
+}
+
+export function isSubscriptionCurrentlyActive(
+  subscription: TenantSubscription,
+  now = Date.now()
+): boolean {
+  return (
+    subscription.status === 'active' && (!subscription.expiresAt || subscription.expiresAt > now)
+  );
+}
+
+/** Solicitud de cambio de plan por el cliente: mantiene acceso si la suscripción sigue activa. */
+export function requestClientPlanChange(
+  subscription: TenantSubscription,
+  plan: SubscriptionPlan,
+  now = Date.now()
+): TenantSubscription {
+  const sub = ensureTenantSubscription(subscription);
+
+  if (isSubscriptionCurrentlyActive(sub, now)) {
+    if (plan === sub.plan) {
+      return { ...sub, requestedPlan: undefined, requestedAt: Date.now() };
+    }
+    return {
+      ...sub,
+      requestedPlan: plan,
+      requestedAt: Date.now(),
+    };
+  }
+
+  return changeSubscriptionPlan(sub, plan);
+}
+
+function clearRequestedPlan(subscription: TenantSubscription): TenantSubscription {
+  const { requestedPlan: _requestedPlan, ...rest } = subscription;
+  return rest;
 }
 
 export function renewSubscription(
@@ -182,16 +221,24 @@ export function applySubscriptionAdminAction(
 ): TenantSubscription {
   switch (action) {
     case 'activate':
-      return activateSubscription(plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription);
+      return clearRequestedPlan(
+        activateSubscription(
+          plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription
+        )
+      );
     case 'renew':
-      return renewSubscription(plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription);
+      return clearRequestedPlan(
+        renewSubscription(
+          plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription
+        )
+      );
     case 'expire':
-      return markSubscriptionExpired(subscription);
+      return clearRequestedPlan(markSubscriptionExpired(subscription));
     case 'pending':
-      return markSubscriptionPendingPayment(subscription);
+      return clearRequestedPlan(markSubscriptionPendingPayment(subscription));
     case 'set_plan':
       if (!plan) throw new Error('Plan requerido.');
-      return changeSubscriptionPlan(subscription, plan);
+      return clearRequestedPlan(changeSubscriptionPlan(subscription, plan));
     default:
       return subscription;
   }

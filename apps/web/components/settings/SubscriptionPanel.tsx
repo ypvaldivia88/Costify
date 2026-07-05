@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CreditCard } from 'lucide-react';
 import type { SubscriptionPlan, TenantSubscription } from '@costify/shared/domain/subscription';
 import {
@@ -47,9 +47,16 @@ export function SubscriptionPanel({
   manageable = false,
   onChangePlan,
 }: SubscriptionPanelProps) {
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(subscription?.plan ?? 'monthly');
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(
+    subscription?.requestedPlan ?? subscription?.plan ?? 'monthly'
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!subscription) return;
+    setSelectedPlan(subscription.requestedPlan ?? subscription.plan);
+  }, [subscription?.plan, subscription?.requestedPlan, subscription]);
 
   if (!subscription) {
     return (
@@ -68,6 +75,8 @@ export function SubscriptionPanel({
     Boolean(subscription.expiresAt && subscription.expiresAt < Date.now());
   const needsPayment = subscription.status === 'pending_payment' || isExpired;
   const planChanged = selectedPlan !== subscription.plan;
+  const hasPendingPlanChange =
+    Boolean(subscription.requestedPlan) && subscription.requestedPlan !== subscription.plan;
   const canRequestPlan = needsPayment || planChanged;
 
   function openWhatsAppForPlan(plan: SubscriptionPlan) {
@@ -127,6 +136,13 @@ export function SubscriptionPanel({
             {SUBSCRIPTION_PLAN_LABELS[subscription.plan]}
           </span>
         </div>
+
+        {hasPendingPlanChange && subscription.requestedPlan ? (
+          <p className="text-xs text-muted">
+            Cambio solicitado: {SUBSCRIPTION_PLAN_LABELS[subscription.requestedPlan]} (pendiente de
+            confirmación)
+          </p>
+        ) : null}
 
         <dl className="grid gap-3 sm:grid-cols-2 text-sm">
           <div className="rounded-xl border border-border bg-surface-muted/50 p-3">
