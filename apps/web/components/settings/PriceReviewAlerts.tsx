@@ -54,7 +54,10 @@ export function PriceReviewAlerts({
             <button
               type="button"
               aria-label="Cerrar alerta"
-              onClick={() => dismissAlert(alert.id)}
+              onClick={(event) => {
+                event.stopPropagation();
+                dismissAlert(alert.id);
+              }}
               className="shrink-0 rounded-lg p-1 opacity-70 transition hover:opacity-100"
             >
               <X className="w-4 h-4" />

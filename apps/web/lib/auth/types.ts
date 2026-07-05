@@ -1,3 +1,5 @@
+import type { TenantSubscription } from '@costify/shared/domain/subscription';
+
 export type {
   UserRole,
   AccountStatus,
@@ -8,6 +10,7 @@ export type {
 
 export const USERS_COLLECTION = 'users';
 export const TENANTS_COLLECTION = 'tenants';
+export const REGISTRATIONS_COLLECTION = 'registrations';
 
 export interface UserDocument {
   userId: string;
@@ -27,4 +30,5 @@ export interface TenantDocument {
   workspaceId: string;
   status: import('@costify/client-data').AccountStatus;
   createdAt: number;
+  subscription?: TenantSubscription;
 }

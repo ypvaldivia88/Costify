@@ -22,13 +22,27 @@ export async function POST(request: Request) {
     }
 
     const user = await findUserByEmail(email);
-    if (!user || user.status !== 'active') {
+    if (!user) {
       const bootstrapConfigured = isSuperAdminBootstrapConfigured();
       const message =
         !bootstrapConfigured && email === process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase()
           ? 'El super administrador no está configurado en el servidor. Define SUPER_ADMIN_EMAIL y SUPER_ADMIN_PASSWORD.'
           : 'Credenciales inválidas.';
       return NextResponse.json({ error: message }, { status: 401 });
+    }
+
+    if (user.status === 'pending') {
+      return NextResponse.json(
+        {
+          error:
+            'Tu cuenta está pendiente de aprobación. Completa el pago por WhatsApp y espera la activación por el administrador.',
+        },
+        { status: 403 }
+      );
+    }
+
+    if (user.status !== 'active') {
+      return NextResponse.json({ error: 'Credenciales inválidas.' }, { status: 401 });
     }
 
     const valid = await verifyPassword(password, user.passwordHash);
@@ -45,7 +59,19 @@ export async function POST(request: Request) {
 
     if (user.tenantId) {
       const tenant = await findTenantById(user.tenantId);
-      if (!tenant || tenant.status !== 'active') {
+      if (!tenant) {
+        return NextResponse.json({ error: 'El negocio asociado no existe.' }, { status: 403 });
+      }
+      if (tenant.status === 'pending') {
+        return NextResponse.json(
+          {
+            error:
+              'Tu negocio está pendiente de aprobación. Escríbenos por WhatsApp para completar el pago y activar la cuenta.',
+          },
+          { status: 403 }
+        );
+      }
+      if (tenant.status !== 'active') {
         return NextResponse.json({ error: 'El negocio asociado está suspendido.' }, { status: 403 });
       }
       sessionUser.tenantId = tenant.tenantId;

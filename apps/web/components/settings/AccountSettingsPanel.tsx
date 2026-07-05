@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
+import { SubscriptionPanel } from '@/components/settings/SubscriptionPanel';
 import type { AccountDetails } from '@/lib/auth/account';
 import type { SessionUser } from '@/lib/auth/types';
 
@@ -199,6 +200,15 @@ export function AccountSettingsPanel({ user }: AccountSettingsPanelProps) {
 
   return (
     <div className="space-y-4">
+      {isTenantAdmin && account?.tenant && (
+        <SubscriptionPanel
+          businessName={account.tenant.name}
+          contactName={profile.name}
+          contactEmail={profile.contactEmail || profile.email}
+          subscription={account.tenant.subscription}
+        />
+      )}
+
       <Card>
         <SectionHeader
           icon={User}

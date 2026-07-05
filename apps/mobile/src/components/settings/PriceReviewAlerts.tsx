@@ -84,7 +84,10 @@ export function PriceReviewAlerts({
               accessibilityRole="button"
               accessibilityLabel="Cerrar alerta"
               hitSlop={8}
-              onPress={() => dismissAlert(alert.id)}
+              onPress={(event) => {
+                event?.stopPropagation?.();
+                dismissAlert(alert.id);
+              }}
               style={styles.dismissBtn}
             >
               <X size={16} color={textColor} />

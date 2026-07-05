@@ -116,6 +116,12 @@ export default function LoginPage() {
           <p className="text-center text-xs text-muted">
             Calculadora de costos para MIPYME en Cuba
           </p>
+          <p className="text-center text-sm text-muted">
+            ¿No tienes cuenta?{' '}
+            <a href="/register" className="text-brand font-semibold hover:underline">
+              Registra tu negocio
+            </a>
+          </p>
         </motion.div>
       </div>
     </div>

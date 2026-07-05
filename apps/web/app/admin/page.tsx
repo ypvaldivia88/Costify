@@ -1,13 +1,33 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Building2, LogOut, Plus, Shield, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Building2, CheckCircle2, Clock3, LogOut, Plus, Shield, Users, XCircle } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import type { PublicTenant, PublicUser } from '@/lib/auth/types';
+import {
+  SUBSCRIPTION_PLAN_LABELS,
+  SUBSCRIPTION_STATUS_LABELS,
+} from '@costify/shared/domain/subscription';
 import { cn } from '@/lib/utils';
+
+function tenantStatusLabel(status: PublicTenant['status']): string {
+  if (status === 'pending') return 'Pendiente';
+  if (status === 'suspended') return 'Suspendido';
+  return 'Activo';
+}
+
+function tenantStatusClass(status: PublicTenant['status']): string {
+  if (status === 'pending') {
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300';
+  }
+  if (status === 'active') {
+    return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300';
+  }
+  return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300';
+}
 
 export default function AdminPage() {
   const { user, logout, loading: authLoading } = useAuth();
@@ -148,6 +168,50 @@ export default function AdminPage() {
   };
 
   const selectedTenant = tenants.find((tenant) => tenant.tenantId === selectedTenantId) ?? null;
+  const pendingTenants = useMemo(
+    () => tenants.filter((tenant) => tenant.status === 'pending'),
+    [tenants]
+  );
+  const activeTenants = useMemo(
+    () => tenants.filter((tenant) => tenant.status !== 'pending'),
+    [tenants]
+  );
+
+  const handleApproveTenant = async (tenantId: string) => {
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/tenants/${tenantId}/approve`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(json.error || 'No se pudo aprobar el cliente.');
+      }
+      await loadTenants();
+      setSelectedTenantId(tenantId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al aprobar.');
+    }
+  };
+
+  const handleRejectTenant = async (tenantId: string) => {
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/tenants/${tenantId}/reject`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(json.error || 'No se pudo rechazar el registro.');
+      }
+      if (selectedTenantId === tenantId) setSelectedTenantId(null);
+      await loadTenants();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al rechazar.');
+    }
+  };
 
   if (authLoading) {
     return (
@@ -194,6 +258,54 @@ export default function AdminPage() {
         </div>
 
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        {pendingTenants.length > 0 && (
+          <Card className="p-4 border-brand/30 bg-brand-muted/20">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Clock3 className="w-4 h-4 text-brand" />
+              Solicitudes pendientes de aprobación
+            </h3>
+            <div className="space-y-3">
+              {pendingTenants.map((tenant) => (
+                <div
+                  key={tenant.tenantId}
+                  className="rounded-xl border border-border bg-surface p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                >
+                  <div>
+                    <p className="font-semibold text-sm">{tenant.name}</p>
+                    <p className="text-xs text-muted">{tenant.contactEmail}</p>
+                    {tenant.subscription ? (
+                      <p className="text-xs text-muted mt-1">
+                        Plan: {SUBSCRIPTION_PLAN_LABELS[tenant.subscription.plan]} ·{' '}
+                        {tenant.subscription.priceUsd} USD ·{' '}
+                        {SUBSCRIPTION_STATUS_LABELS[tenant.subscription.status]}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void handleApproveTenant(tenant.tenantId)}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Aprobar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void handleRejectTenant(tenant.tenantId)}
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Rechazar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {showCreateForm && (
           <Card className="p-5">
@@ -252,11 +364,11 @@ export default function AdminPage() {
             </h3>
             {loading ? (
               <p className="text-sm text-muted">Cargando…</p>
-            ) : tenants.length === 0 ? (
-              <p className="text-sm text-muted">Aún no hay clientes registrados.</p>
+            ) : activeTenants.length === 0 ? (
+              <p className="text-sm text-muted">Aún no hay clientes activos.</p>
             ) : (
               <div className="space-y-2">
-                {tenants.map((tenant) => (
+                {activeTenants.map((tenant) => (
                   <button
                     key={tenant.tenantId}
                     type="button"
@@ -272,16 +384,20 @@ export default function AdminPage() {
                       <div>
                         <p className="font-semibold text-sm">{tenant.name}</p>
                         <p className="text-xs text-muted">{tenant.contactEmail}</p>
+                        {tenant.subscription ? (
+                          <p className="text-xs text-muted mt-1">
+                            {SUBSCRIPTION_PLAN_LABELS[tenant.subscription.plan]} ·{' '}
+                            {tenant.subscription.priceUsd} USD
+                          </p>
+                        ) : null}
                       </div>
                       <span
                         className={cn(
                           'text-xs font-semibold px-2 py-1 rounded-full',
-                          tenant.status === 'active'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+                          tenantStatusClass(tenant.status)
                         )}
                       >
-                        {tenant.status === 'active' ? 'Activo' : 'Suspendido'}
+                        {tenantStatusLabel(tenant.status)}
                       </span>
                     </div>
                   </button>
@@ -311,15 +427,41 @@ export default function AdminPage() {
                 <div className="rounded-xl border border-border p-3 bg-surface-muted/50">
                   <p className="text-sm font-semibold">{selectedTenant.name}</p>
                   <p className="text-xs text-muted mt-1">ID: {selectedTenant.tenantId}</p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="mt-3"
-                    onClick={() => void toggleTenantStatus(selectedTenant)}
-                  >
-                    {selectedTenant.status === 'active' ? 'Suspender acceso' : 'Reactivar acceso'}
-                  </Button>
+                  {selectedTenant.subscription ? (
+                    <p className="text-xs text-muted mt-1">
+                      Plan: {SUBSCRIPTION_PLAN_LABELS[selectedTenant.subscription.plan]} ·{' '}
+                      {selectedTenant.subscription.priceUsd} USD
+                    </p>
+                  ) : null}
+                  {selectedTenant.status !== 'pending' ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="mt-3"
+                      onClick={() => void toggleTenantStatus(selectedTenant)}
+                    >
+                      {selectedTenant.status === 'active' ? 'Suspender acceso' : 'Reactivar acceso'}
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => void handleApproveTenant(selectedTenant.tenantId)}
+                      >
+                        Aprobar registro
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void handleRejectTenant(selectedTenant.tenantId)}
+                      >
+                        Rechazar
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {showUserForm && (

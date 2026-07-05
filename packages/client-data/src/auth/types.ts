@@ -1,5 +1,11 @@
 export type UserRole = 'super_admin' | 'tenant_admin' | 'tenant_user';
-export type AccountStatus = 'active' | 'suspended';
+export type AccountStatus = 'pending' | 'active' | 'suspended';
+
+export type {
+  SubscriptionPlan,
+  SubscriptionStatus,
+  TenantSubscription,
+} from '@costify/shared/domain/subscription';
 
 export interface SessionUser {
   userId: string;
@@ -28,6 +34,7 @@ export interface PublicTenant {
   workspaceId: string;
   status: AccountStatus;
   createdAt: number;
+  subscription?: import('@costify/shared/domain/subscription').TenantSubscription;
 }
 
 export interface AccountDetails {

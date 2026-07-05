@@ -16,6 +16,24 @@ import {
   DEFAULT_TAX_SETTINGS,
 } from '@costify/shared/domain/constants';
 import { DEFAULT_UNIT_SETTINGS } from '@costify/shared/domain/unit-settings';
+import {
+  activateSubscription,
+  buildPendingSubscription,
+  type SubscriptionPlan,
+  type TenantSubscription,
+} from '@costify/shared/domain/subscription';
+
+function toPublicTenant(tenant: TenantDocument): PublicTenant {
+  return {
+    tenantId: tenant.tenantId,
+    name: tenant.name,
+    contactEmail: tenant.contactEmail,
+    workspaceId: tenant.workspaceId,
+    status: tenant.status,
+    createdAt: tenant.createdAt,
+    subscription: tenant.subscription,
+  };
+}
 
 export async function listTenants(): Promise<PublicTenant[]> {
   const db = await getDb();
@@ -25,14 +43,18 @@ export async function listTenants(): Promise<PublicTenant[]> {
     .sort({ createdAt: -1 })
     .toArray();
 
-  return tenants.map(({ tenantId, name, contactEmail, workspaceId, status, createdAt }) => ({
-    tenantId,
-    name,
-    contactEmail,
-    workspaceId,
-    status,
-    createdAt,
-  }));
+  return tenants.map(toPublicTenant);
+}
+
+export async function listPendingTenants(): Promise<PublicTenant[]> {
+  const db = await getDb();
+  const tenants = await db
+    .collection<TenantDocument>(TENANTS_COLLECTION)
+    .find({ status: 'pending' })
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  return tenants.map(toPublicTenant);
 }
 
 export async function listTenantUsers(tenantId: string): Promise<PublicUser[]> {
@@ -65,9 +87,11 @@ interface CreateTenantInput {
   adminName: string;
   adminEmail: string;
   adminPassword: string;
+  status?: TenantDocument['status'];
+  subscription?: TenantSubscription;
 }
 
-export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
+async function insertTenantBundle(input: CreateTenantInput): Promise<{
   tenant: PublicTenant;
   admin: PublicUser;
 }> {
@@ -80,6 +104,7 @@ export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
   const workspaceId = tenantId;
   const now = Date.now();
   const adminEmail = input.adminEmail.trim().toLowerCase();
+  const status = input.status ?? 'active';
 
   const existingUser = await users.findOne({ email: adminEmail });
   if (existingUser) {
@@ -91,8 +116,9 @@ export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
     name: input.name.trim(),
     contactEmail: input.contactEmail.trim().toLowerCase(),
     workspaceId,
-    status: 'active',
+    status,
     createdAt: now,
+    subscription: input.subscription,
   };
 
   const admin: UserDocument = {
@@ -102,7 +128,7 @@ export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
     role: 'tenant_admin',
     tenantId,
     name: input.adminName.trim(),
-    status: 'active',
+    status,
     createdAt: now,
   };
 
@@ -127,14 +153,7 @@ export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
   await workspaces.insertOne(workspace);
 
   return {
-    tenant: {
-      tenantId: tenant.tenantId,
-      name: tenant.name,
-      contactEmail: tenant.contactEmail,
-      workspaceId: tenant.workspaceId,
-      status: tenant.status,
-      createdAt: tenant.createdAt,
-    },
+    tenant: toPublicTenant(tenant),
     admin: {
       userId: admin.userId,
       email: admin.email,
@@ -145,6 +164,68 @@ export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
       createdAt: admin.createdAt,
     },
   };
+}
+
+export async function createTenantWithAdmin(input: CreateTenantInput): Promise<{
+  tenant: PublicTenant;
+  admin: PublicUser;
+}> {
+  const subscription = activateSubscription(buildPendingSubscription('monthly'));
+  return insertTenantBundle({
+    ...input,
+    status: 'active',
+    subscription,
+  });
+}
+
+interface RegisterTenantInput {
+  name: string;
+  contactEmail: string;
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+  plan: SubscriptionPlan;
+}
+
+export async function registerPendingTenant(input: RegisterTenantInput): Promise<{
+  tenant: PublicTenant;
+  admin: PublicUser;
+}> {
+  return insertTenantBundle({
+    name: input.name,
+    contactEmail: input.contactEmail,
+    adminName: input.adminName,
+    adminEmail: input.adminEmail,
+    adminPassword: input.adminPassword,
+    status: 'pending',
+    subscription: buildPendingSubscription(input.plan),
+  });
+}
+
+export async function approveTenant(tenantId: string): Promise<PublicTenant | null> {
+  const tenant = await findTenantById(tenantId);
+  if (!tenant || tenant.status !== 'pending') {
+    throw new Error('El cliente no está pendiente de aprobación.');
+  }
+
+  const subscription = tenant.subscription
+    ? activateSubscription(tenant.subscription)
+    : activateSubscription(buildPendingSubscription('monthly'));
+
+  const db = await getDb();
+  const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOneAndUpdate(
+    { tenantId },
+    { $set: { status: 'active', subscription } },
+    { returnDocument: 'after' }
+  );
+
+  if (!result) return null;
+
+  await db
+    .collection<UserDocument>(USERS_COLLECTION)
+    .updateMany({ tenantId }, { $set: { status: 'active' } });
+
+  return toPublicTenant(result);
 }
 
 interface CreateTenantUserInput {
@@ -207,14 +288,20 @@ export async function updateTenantStatus(
 
   if (!result) return null;
 
-  return {
-    tenantId: result.tenantId,
-    name: result.name,
-    contactEmail: result.contactEmail,
-    workspaceId: result.workspaceId,
-    status: result.status,
-    createdAt: result.createdAt,
-  };
+  return toPublicTenant(result);
+}
+
+export async function rejectPendingTenant(tenantId: string): Promise<boolean> {
+  const tenant = await findTenantById(tenantId);
+  if (!tenant || tenant.status !== 'pending') {
+    throw new Error('El cliente no está pendiente de aprobación.');
+  }
+
+  const db = await getDb();
+  await db.collection<UserDocument>(USERS_COLLECTION).deleteMany({ tenantId });
+  await db.collection(WORKSPACES_COLLECTION).deleteOne({ workspaceId: tenant.workspaceId });
+  const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).deleteOne({ tenantId });
+  return result.deletedCount === 1;
 }
 
 export async function updateTenantUserPassword(

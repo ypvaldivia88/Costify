@@ -38,6 +38,7 @@ function toPublicTenant(tenant: TenantDocument): PublicTenant {
     workspaceId: tenant.workspaceId,
     status: tenant.status,
     createdAt: tenant.createdAt,
+    subscription: tenant.subscription,
   };
 }
 

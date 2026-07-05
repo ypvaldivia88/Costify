@@ -7,6 +7,12 @@ import { useStorage } from '../context/ClientDataProvider';
 import { useAsyncPersistedResource } from './use-persisted-state';
 import { usePriceReviewAlerts } from './use-exchange-rates-context';
 
+function mergeDismissedAlertIds(loaded: string[], current: string[]): string[] {
+  if (current.length === 0) return loaded;
+  if (loaded.length === 0) return current;
+  return [...new Set([...loaded, ...current])];
+}
+
 export function getTabForPriceReviewTarget(target: PriceReviewAlertTarget): AppTab {
   return target.refType === 'raw_material' ? 'raw-materials' : 'products';
 }
@@ -19,6 +25,7 @@ export function useActivePriceReviewAlerts(materials: RawMaterial[], products: P
     load: () => storage.load<string[]>(STORAGE_KEYS.dismissedPriceAlerts, []),
     save: (ids) => storage.save(STORAGE_KEYS.dismissedPriceAlerts, ids),
     initialValue: [] as string[],
+    mergeOnReload: mergeDismissedAlertIds,
   });
 
   const activeAlerts = useMemo(
