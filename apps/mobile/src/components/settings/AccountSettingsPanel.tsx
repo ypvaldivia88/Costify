@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { SubscriptionPanel } from '@/components/settings/SubscriptionPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 
 interface AccountSettingsPanelProps {
@@ -184,6 +185,15 @@ export function AccountSettingsPanel({ user }: AccountSettingsPanelProps) {
 
   return (
     <View style={styles.content}>
+      {isTenantAdmin && account?.tenant ? (
+        <SubscriptionPanel
+          businessName={account.tenant.name}
+          contactName={profile.name}
+          contactEmail={profile.contactEmail || profile.email}
+          subscription={account.tenant.subscription}
+        />
+      ) : null}
+
       <Card>
         <SectionHeader
           icon={User}

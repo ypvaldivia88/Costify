@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Moon, Sun } from 'lucide-react-native';
 import { AdminScreen } from '@/components/admin/AdminScreen';
 import { LoginScreen } from '@/components/auth/LoginScreen';
+import { RegisterScreen } from '@/components/auth/RegisterScreen';
 import { ProductsView } from '@/components/products/ProductsView';
 import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsManager';
 import { SettingsView } from '@/components/settings/SettingsView';
@@ -326,13 +327,17 @@ function NavigationRoot() {
 function AuthGate() {
   const { user, loading } = useAuth();
   const { colors } = useTheme();
+  const [authScreen, setAuthScreen] = useState<'login' | 'register'>('login');
 
   if (loading) {
     return <LoadingScreen message="Verificando sesión…" />;
   }
 
   if (!user) {
-    return <LoginScreen />;
+    if (authScreen === 'register') {
+      return <RegisterScreen onBackToLogin={() => setAuthScreen('login')} />;
+    }
+    return <LoginScreen onRegister={() => setAuthScreen('register')} />;
   }
 
   if (user.role === 'super_admin') {

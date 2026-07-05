@@ -1,0 +1,184 @@
+import { Linking, StyleSheet, Text, View } from 'react-native';
+import { CreditCard, MessageCircle } from 'lucide-react-native';
+import type { TenantSubscription } from '@costify/shared/domain/subscription';
+import {
+  buildWhatsAppPaymentMessage,
+  buildWhatsAppPaymentUrl,
+  formatSubscriptionExpiry,
+  getSubscriptionStatusLabel,
+  SUBSCRIPTION_PLAN_LABELS,
+  WHATSAPP_SUPPORT_NUMBER,
+} from '@costify/shared/domain/subscription';
+import { useTheme } from '@/context/ThemeContext';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+
+interface SubscriptionPanelProps {
+  businessName: string;
+  contactName: string;
+  contactEmail: string;
+  subscription?: TenantSubscription | null;
+}
+
+function statusColors(
+  subscription: TenantSubscription,
+  colors: ReturnType<typeof useTheme>['colors']
+): { bg: string; text: string } {
+  if (subscription.status === 'active') {
+    if (subscription.expiresAt && subscription.expiresAt < Date.now()) {
+      return { bg: colors.accentSurface, text: colors.warning };
+    }
+    return { bg: colors.brandMuted, text: colors.brandForeground };
+  }
+  if (subscription.status === 'pending_payment') {
+    return { bg: '#dbeafe', text: '#1e40af' };
+  }
+  return { bg: colors.dangerMuted, text: colors.danger };
+}
+
+export function SubscriptionPanel({
+  businessName,
+  contactName,
+  contactEmail,
+  subscription,
+}: SubscriptionPanelProps) {
+  const { colors, scheme } = useTheme();
+
+  if (!subscription) {
+    return (
+      <Card>
+        <SectionHeader
+          icon={CreditCard}
+          title="Plan de suscripción"
+          description="No hay información de suscripción para este negocio."
+        />
+      </Card>
+    );
+  }
+
+  const isExpired =
+    subscription.status === 'active' &&
+    Boolean(subscription.expiresAt && subscription.expiresAt < Date.now());
+  const needsPayment = subscription.status === 'pending_payment' || isExpired;
+  const badge = statusColors(subscription, colors);
+  const pendingPaymentBg = scheme === 'dark' ? '#172554' : '#dbeafe';
+  const pendingPaymentText = scheme === 'dark' ? '#dbeafe' : '#1e40af';
+
+  const whatsappUrl = buildWhatsAppPaymentUrl(
+    buildWhatsAppPaymentMessage({
+      businessName,
+      contactName,
+      email: contactEmail,
+      plan: subscription.plan,
+      priceUsd: subscription.priceUsd,
+      isRenewal: !needsPayment || isExpired,
+    })
+  );
+
+  const openWhatsApp = () => {
+    void Linking.openURL(whatsappUrl);
+  };
+
+  return (
+    <Card>
+      <SectionHeader
+        icon={CreditCard}
+        title="Plan de suscripción"
+        description="Estado de tu plan y opciones de pago o renovación"
+      />
+
+      <View style={styles.stack}>
+        <View style={styles.badges}>
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor:
+                  subscription.status === 'pending_payment' ? pendingPaymentBg : badge.bg,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.badgeText,
+                {
+                  color:
+                    subscription.status === 'pending_payment' ? pendingPaymentText : badge.text,
+                },
+              ]}
+            >
+              {isExpired ? 'Vencida' : getSubscriptionStatusLabel(subscription)}
+            </Text>
+          </View>
+          <Text style={[styles.planLabel, { color: colors.foreground }]}>
+            {SUBSCRIPTION_PLAN_LABELS[subscription.plan]}
+          </Text>
+        </View>
+
+        <View style={styles.grid}>
+          <View style={[styles.stat, { borderColor: colors.border, backgroundColor: colors.surfaceMuted }]}>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>Precio del plan</Text>
+            <Text style={[styles.statValue, { color: colors.foreground }]}>
+              {subscription.priceUsd.toFixed(2)} USD
+            </Text>
+            <Text style={[styles.statHint, { color: colors.muted }]}>
+              {subscription.discountPercent > 0
+                ? `${subscription.discountPercent}% de descuento`
+                : `${subscription.monthlyPriceUsd.toFixed(2)} USD / mes`}
+            </Text>
+          </View>
+          <View style={[styles.stat, { borderColor: colors.border, backgroundColor: colors.surfaceMuted }]}>
+            <Text style={[styles.statLabel, { color: colors.muted }]}>Vencimiento</Text>
+            <Text style={[styles.statValue, { color: colors.foreground }]}>
+              {subscription.status === 'active'
+                ? formatSubscriptionExpiry(subscription.expiresAt)
+                : 'Pendiente de activación'}
+            </Text>
+          </View>
+        </View>
+
+        {needsPayment ? (
+          <View style={[styles.cta, { borderColor: colors.brand, backgroundColor: colors.brandMuted }]}>
+            <Text style={[styles.ctaText, { color: colors.foreground }]}>
+              El pago se gestiona por WhatsApp ({WHATSAPP_SUPPORT_NUMBER}). Escríbenos para pagar y
+              activar tu cuenta.
+            </Text>
+            <Button onPress={openWhatsApp}>
+              <MessageCircle size={16} color="#fff" />
+              <Text style={styles.ctaBtnText}>Pagar o renovar por WhatsApp</Text>
+            </Button>
+          </View>
+        ) : (
+          <Text style={[styles.renewHint, { color: colors.muted }]}>
+            Para renovar antes del vencimiento, contáctanos por WhatsApp ({WHATSAPP_SUPPORT_NUMBER}).
+          </Text>
+        )}
+      </View>
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  stack: { gap: 12, marginTop: 4 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontSize: 12, fontWeight: '700' },
+  planLabel: { fontSize: 14, fontWeight: '700' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  stat: {
+    flex: 1,
+    minWidth: 140,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 4,
+  },
+  statLabel: { fontSize: 12 },
+  statValue: { fontSize: 15, fontWeight: '700' },
+  statHint: { fontSize: 12, lineHeight: 16 },
+  cta: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 10 },
+  ctaText: { fontSize: 13, lineHeight: 18 },
+  ctaBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  renewHint: { fontSize: 12, lineHeight: 16 },
+});

@@ -35,6 +35,52 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   });
 }
 
+export async function publicApiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(options.headers);
+
+  if (!headers.has('Content-Type') && options.body) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  return fetch(`${getApiBaseUrl()}${path}`, {
+    ...options,
+    headers,
+  });
+}
+
+export interface RegisterRequestInput {
+  businessName: string;
+  contactEmail?: string;
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+  plan: import('@costify/shared/domain/subscription').SubscriptionPlan;
+}
+
+export interface RegisterRequestResult {
+  planLabel: string;
+  priceUsd: number;
+  whatsappUrl: string;
+  message: string;
+}
+
+export async function registerRequest(input: RegisterRequestInput): Promise<RegisterRequestResult> {
+  const response = await publicApiFetch('/api/register', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  const json = (await response.json()) as RegisterRequestResult & { error?: string };
+  if (!response.ok) {
+    throw new Error(json.error || 'No se pudo completar el registro.');
+  }
+  return {
+    planLabel: json.planLabel,
+    priceUsd: json.priceUsd,
+    whatsappUrl: json.whatsappUrl,
+    message: json.message,
+  };
+}
+
 export async function loginRequest(
   email: string,
   password: string

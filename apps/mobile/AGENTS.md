@@ -4,6 +4,8 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 
 > **Staging / secrets / URLs de producción:** ver [`/AGENTS.md`](../../AGENTS.md) en la raíz del monorepo.
 
+**Prioridad móvil:** registro, suscripciones y aprobaciones de super admin viven en la app nativa (`RegisterScreen`, `SubscriptionPanel`, `AdminScreen`). La web replica los mismos flujos.
+
 ## Monorepo
 
 This app lives at `apps/mobile` inside the Costify monorepo. Shared business logic is in `packages/shared` (`@costify/shared`) and client hooks/sync in `packages/client-data` (`@costify/client-data`).

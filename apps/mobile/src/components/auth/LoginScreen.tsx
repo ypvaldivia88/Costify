@@ -19,7 +19,11 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  onRegister?: () => void;
+}
+
+export function LoginScreen({ onRegister }: LoginScreenProps) {
   const { login } = useAuth();
   const { colors, scheme, toggleScheme } = useTheme();
   const [email, setEmail] = useState('');
@@ -160,6 +164,14 @@ export function LoginScreen() {
           <Text style={[styles.footer, { color: colors.muted }]}>
             Calculadora de costos para MIPYME en Cuba
           </Text>
+          {onRegister ? (
+            <Pressable onPress={onRegister} style={styles.registerLink}>
+              <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 14 }}>
+                ¿No tienes cuenta?{' '}
+                <Text style={{ color: colors.brand, fontWeight: '700' }}>Registra tu negocio</Text>
+              </Text>
+            </Pressable>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -219,4 +231,5 @@ const styles = StyleSheet.create({
   submitting: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   submitText: { color: '#fff', fontWeight: '700' },
   footer: { textAlign: 'center', fontSize: 12, marginTop: 'auto' },
+  registerLink: { paddingVertical: 4 },
 });

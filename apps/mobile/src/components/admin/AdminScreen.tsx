@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +8,11 @@ import {
   View,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Building2, LogOut, Plus, Shield, Users } from 'lucide-react-native';
+import { Building2, CheckCircle2, Clock3, LogOut, Plus, Shield, Users, XCircle } from 'lucide-react-native';
+import {
+  SUBSCRIPTION_PLAN_LABELS,
+  SUBSCRIPTION_STATUS_LABELS,
+} from '@costify/shared/domain/subscription';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/api/client';
 import type { PublicTenant, PublicUser } from '@/auth/types';
@@ -18,6 +22,12 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+
+function tenantStatusLabel(status: PublicTenant['status']): string {
+  if (status === 'pending') return 'Pendiente';
+  if (status === 'suspended') return 'Suspendido';
+  return 'Activo';
+}
 
 export function AdminScreen() {
   const { user, logout } = useAuth();
@@ -178,6 +188,44 @@ export function AdminScreen() {
   };
 
   const selectedTenant = tenants.find((tenant) => tenant.tenantId === selectedTenantId) ?? null;
+  const pendingTenants = useMemo(
+    () => tenants.filter((tenant) => tenant.status === 'pending'),
+    [tenants]
+  );
+  const activeTenants = useMemo(
+    () => tenants.filter((tenant) => tenant.status !== 'pending'),
+    [tenants]
+  );
+
+  const handleApproveTenant = async (tenantId: string) => {
+    setError(null);
+    try {
+      const response = await apiFetch(`/api/admin/tenants/${tenantId}/approve`, { method: 'POST' });
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(json.error || 'No se pudo aprobar el cliente.');
+      }
+      await loadTenants();
+      setSelectedTenantId(tenantId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al aprobar.');
+    }
+  };
+
+  const handleRejectTenant = async (tenantId: string) => {
+    setError(null);
+    try {
+      const response = await apiFetch(`/api/admin/tenants/${tenantId}/reject`, { method: 'POST' });
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(json.error || 'No se pudo rechazar el registro.');
+      }
+      if (selectedTenantId === tenantId) setSelectedTenantId(null);
+      await loadTenants();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al rechazar.');
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
@@ -212,6 +260,41 @@ export function AdminScreen() {
         </View>
 
         {error ? <Text style={{ color: colors.danger, fontSize: 13 }}>{error}</Text> : null}
+
+        {pendingTenants.length > 0 ? (
+          <Card variant="accent">
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+              <Clock3 size={16} color={colors.brand} /> Solicitudes pendientes
+            </Text>
+            {pendingTenants.map((tenant) => (
+              <View
+                key={tenant.tenantId}
+                style={[styles.pendingItem, { borderColor: colors.border, backgroundColor: colors.surface }]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.tenantName, { color: colors.foreground }]}>{tenant.name}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12 }}>{tenant.contactEmail}</Text>
+                  {tenant.subscription ? (
+                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
+                      {SUBSCRIPTION_PLAN_LABELS[tenant.subscription.plan]} · {tenant.subscription.priceUsd} USD ·{' '}
+                      {SUBSCRIPTION_STATUS_LABELS[tenant.subscription.status]}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.row}>
+                  <Button size="sm" onPress={() => void handleApproveTenant(tenant.tenantId)}>
+                    <CheckCircle2 size={14} color="#fff" />
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Aprobar</Text>
+                  </Button>
+                  <Button size="sm" variant="outline" onPress={() => void handleRejectTenant(tenant.tenantId)}>
+                    <XCircle size={14} color={colors.foreground} />
+                    <Text style={{ color: colors.foreground, fontWeight: '700', fontSize: 13 }}>Rechazar</Text>
+                  </Button>
+                </View>
+              </View>
+            ))}
+          </Card>
+        ) : null}
 
         {showCreateForm ? (
           <Card>
@@ -263,10 +346,10 @@ export function AdminScreen() {
           </Text>
           {loading ? (
             <ActivityIndicator color={colors.brand} />
-          ) : tenants.length === 0 ? (
-            <Text style={{ color: colors.muted, fontSize: 13 }}>Aún no hay clientes registrados.</Text>
+          ) : activeTenants.length === 0 ? (
+            <Text style={{ color: colors.muted, fontSize: 13 }}>Aún no hay clientes activos.</Text>
           ) : (
-            tenants.map((tenant) => {
+            activeTenants.map((tenant) => {
               const selected = selectedTenantId === tenant.tenantId;
               return (
                 <Pressable
@@ -283,17 +366,32 @@ export function AdminScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.tenantName, { color: colors.foreground }]}>{tenant.name}</Text>
                     <Text style={{ color: colors.muted, fontSize: 12 }}>{tenant.contactEmail}</Text>
+                    {tenant.subscription ? (
+                      <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                        {SUBSCRIPTION_PLAN_LABELS[tenant.subscription.plan]} · {tenant.subscription.priceUsd} USD
+                      </Text>
+                    ) : null}
                   </View>
                   <Text
                     style={[
                       styles.badge,
                       {
-                        color: tenant.status === 'active' ? colors.brandForeground : colors.warning,
-                        backgroundColor: tenant.status === 'active' ? colors.brandMuted : colors.accentSurface,
+                        color:
+                          tenant.status === 'active'
+                            ? colors.brandForeground
+                            : tenant.status === 'pending'
+                              ? colors.brand
+                              : colors.warning,
+                        backgroundColor:
+                          tenant.status === 'active'
+                            ? colors.brandMuted
+                            : tenant.status === 'pending'
+                              ? colors.accentSurface
+                              : colors.accentSurface,
                       },
                     ]}
                   >
-                    {tenant.status === 'active' ? 'Activo' : 'Suspendido'}
+                    {tenantStatusLabel(tenant.status)}
                   </Text>
                 </Pressable>
               );
@@ -325,13 +423,30 @@ export function AdminScreen() {
                 <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
                   ID: {selectedTenant.tenantId}
                 </Text>
-                <Button
-                  variant="outline"
-                  onPress={() => void toggleTenantStatus(selectedTenant)}
-                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                >
-                  {selectedTenant.status === 'active' ? 'Suspender acceso' : 'Reactivar acceso'}
-                </Button>
+                {selectedTenant.subscription ? (
+                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
+                    {SUBSCRIPTION_PLAN_LABELS[selectedTenant.subscription.plan]} ·{' '}
+                    {selectedTenant.subscription.priceUsd} USD
+                  </Text>
+                ) : null}
+                {selectedTenant.status !== 'pending' ? (
+                  <Button
+                    variant="outline"
+                    onPress={() => void toggleTenantStatus(selectedTenant)}
+                    style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                  >
+                    {selectedTenant.status === 'active' ? 'Suspender acceso' : 'Reactivar acceso'}
+                  </Button>
+                ) : (
+                  <View style={[styles.row, { marginTop: 12 }]}>
+                    <Button onPress={() => void handleApproveTenant(selectedTenant.tenantId)}>
+                      Aprobar registro
+                    </Button>
+                    <Button variant="outline" onPress={() => void handleRejectTenant(selectedTenant.tenantId)}>
+                      Rechazar
+                    </Button>
+                  </View>
+                )}
               </View>
 
               {showUserForm ? (
@@ -492,6 +607,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
+  },
+  pendingItem: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    gap: 10,
   },
   userForm: {
     borderWidth: 1,
