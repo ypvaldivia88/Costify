@@ -199,17 +199,7 @@ function MainTabs({
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <AppHeader title={screenTitle} />
         <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          <TrialBanner
-            user={user}
-            onRefresh={refresh}
-            onOpenSubscription={() => {
-              setSettingsSection('subscription');
-              setActiveTab('settings');
-              if (navigationRef.isReady()) {
-                navigationRef.navigate('settings');
-              }
-            }}
-          />
+          <TrialBanner user={user} />
         </View>
         <PriceReviewAlerts
           materials={data.materials}

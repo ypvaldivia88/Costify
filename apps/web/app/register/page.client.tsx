@@ -3,14 +3,13 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Building2, Calculator, CheckCircle2, MessageCircle, Sparkles } from 'lucide-react';
+import { Building2, Calculator, CheckCircle2, Sparkles } from 'lucide-react';
 import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   getSubscriptionDiscountPercent,
   getSubscriptionPlanPriceUsd,
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
-  WHATSAPP_SUPPORT_NUMBER,
 } from '@costify/shared/domain/subscription';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -84,6 +83,7 @@ export default function RegisterPage() {
         whatsappUrl: json.whatsappUrl,
         message: json.message,
       });
+      window.open(json.whatsappUrl, '_blank', 'noopener,noreferrer');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar.');
     } finally {
@@ -140,27 +140,13 @@ export default function RegisterPage() {
                 <CheckCircle2 className="w-6 h-6 text-brand shrink-0 mt-0.5" />
                 <div className="space-y-2">
                   <h2 className="text-lg font-semibold">Solicitud enviada</h2>
-                  <p className="text-sm text-muted">{success.message}</p>
+                  <p className="text-sm text-muted">
+                    Te redirigimos a WhatsApp para confirmar el pago y activar tu cuenta.
+                  </p>
                   <p className="text-sm">
                     Plan seleccionado: <strong>{success.planLabel}</strong> ({success.priceUsd} USD)
                   </p>
                 </div>
-              </div>
-
-              <div className="rounded-2xl border border-brand/30 bg-brand-muted/40 p-4 space-y-3">
-                <p className="text-sm">
-                  Escríbenos al <strong>{WHATSAPP_SUPPORT_NUMBER}</strong> para pagar y solicitar la
-                  activación de tu cuenta.
-                </p>
-                <a
-                  href={success.whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 min-h-11 px-4 py-2.5 text-sm bg-brand-gradient text-white hover:brightness-110 active:brightness-95 shadow-glow w-full sm:w-auto"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Abrir WhatsApp para pagar
-                </a>
               </div>
 
               <p className="text-center text-sm text-muted">

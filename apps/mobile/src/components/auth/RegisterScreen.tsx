@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Building2, Calculator, CheckCircle2, MessageCircle, Moon, Sparkles, Sun } from 'lucide-react-native';
+import { Building2, Calculator, CheckCircle2, Moon, Sparkles, Sun } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
@@ -19,7 +19,6 @@ import {
   getSubscriptionPlanPriceUsd,
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
-  WHATSAPP_SUPPORT_NUMBER,
 } from '@costify/shared/domain/subscription';
 import { registerRequest } from '@/api/client';
 import { useTheme } from '@/context/ThemeContext';
@@ -85,6 +84,7 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
         plan: form.plan,
       });
       setSuccess(result);
+      void Linking.openURL(result.whatsappUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar.');
     } finally {
@@ -145,15 +145,9 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
                 </View>
               </View>
 
-              <View style={[styles.cta, { borderColor: colors.brand, backgroundColor: colors.brandMuted }]}>
-                <Text style={[styles.ctaText, { color: colors.foreground }]}>
-                  Escríbenos al {WHATSAPP_SUPPORT_NUMBER} para pagar y activar tu cuenta.
-                </Text>
-                <Button onPress={() => void Linking.openURL(success.whatsappUrl)}>
-                  <MessageCircle size={16} color="#fff" />
-                  <Text style={styles.ctaBtnText}>Abrir WhatsApp para pagar</Text>
-                </Button>
-              </View>
+              <Text style={[styles.successBody, { color: colors.muted }]}>
+                Te redirigimos a WhatsApp para confirmar el pago y activar tu cuenta.
+              </Text>
 
               <Pressable onPress={onBackToLogin} style={styles.loginLink}>
                 <Text style={[styles.loginLinkText, { color: colors.brand }]}>
@@ -344,7 +338,4 @@ const styles = StyleSheet.create({
   successHeader: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   successTitle: { fontSize: 17, fontWeight: '700' },
   successBody: { fontSize: 13, lineHeight: 18, marginTop: 4 },
-  cta: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 10 },
-  ctaText: { fontSize: 13, lineHeight: 18 },
-  ctaBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

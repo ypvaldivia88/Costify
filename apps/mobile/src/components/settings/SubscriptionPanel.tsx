@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { CreditCard, MessageCircle } from 'lucide-react-native';
+import { CreditCard } from 'lucide-react-native';
 import type { SubscriptionPlan, TenantSubscription } from '@costify/shared/domain/subscription';
 import {
   buildWhatsAppPaymentMessage,
@@ -10,7 +10,6 @@ import {
   getSubscriptionStatusLabel,
   SUBSCRIPTION_PLAN_LABELS,
   SUBSCRIPTION_PLANS,
-  WHATSAPP_SUPPORT_NUMBER,
 } from '@costify/shared/domain/subscription';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/Button';
@@ -54,7 +53,6 @@ export function SubscriptionPanel({
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(subscription?.plan ?? 'monthly');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   if (!subscription) {
     return (
@@ -75,32 +73,35 @@ export function SubscriptionPanel({
   const badge = statusColors(subscription, colors);
   const pendingPaymentBg = scheme === 'dark' ? '#172554' : '#dbeafe';
   const pendingPaymentText = scheme === 'dark' ? '#dbeafe' : '#1e40af';
+  const planChanged = selectedPlan !== subscription.plan;
+  const canRequestPlan = needsPayment || planChanged;
 
-  const whatsappUrl = buildWhatsAppPaymentUrl(
-    buildWhatsAppPaymentMessage({
-      businessName,
-      contactName,
-      email: contactEmail,
-      plan: subscription.plan,
-      priceUsd: subscription.priceUsd,
-      isRenewal: !needsPayment || isExpired,
-    })
-  );
+  function openWhatsAppForPlan(plan: SubscriptionPlan) {
+    const priceUsd = getSubscriptionPlanPriceUsd(plan);
+    const url = buildWhatsAppPaymentUrl(
+      buildWhatsAppPaymentMessage({
+        businessName,
+        contactName,
+        email: contactEmail,
+        plan,
+        priceUsd,
+        isRenewal: !needsPayment || isExpired,
+      })
+    );
+    void Linking.openURL(url);
+  }
 
-  const openWhatsApp = () => {
-    void Linking.openURL(whatsappUrl);
-  };
-
-  async function handleChangePlan() {
-    if (!subscription || !onChangePlan || selectedPlan === subscription.plan) return;
+  async function handleRequestPlan() {
+    if (!onChangePlan || !canRequestPlan) return;
     setSaving(true);
     setError(null);
-    setSuccess(null);
     try {
-      await onChangePlan(selectedPlan);
-      setSuccess('Plan actualizado. Envía el comprobante por WhatsApp para activarlo.');
+      if (planChanged) {
+        await onChangePlan(selectedPlan);
+      }
+      openWhatsAppForPlan(selectedPlan);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo cambiar el plan.');
+      setError(err instanceof Error ? err.message : 'No se pudo actualizar el plan.');
     } finally {
       setSaving(false);
     }
@@ -113,7 +114,7 @@ export function SubscriptionPanel({
         title="Plan de suscripción"
         description={
           manageable
-            ? 'Gestiona tu plan y envía el pago por WhatsApp.'
+            ? 'Elige tu plan y continúa por WhatsApp para pagar.'
             : 'Estado de tu plan y opciones de pago o renovación'
         }
       />
@@ -170,7 +171,7 @@ export function SubscriptionPanel({
 
         {manageable && onChangePlan ? (
           <View style={styles.planSection}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Cambiar plan</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Plan</Text>
             <View style={styles.planGrid}>
               {SUBSCRIPTION_PLANS.map((planId) => {
                 const selected = selectedPlan === planId;
@@ -196,33 +197,16 @@ export function SubscriptionPanel({
                 );
               })}
             </View>
-            <Button
-              onPress={() => void handleChangePlan()}
-              disabled={saving || selectedPlan === subscription.plan}
-            >
-              {saving ? 'Guardando…' : 'Solicitar cambio de plan'}
+            <Button onPress={() => void handleRequestPlan()} disabled={saving || !canRequestPlan}>
+              {saving ? 'Abriendo WhatsApp…' : 'Continuar por WhatsApp'}
             </Button>
             {error ? <Text style={[styles.feedback, { color: colors.danger }]}>{error}</Text> : null}
-            {success ? <Text style={[styles.feedback, { color: colors.brand }]}>{success}</Text> : null}
           </View>
+        ) : needsPayment ? (
+          <Button onPress={() => openWhatsAppForPlan(subscription.plan)}>
+            Continuar por WhatsApp
+          </Button>
         ) : null}
-
-        {needsPayment ? (
-          <View style={[styles.cta, { borderColor: colors.brand, backgroundColor: colors.brandMuted }]}>
-            <Text style={[styles.ctaText, { color: colors.foreground }]}>
-              El pago se gestiona por WhatsApp ({WHATSAPP_SUPPORT_NUMBER}). Escríbenos para pagar y
-              activar tu cuenta.
-            </Text>
-            <Button onPress={openWhatsApp}>
-              <MessageCircle size={16} color="#fff" />
-              <Text style={styles.ctaBtnText}>Pagar o renovar por WhatsApp</Text>
-            </Button>
-          </View>
-        ) : (
-          <Text style={[styles.renewHint, { color: colors.muted }]}>
-            Para renovar antes del vencimiento, contáctanos por WhatsApp ({WHATSAPP_SUPPORT_NUMBER}).
-          </Text>
-        )}
       </View>
     </Card>
   );
@@ -261,8 +245,4 @@ const styles = StyleSheet.create({
   planOptionLabel: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
   planOptionPrice: { fontSize: 11, textAlign: 'center' },
   feedback: { fontSize: 12, lineHeight: 16 },
-  cta: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 10 },
-  ctaText: { fontSize: 13, lineHeight: 18 },
-  ctaBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  renewHint: { fontSize: 12, lineHeight: 16 },
 });

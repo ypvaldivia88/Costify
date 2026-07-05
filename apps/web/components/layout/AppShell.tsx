@@ -34,7 +34,7 @@ function LoadingScreen() {
 }
 
 export function AppShell() {
-  const { loading: authLoading, refresh } = useAuth();
+  const { loading: authLoading } = useAuth();
   const data = useAppData();
   const [activeTab, setActiveTab] = useState<AppTab>('products');
   const [settingsSection, setSettingsSection] = useState<
@@ -82,15 +82,7 @@ export function AppShell() {
         />
 
         <main className="max-w-5xl mx-auto px-4 pt-5 pb-32 md:pb-8">
-          <TrialBanner
-            user={data.user}
-            className="mb-4"
-            onRefresh={refresh}
-            onOpenSubscription={() => {
-              setActiveTab('settings');
-              setSettingsSection('subscription');
-            }}
-          />
+          <TrialBanner user={data.user} className="mb-4" />
           <PriceReviewAlerts
             materials={data.materials}
             products={data.inventory}
