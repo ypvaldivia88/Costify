@@ -186,6 +186,17 @@ export function ProductDetailView({
                 </Text>
               </View>
             ))}
+            {product.laborShareBreakdown.map((item) => (
+              <View key={item.roleId} style={styles.row}>
+                <Text style={{ color: colors.muted, flex: 1 }} numberOfLines={2}>
+                  {item.name}{' '}
+                  <Text style={{ fontSize: 12 }}>({formatPercent(item.percentOfSale)} venta)</Text>
+                </Text>
+                <Text style={{ color: colors.foreground, fontWeight: '600' }}>
+                  {formatCurrency(item.perUnit)}
+                </Text>
+              </View>
+            ))}
             <View style={[styles.row, styles.totalRow, { borderTopColor: colors.border }]}>
               <Text style={{ color: colors.foreground, fontWeight: '800' }}>Costo total unitario</Text>
               <Text style={{ color: colors.foreground, fontWeight: '800' }}>

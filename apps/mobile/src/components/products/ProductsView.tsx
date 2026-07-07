@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type {
   GlobalFundSettings,
+  LaborShareSettings,
   MovementType,
   ProductCalculation,
   RawMaterial,
@@ -21,6 +22,7 @@ interface ProductsViewProps {
   materials: RawMaterial[];
   globalIndirectCosts: ProductCalculation['indirectCosts'];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   warehouses: Warehouse[];
@@ -60,6 +62,7 @@ export function ProductsView({
   materials,
   globalIndirectCosts,
   globalFund,
+  laborShareSettings,
   taxSettings,
   unitSettings,
   warehouses,
@@ -129,6 +132,7 @@ export function ProductsView({
         rawMaterials={materials}
         globalIndirectCosts={globalIndirectCosts}
         globalFund={globalFund}
+        laborShareSettings={laborShareSettings}
         taxSettings={taxSettings}
         unitSettings={unitSettings}
         editingProduct={mode === 'edit' ? editingProduct : null}

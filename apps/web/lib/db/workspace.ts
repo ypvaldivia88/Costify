@@ -1,6 +1,7 @@
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   ProductCalculation,
   RawMaterial,
   StockMovement,
@@ -21,6 +22,7 @@ export interface WorkspaceDocument {
   rawMaterials: RawMaterial[];
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings?: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   warehouses: Warehouse[];

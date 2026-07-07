@@ -1,6 +1,7 @@
 import type {
   DistributionCriteria,
   GlobalFundSettings,
+  LaborShareSettings,
   MovementType,
   TaxSettings,
   WarehouseType,
@@ -20,6 +21,11 @@ export const DEFAULT_GLOBAL_FUND_SETTINGS: GlobalFundSettings = {
   enabled: false,
   name: 'Fondo global',
   percent: 0,
+};
+
+export const DEFAULT_LABOR_SHARE_SETTINGS: LaborShareSettings = {
+  enabled: false,
+  areas: [],
 };
 
 export const DISTRIBUTION_CRITERIA_LABELS: Record<DistributionCriteria, string> = {
@@ -47,6 +53,7 @@ export const STORAGE_KEYS = {
   taxSettings: 'costify_tax_settings_v3',
   rawMaterials: 'costify_raw_materials_v2',
   globalFund: 'costify_global_fund_v2',
+  laborShareSettings: 'costify_labor_share_settings_v1',
   unitSettings: 'costify_unit_settings_v1',
   warehouses: 'costify_warehouses_v1',
   stockMovements: 'costify_stock_movements_v1',

@@ -162,6 +162,7 @@ export {
   useRawMaterials,
   useGlobalCosts,
   useGlobalFund,
+  useLaborShareSettings,
   useTaxSettings,
   useUnitSettings,
   useWarehouses,

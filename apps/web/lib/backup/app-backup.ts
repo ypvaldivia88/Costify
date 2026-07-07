@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from '@costify/shared/domain/constants';
 import { migrateExchangeRateSettings } from '@costify/shared/domain/migrate-exchange-rates';
 import { migrateGlobalFundSettings } from '@costify/shared/domain/calculations/global-fund';
+import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/labor-share';
 import { migrateTaxSettings } from '@costify/shared/domain/migrate-tax-settings';
 import { migrateUnitSettings } from '@costify/shared/domain/unit-settings';
 import type { AppBackupV1 } from '@costify/shared/backup/backup-core';
@@ -27,6 +28,10 @@ export function applyBackupToStorage(backup: AppBackupV1): void {
   saveToStorage(STORAGE_KEYS.rawMaterials, backup.rawMaterials);
   saveToStorage(STORAGE_KEYS.globalCosts, backup.globalCosts);
   saveToStorage(STORAGE_KEYS.globalFund, backup.globalFund);
+  saveToStorage(
+    STORAGE_KEYS.laborShareSettings,
+    migrateLaborShareSettings(backup.laborShareSettings)
+  );
   saveToStorage(STORAGE_KEYS.taxSettings, migrateTaxSettings(backup.taxSettings));
   saveToStorage(STORAGE_KEYS.unitSettings, migrateUnitSettings(backup.unitSettings));
   saveToStorage(STORAGE_KEYS.warehouses, backup.warehouses ?? []);

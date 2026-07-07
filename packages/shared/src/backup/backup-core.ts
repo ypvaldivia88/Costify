@@ -1,6 +1,7 @@
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   ProductCalculation,
   RawMaterial,
   StockMovement,
@@ -12,10 +13,12 @@ import type {
 import type { ExchangeRateSettings } from '../domain/exchange-rates';
 import { migrateExchangeRateSettings } from '../domain/migrate-exchange-rates';
 import { migrateGlobalFundSettings } from '../domain/calculations/global-fund';
+import { migrateLaborShareSettings } from '../domain/calculations/labor-share';
 import { migrateTaxSettings } from '../domain/migrate-tax-settings';
 import { migrateUnitSettings } from '../domain/unit-settings';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
+  DEFAULT_LABOR_SHARE_SETTINGS,
   DEFAULT_TAX_SETTINGS,
 } from '../domain/constants';
 
@@ -28,6 +31,7 @@ export interface AppBackupV1 {
   rawMaterials: RawMaterial[];
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings?: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings?: UnitSettings;
   warehouses?: Warehouse[];
@@ -41,6 +45,7 @@ export interface AppBackupInput {
   rawMaterials: RawMaterial[];
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   warehouses: Warehouse[];
@@ -83,6 +88,7 @@ export function createBackupPayload(input: AppBackupInput): string {
     rawMaterials: input.rawMaterials,
     globalCosts: input.globalCosts,
     globalFund: input.globalFund,
+    laborShareSettings: input.laborShareSettings,
     taxSettings: input.taxSettings,
     unitSettings: input.unitSettings,
     warehouses: input.warehouses,
@@ -122,6 +128,9 @@ export function parseBackupPayload(raw: string): AppBackupV1 {
     rawMaterials: backup.rawMaterials,
     globalCosts: Array.isArray(backup.globalCosts) ? backup.globalCosts : [],
     globalFund: migrateGlobalFundSettings(backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
+    laborShareSettings: migrateLaborShareSettings(
+      backup.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS
+    ),
     taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
     unitSettings: migrateUnitSettings(backup.unitSettings),
     warehouses: Array.isArray(backup.warehouses) ? backup.warehouses : [],
@@ -148,6 +157,9 @@ export function parseBackupFileContent(text: string): string {
       rawMaterials: backup.rawMaterials,
       globalCosts: backup.globalCosts ?? [],
       globalFund: migrateGlobalFundSettings(backup.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
+      laborShareSettings: migrateLaborShareSettings(
+        backup.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS
+      ),
       taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
       unitSettings: migrateUnitSettings(backup.unitSettings),
       warehouses: backup.warehouses ?? [],

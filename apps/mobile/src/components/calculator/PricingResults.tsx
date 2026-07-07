@@ -47,6 +47,7 @@ export function PricingResults({
   const hasDetails =
     (result.recipeBreakdown && result.recipeBreakdown.length > 0) ||
     result.indirectBreakdown.length > 0 ||
+    result.laborShareBreakdown.length > 0 ||
     totalMonthlyIndirect > 0 ||
     hasMonthlyProjection;
 
@@ -127,6 +128,28 @@ export function PricingResults({
                       </Text>
                       <Text style={[styles.rowValue, { color: colors.foreground }]}>
                         {formatCurrency(item.perUnit)}/u
+                      </Text>
+                    </View>
+                  ))}
+                </Card>
+              ) : null}
+
+              {result.laborShareBreakdown.length > 0 ? (
+                <Card variant="muted" style={styles.subCard}>
+                  <Text style={[styles.subCardTitle, { color: colors.muted }]}>
+                    Participación salarial ({formatPercent(result.totalLaborSharePercent)})
+                  </Text>
+                  {result.laborShareBreakdown.map((item) => (
+                    <View key={item.roleId} style={styles.row}>
+                      <Text style={[styles.rowLabel, { color: colors.muted }]}>
+                        {item.name}
+                        <Text style={{ fontSize: 11, opacity: 0.7 }}>
+                          {' '}
+                          ({formatPercent(item.percentOfSale)})
+                        </Text>
+                      </Text>
+                      <Text style={[styles.rowValue, { color: colors.foreground }]}>
+                        {formatCurrency(item.perUnit)}
                       </Text>
                     </View>
                   ))}

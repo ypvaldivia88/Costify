@@ -8,6 +8,7 @@ import { useInventory } from '@/hooks/use-inventory';
 import { useRawMaterials } from '@/hooks/use-raw-materials';
 import { useGlobalCosts } from '@/hooks/use-global-costs';
 import { useGlobalFund } from '@/hooks/use-global-fund';
+import { useLaborShareSettings } from '@/hooks/use-labor-share-settings';
 import { useTaxSettings } from '@/hooks/use-tax-settings';
 import { useUnitSettings } from '@/hooks/use-unit-settings';
 import { useWarehouses } from '@/hooks/use-warehouses';
@@ -17,11 +18,13 @@ import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import type {
   ProductCalculation,
+  RawMaterial,
   RawMaterialInput,
   StockMovement,
   Warehouse,
   IndirectCost,
   GlobalFundSettings,
+  LaborShareSettings,
   TaxSettings,
   UnitSettings,
 } from '@costify/shared/domain/types';
@@ -52,6 +55,7 @@ export function useAppData() {
   const rawMaterialsState = useRawMaterials();
   const globalCostsState = useGlobalCosts();
   const globalFundState = useGlobalFund();
+  const laborShareSettingsState = useLaborShareSettings();
   const taxSettingsState = useTaxSettings();
   const unitSettingsState = useUnitSettings();
   const warehousesState = useWarehouses();
@@ -65,6 +69,7 @@ export function useAppData() {
     rawMaterialsState.hydrated &&
     globalCostsState.hydrated &&
     globalFundState.hydrated &&
+    laborShareSettingsState.hydrated &&
     taxSettingsState.hydrated &&
     unitSettingsState.hydrated &&
     warehousesState.hydrated &&
@@ -113,6 +118,7 @@ export function useAppData() {
       rawMaterials: rawMaterialsState.materials,
       globalCosts: globalCostsState.globalCosts,
       globalFund: globalFundState.globalFund,
+      laborShareSettings: laborShareSettingsState.laborShareSettings,
       taxSettings: taxSettingsState.taxSettings,
       unitSettings: unitSettingsState.unitSettings,
       warehouses: warehousesState.warehouses,
@@ -125,6 +131,7 @@ export function useAppData() {
       rawMaterialsState.materials,
       globalCostsState.globalCosts,
       globalFundState.globalFund,
+      laborShareSettingsState.laborShareSettings,
       taxSettingsState.taxSettings,
       unitSettingsState.unitSettings,
       warehousesState.warehouses,
@@ -209,11 +216,14 @@ export function useAppData() {
     inventoryState.recalculateAll(
       rawMaterialsState.materials,
       globalFundState.globalFund,
-      unitSettingsState.unitSettings
+      unitSettingsState.unitSettings,
+      laborShareSettingsState.laborShareSettings
     );
   }, [
     globalFundState.globalFund.enabled,
     globalFundState.globalFund.percent,
+    laborShareSettingsState.laborShareSettings.enabled,
+    laborShareSettingsState.laborShareSettings.areas,
     unitSettingsState.unitSettings,
     hydrated,
   ]);
@@ -478,9 +488,15 @@ export function useAppData() {
         denyWrite(access.trialProductLimitMessage(user?.trialProductLimit));
         return;
       }
-      inventoryState.saveProduct(product, rawMaterials, globalFund, unitSettings);
+      inventoryState.saveProduct(
+        product,
+        rawMaterials,
+        globalFund,
+        unitSettings,
+        laborShareSettingsState.laborShareSettings
+      );
     },
-    [access, denyWrite, inventoryState, user?.trialProductLimit]
+    [access, denyWrite, inventoryState, laborShareSettingsState.laborShareSettings, user?.trialProductLimit]
   );
 
   const deleteProduct = useCallback(
@@ -494,10 +510,16 @@ export function useAppData() {
         denyWrite(access.readonlyMessage);
         return;
       }
-      inventoryState.deleteProduct(id, rawMaterials, globalFund, unitSettings);
+      inventoryState.deleteProduct(
+        id,
+        rawMaterials,
+        globalFund,
+        unitSettings,
+        laborShareSettingsState.laborShareSettings
+      );
       purgeStockReferences('product', id);
     },
-    [access, denyWrite, inventoryState, purgeStockReferences]
+    [access, denyWrite, inventoryState, laborShareSettingsState.laborShareSettings, purgeStockReferences]
   );
 
   const guardWarehouse = useCallback(() => {
@@ -554,6 +576,17 @@ export function useAppData() {
     [access, denyWrite, globalFundState]
   );
 
+  const updateLaborShareSettings = useCallback(
+    (updates: Partial<LaborShareSettings>) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      laborShareSettingsState.updateLaborShareSettings(updates);
+    },
+    [access, denyWrite, laborShareSettingsState]
+  );
+
   const updateTaxSettings = useCallback(
     (updates: Partial<TaxSettings>) => {
       if (!access.canWrite) {
@@ -584,6 +617,28 @@ export function useAppData() {
     unitSettingsState.resetUnitSettings();
   }, [access, denyWrite, unitSettingsState]);
 
+  const recalculateAll = useCallback(
+    (
+      rawMaterials: RawMaterial[] = rawMaterialsState.materials,
+      globalFund: GlobalFundSettings = globalFundState.globalFund,
+      unitSettings: UnitSettings = unitSettingsState.unitSettings
+    ) => {
+      inventoryState.recalculateAll(
+        rawMaterials,
+        globalFund,
+        unitSettings,
+        laborShareSettingsState.laborShareSettings
+      );
+    },
+    [
+      inventoryState,
+      rawMaterialsState.materials,
+      globalFundState.globalFund,
+      unitSettingsState.unitSettings,
+      laborShareSettingsState.laborShareSettings,
+    ]
+  );
+
   return {
     hydrated,
     user,
@@ -591,6 +646,7 @@ export function useAppData() {
     materials: rawMaterialsState.materials,
     globalCosts: globalCostsState.globalCosts,
     globalFund: globalFundState.globalFund,
+    laborShareSettings: laborShareSettingsState.laborShareSettings,
     taxSettings: taxSettingsState.taxSettings,
     unitSettings: unitSettingsState.unitSettings,
     warehouses: warehousesState.warehouses,
@@ -609,12 +665,13 @@ export function useAppData() {
     markCostingRate: exchangeRatesState.markCostingRate,
     saveProduct,
     deleteProduct,
-    recalculateAll: inventoryState.recalculateAll,
+    recalculateAll,
     saveMaterial,
     deleteMaterial,
     updateStock,
     saveCosts,
     updateGlobalFund,
+    updateLaborShareSettings,
     updateTaxSettings,
     saveUnitSettings,
     resetUnitSettings,

@@ -37,6 +37,7 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
   const hasDetails =
     (result.recipeBreakdown && result.recipeBreakdown.length > 0) ||
     result.indirectBreakdown.length > 0 ||
+    result.laborShareBreakdown.length > 0 ||
     totalMonthlyIndirect > 0 ||
     hasMonthlyProjection;
 
@@ -124,6 +125,29 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
                       </span>
                       <span className="font-semibold text-foreground tabular-nums shrink-0">
                         {formatCurrency(item.perUnit)}/u
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {result.laborShareBreakdown.length > 0 && (
+              <Card variant="muted" className="!p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+                  Participación salarial ({formatPercent(result.totalLaborSharePercent)})
+                </p>
+                <div className="space-y-1.5">
+                  {result.laborShareBreakdown.map((item) => (
+                    <div key={item.roleId} className="flex justify-between text-sm gap-2">
+                      <span className="text-muted truncate">
+                        {item.name}
+                        <span className="text-xs opacity-70 ml-1">
+                          ({formatPercent(item.percentOfSale)})
+                        </span>
+                      </span>
+                      <span className="font-semibold text-foreground tabular-nums shrink-0">
+                        {formatCurrency(item.perUnit)}
                       </span>
                     </div>
                   ))}

@@ -5,8 +5,10 @@ import { Save } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   MarginType,
   ProductCalculation,
+  ProductLaborShare,
   ProductType,
   PurchaseCurrency,
   RawMaterial,
@@ -14,7 +16,7 @@ import type {
   TaxSettings,
   UnitSettings,
 } from '@costify/shared/domain/types';
-import { calculateProduct, migrateProductInput } from '@costify/shared/domain/calculations';
+import { calculateProduct, DEFAULT_PRODUCT_LABOR_SHARE, migrateProductInput, validateLaborSharePricing } from '@costify/shared/domain/calculations';
 import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@costify/shared/domain/constants';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { useExchangeRatesContext } from '@/hooks/use-exchange-rates-context';
@@ -35,6 +37,7 @@ import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { IndirectCostsEditor } from './IndirectCostsEditor';
+import { LaborShareEditor } from './LaborShareEditor';
 import { PricingResults } from './PricingResults';
 import { RecipeEditor } from './RecipeEditor';
 
@@ -43,6 +46,7 @@ interface CostCalculatorProps {
   rawMaterials: RawMaterial[];
   globalIndirectCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   editingProduct?: ProductCalculation | null;
@@ -52,7 +56,14 @@ interface CostCalculatorProps {
 
 type FormErrors = Partial<
   Record<
-    'name' | 'purchasePrice' | 'packageQuantity' | 'purchaseUnit' | 'recipe' | 'productionUnits' | 'exchangeRate',
+    | 'name'
+    | 'purchasePrice'
+    | 'packageQuantity'
+    | 'purchaseUnit'
+    | 'recipe'
+    | 'productionUnits'
+    | 'exchangeRate'
+    | 'laborShare',
     string
   >
 >;
@@ -71,6 +82,7 @@ const defaultForm = {
   profitMargin: 30,
   marginType: 'markup' as MarginType,
   indirectCosts: [] as IndirectCost[],
+  laborShare: { ...DEFAULT_PRODUCT_LABOR_SHARE },
 };
 
 export function CostCalculator({
@@ -78,6 +90,7 @@ export function CostCalculator({
   rawMaterials,
   globalIndirectCosts,
   globalFund,
+  laborShareSettings,
   taxSettings,
   unitSettings,
   editingProduct,
@@ -112,6 +125,7 @@ export function CostCalculator({
         profitMargin: editingProduct.profitMargin,
         marginType: editingProduct.marginType ?? 'markup',
         indirectCosts: editingProduct.indirectCosts,
+        laborShare: editingProduct.laborShare ?? { ...DEFAULT_PRODUCT_LABOR_SHARE },
       });
     } else {
       setForm(defaultForm);
@@ -156,6 +170,7 @@ export function CostCalculator({
           indirectCosts: form.indirectCosts,
           profitMargin: form.profitMargin,
           marginType: form.marginType,
+          laborShare: form.laborShare.enabled ? form.laborShare : undefined,
           purchaseMeta: resolvedPurchase.purchaseMeta,
         },
         otherProducts,
@@ -163,9 +178,10 @@ export function CostCalculator({
         globalFund,
         undefined,
         undefined,
-        unitSettings
+        unitSettings,
+        laborShareSettings
       ),
-    [form, otherProducts, rawMaterials, globalFund, unitSettings, totalPurchasePrice, resolvedPurchase.purchaseMeta]
+    [form, otherProducts, rawMaterials, globalFund, laborShareSettings, unitSettings, totalPurchasePrice, resolvedPurchase.purchaseMeta]
   );
 
   const importGlobalCosts = () => {
@@ -224,6 +240,18 @@ export function CostCalculator({
       next.productionUnits = 'Las unidades no pueden ser negativas';
     }
 
+    if (form.laborShare.enabled) {
+      const totalPercent = form.laborShare.roles.reduce((sum, role) => sum + role.percentOfSale, 0);
+      const validation = validateLaborSharePricing(
+        totalPercent,
+        form.profitMargin,
+        form.marginType
+      );
+      if (!validation.valid && validation.error) {
+        next.laborShare = validation.error;
+      }
+    }
+
     return next;
   };
 
@@ -258,6 +286,7 @@ export function CostCalculator({
           indirectCosts: form.indirectCosts,
           profitMargin: form.profitMargin,
           marginType: form.marginType,
+          laborShare: form.laborShare.enabled ? form.laborShare : undefined,
           purchaseMeta: isElaborated ? undefined : resolved.purchaseMeta,
         },
         otherProducts,
@@ -265,7 +294,8 @@ export function CostCalculator({
         globalFund,
         editingProduct?.id,
         editingProduct?.timestamp,
-        unitSettings
+        unitSettings,
+        laborShareSettings
       );
 
       onSave(saved);
@@ -506,6 +536,33 @@ export function CostCalculator({
               />
             </div>
           </CollapsibleSection>
+
+          {laborShareSettings.enabled && (
+            <CollapsibleSection
+              title="Participación salarial"
+              summary={
+                form.laborShare.enabled && form.laborShare.roles.length > 0
+                  ? `${form.laborShare.roles.reduce((sum, role) => sum + role.percentOfSale, 0).toFixed(0)}% del precio`
+                  : 'Opcional — % del precio por rol'
+              }
+            >
+              <div className="pt-3 space-y-2">
+                <LaborShareEditor
+                  laborShare={form.laborShare}
+                  laborShareSettings={laborShareSettings}
+                  profitMargin={form.profitMargin}
+                  marginType={form.marginType}
+                  onChange={(laborShare) => {
+                    setForm((prev) => ({ ...prev, laborShare }));
+                    if (errors.laborShare) setErrors((prev) => ({ ...prev, laborShare: undefined }));
+                  }}
+                />
+                {errors.laborShare && (
+                  <p className="text-xs text-red-600 dark:text-red-400">{errors.laborShare}</p>
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
 
           <div className="flex flex-col gap-2 pt-1">
             {onCancelEdit && (

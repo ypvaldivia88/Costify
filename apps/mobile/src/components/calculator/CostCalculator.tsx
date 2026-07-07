@@ -5,6 +5,7 @@ import { Picker } from '@react-native-picker/picker';
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   MarginType,
   ProductCalculation,
   ProductType,
@@ -14,7 +15,12 @@ import type {
   TaxSettings,
   UnitSettings,
 } from '@costify/shared/domain/types';
-import { calculateProduct, migrateProductInput } from '@costify/shared/domain/calculations';
+import {
+  calculateProduct,
+  DEFAULT_PRODUCT_LABOR_SHARE,
+  migrateProductInput,
+  validateLaborSharePricing,
+} from '@costify/shared/domain/calculations';
 import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@costify/shared/domain/constants';
 import {
   getPurchaseFormValuesFromMeta,
@@ -23,6 +29,7 @@ import {
 } from '@costify/shared/domain/purchase-currency';
 import type { PurchasePriceMode } from '@costify/shared/purchase-price';
 import { IndirectCostsEditor } from '@/components/calculator/IndirectCostsEditor';
+import { LaborShareEditor } from '@/components/calculator/LaborShareEditor';
 import { PricingResults } from '@/components/calculator/PricingResults';
 import { RecipeEditor } from '@/components/calculator/RecipeEditor';
 import { Button } from '@/components/ui/Button';
@@ -43,6 +50,7 @@ interface CostCalculatorProps {
   rawMaterials: RawMaterial[];
   globalIndirectCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   editingProduct?: ProductCalculation | null;
@@ -52,7 +60,14 @@ interface CostCalculatorProps {
 
 type FormErrors = Partial<
   Record<
-    'name' | 'purchasePrice' | 'packageQuantity' | 'purchaseUnit' | 'recipe' | 'productionUnits' | 'exchangeRate',
+    | 'name'
+    | 'purchasePrice'
+    | 'packageQuantity'
+    | 'purchaseUnit'
+    | 'recipe'
+    | 'productionUnits'
+    | 'exchangeRate'
+    | 'laborShare',
     string
   >
 >;
@@ -71,6 +86,7 @@ const defaultForm = {
   profitMargin: 30,
   marginType: 'markup' as MarginType,
   indirectCosts: [] as IndirectCost[],
+  laborShare: { ...DEFAULT_PRODUCT_LABOR_SHARE },
 };
 
 export function CostCalculator({
@@ -78,6 +94,7 @@ export function CostCalculator({
   rawMaterials,
   globalIndirectCosts,
   globalFund,
+  laborShareSettings,
   taxSettings,
   unitSettings,
   editingProduct,
@@ -113,6 +130,7 @@ export function CostCalculator({
         profitMargin: editingProduct.profitMargin,
         marginType: editingProduct.marginType ?? 'markup',
         indirectCosts: editingProduct.indirectCosts,
+        laborShare: editingProduct.laborShare ?? { ...DEFAULT_PRODUCT_LABOR_SHARE },
       });
     } else {
       setForm(defaultForm);
@@ -157,6 +175,7 @@ export function CostCalculator({
           indirectCosts: form.indirectCosts,
           profitMargin: form.profitMargin,
           marginType: form.marginType,
+          laborShare: form.laborShare.enabled ? form.laborShare : undefined,
           purchaseMeta: resolvedPurchase.purchaseMeta,
         },
         otherProducts,
@@ -164,9 +183,10 @@ export function CostCalculator({
         globalFund,
         undefined,
         undefined,
-        unitSettings
+        unitSettings,
+        laborShareSettings
       ),
-    [form, otherProducts, rawMaterials, globalFund, unitSettings, totalPurchasePrice, resolvedPurchase.purchaseMeta]
+    [form, otherProducts, rawMaterials, globalFund, laborShareSettings, unitSettings, totalPurchasePrice, resolvedPurchase.purchaseMeta]
   );
 
   const importGlobalCosts = () => {
@@ -219,6 +239,17 @@ export function CostCalculator({
     if (form.productionUnits < 0) {
       next.productionUnits = 'Las unidades no pueden ser negativas';
     }
+    if (form.laborShare.enabled) {
+      const totalPercent = form.laborShare.roles.reduce((sum, role) => sum + role.percentOfSale, 0);
+      const validation = validateLaborSharePricing(
+        totalPercent,
+        form.profitMargin,
+        form.marginType
+      );
+      if (!validation.valid && validation.error) {
+        next.laborShare = validation.error;
+      }
+    }
     return next;
   };
 
@@ -253,6 +284,7 @@ export function CostCalculator({
           indirectCosts: form.indirectCosts,
           profitMargin: form.profitMargin,
           marginType: form.marginType,
+          laborShare: form.laborShare.enabled ? form.laborShare : undefined,
           purchaseMeta: isElaborated ? undefined : resolved.purchaseMeta,
         },
         otherProducts,
@@ -260,7 +292,8 @@ export function CostCalculator({
         globalFund,
         editingProduct?.id,
         editingProduct?.timestamp,
-        unitSettings
+        unitSettings,
+        laborShareSettings
       );
 
       onSave(saved);
@@ -501,6 +534,33 @@ export function CostCalculator({
               />
             </View>
           </CollapsibleSection>
+
+          {laborShareSettings.enabled ? (
+            <CollapsibleSection
+              title="Participación salarial"
+              summary={
+                form.laborShare.enabled && form.laborShare.roles.length > 0
+                  ? `${form.laborShare.roles.reduce((sum, role) => sum + role.percentOfSale, 0).toFixed(0)}% del precio`
+                  : 'Opcional — % del precio por rol'
+              }
+            >
+              <View style={styles.collapsibleBody}>
+                <LaborShareEditor
+                  laborShare={form.laborShare}
+                  laborShareSettings={laborShareSettings}
+                  profitMargin={form.profitMargin}
+                  marginType={form.marginType}
+                  onChange={(laborShare) => {
+                    setForm((prev) => ({ ...prev, laborShare }));
+                    if (errors.laborShare) setErrors((prev) => ({ ...prev, laborShare: undefined }));
+                  }}
+                />
+                {errors.laborShare ? (
+                  <Text style={{ color: '#ef4444', fontSize: 12 }}>{errors.laborShare}</Text>
+                ) : null}
+              </View>
+            </CollapsibleSection>
+          ) : null}
 
           {onCancelEdit ? (
             <Button variant="outline" onPress={onCancelEdit}>

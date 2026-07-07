@@ -5,6 +5,7 @@ import { Copy, Download, Share2, Upload } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   ProductCalculation,
   RawMaterial,
   StockMovement,
@@ -35,6 +36,7 @@ interface DataSyncPanelProps {
   rawMaterials: RawMaterial[];
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   exchangeRateSettings: ExchangeRateSettings;
@@ -60,6 +62,7 @@ export function DataSyncPanel({
   rawMaterials,
   globalCosts,
   globalFund,
+  laborShareSettings,
   taxSettings,
   unitSettings,
   exchangeRateSettings,
@@ -83,6 +86,7 @@ export function DataSyncPanel({
         rawMaterials,
         globalCosts,
         globalFund,
+        laborShareSettings,
         taxSettings,
         unitSettings,
         exchangeRateSettings,
@@ -95,6 +99,7 @@ export function DataSyncPanel({
       rawMaterials,
       globalCosts,
       globalFund,
+      laborShareSettings,
       taxSettings,
       unitSettings,
       exchangeRateSettings,

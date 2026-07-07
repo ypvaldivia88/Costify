@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { CreditCard, Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User } from 'lucide-react-native';
+import { CreditCard, Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User, Users } from 'lucide-react-native';
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   ProductCalculation,
   RawMaterial,
   StockMovement,
@@ -20,13 +21,14 @@ import { SubscriptionSettingsPanel } from '@/components/settings/SubscriptionSet
 import { DataSyncPanel } from '@/components/settings/DataSyncPanel';
 import { ExchangeRatesPanel } from '@/components/settings/ExchangeRatesPanel';
 import { GlobalFundSettingsPanel } from '@/components/settings/GlobalFundSettings';
+import { LaborShareSettingsPanel } from '@/components/settings/LaborShareSettings';
 import { IndirectCostsSettings } from '@/components/settings/IndirectCostsSettings';
 import { TaxSettingsPanel } from '@/components/settings/TaxSettingsPanel';
 import { UnitSettingsPanel } from '@/components/settings/UnitSettingsPanel';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTheme } from '@/context/ThemeContext';
 
-type SettingsSection = 'account' | 'subscription' | 'taxes' | 'fund' | 'indirect' | 'units' | 'exchange' | 'sync';
+type SettingsSection = 'account' | 'subscription' | 'taxes' | 'fund' | 'labor' | 'indirect' | 'units' | 'exchange' | 'sync';
 
 interface SettingsViewProps {
   user: SessionUser | null;
@@ -34,6 +36,7 @@ interface SettingsViewProps {
   rawMaterials: RawMaterial[];
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   exchangeRateSettings: ExchangeRateSettings;
@@ -43,6 +46,7 @@ interface SettingsViewProps {
   cloudSync: ReturnType<typeof useCloudSync>;
   onSaveCosts: (costs: IndirectCost[]) => void;
   onUpdateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
+  onUpdateLaborShareSettings: (updates: Partial<LaborShareSettings>) => void;
   onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
   onSaveUnitSettings: (settings: UnitSettings) => void;
   onResetUnitSettings: () => void;
@@ -55,6 +59,7 @@ const baseSections: { id: SettingsSection; label: string; icon: typeof Database 
   { id: 'account', label: 'Cuenta', icon: User },
   { id: 'taxes', label: 'Impuestos', icon: Receipt },
   { id: 'fund', label: 'Fondo', icon: PiggyBank },
+  { id: 'labor', label: 'Salarios', icon: Users },
   { id: 'indirect', label: 'Gastos', icon: Percent },
   { id: 'units', label: 'Unidades', icon: Ruler },
   { id: 'exchange', label: 'Tasas', icon: DollarSign },
@@ -67,6 +72,7 @@ export function SettingsView({
   rawMaterials,
   globalCosts,
   globalFund,
+  laborShareSettings,
   taxSettings,
   unitSettings,
   exchangeRateSettings,
@@ -76,6 +82,7 @@ export function SettingsView({
   cloudSync,
   onSaveCosts,
   onUpdateGlobalFund,
+  onUpdateLaborShareSettings,
   onUpdateTaxSettings,
   onSaveUnitSettings,
   onResetUnitSettings,
@@ -167,6 +174,9 @@ export function SettingsView({
       {activeSection === 'fund' ? (
         <GlobalFundSettingsPanel settings={globalFund} onChange={onUpdateGlobalFund} />
       ) : null}
+      {activeSection === 'labor' ? (
+        <LaborShareSettingsPanel settings={laborShareSettings} onChange={onUpdateLaborShareSettings} />
+      ) : null}
       {activeSection === 'indirect' ? (
         <IndirectCostsSettings costs={globalCosts} onSave={onSaveCosts} />
       ) : null}
@@ -186,6 +196,7 @@ export function SettingsView({
           rawMaterials={rawMaterials}
           globalCosts={globalCosts}
           globalFund={globalFund}
+          laborShareSettings={laborShareSettings}
           taxSettings={taxSettings}
           unitSettings={unitSettings}
           exchangeRateSettings={exchangeRateSettings}

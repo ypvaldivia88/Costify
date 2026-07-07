@@ -1,12 +1,25 @@
-import type { GlobalFundSettings, ProductCalculation, ProductInput, RawMaterial, UnitSettings } from '../types';
+import type {
+  GlobalFundSettings,
+  LaborShareBreakdownItem,
+  LaborShareSettings,
+  ProductCalculation,
+  ProductInput,
+  RawMaterial,
+  UnitSettings,
+} from '../types';
 import { calculateUnitDirectCost } from './direct-cost';
 import { calculateGlobalFundPerUnit } from './global-fund';
 import { allocateIndirectCosts } from './indirect-allocation';
+import {
+  getActiveLaborRoles,
+  getTotalLaborSharePercent,
+} from './labor-share';
 import { migrateProductInput, normalizePurchaseUnit } from './product-migration';
 import {
   calculateGrossMarginPercent,
   calculateProfitPerUnit,
   calculateSuggestedPrice,
+  calculateSuggestedPriceWithLaborShare,
 } from './pricing';
 import { calculateRecipeUnitCost } from './recipe-cost';
 import { DEFAULT_UNIT_SETTINGS } from '../unit-settings';
@@ -52,7 +65,8 @@ export function calculateProduct(
   globalFund?: GlobalFundSettings,
   id?: string,
   timestamp?: number,
-  unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS
+  unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS,
+  laborShareSettings?: LaborShareSettings
 ): ProductCalculation {
   const direct = resolveDirectCost(input, rawMaterials, unitSettings);
 
@@ -82,13 +96,35 @@ export function calculateProduct(
   }
 
   const totalUnitCost = direct.unitCost + totalIndirectPerUnit;
-  const suggestedPrice = calculateSuggestedPrice(
-    totalUnitCost,
-    input.profitMargin,
-    input.marginType
+  const activeLaborRoles = getActiveLaborRoles(input, laborShareSettings);
+  const totalLaborSharePercent = getTotalLaborSharePercent(activeLaborRoles);
+
+  const suggestedPrice =
+    totalLaborSharePercent > 0
+      ? calculateSuggestedPriceWithLaborShare(
+          totalUnitCost,
+          input.profitMargin,
+          input.marginType,
+          totalLaborSharePercent
+        )
+      : calculateSuggestedPrice(totalUnitCost, input.profitMargin, input.marginType);
+
+  const laborShareBreakdown: LaborShareBreakdownItem[] = activeLaborRoles.map((role) => ({
+    roleId: role.id,
+    name: role.name,
+    percentOfSale: role.percentOfSale,
+    perUnit: suggestedPrice * (role.percentOfSale / 100),
+  }));
+  const totalLaborSharePerUnit = laborShareBreakdown.reduce((sum, item) => sum + item.perUnit, 0);
+
+  const profitPerUnit = calculateProfitPerUnit(
+    suggestedPrice,
+    totalUnitCost + totalLaborSharePerUnit
   );
-  const profitPerUnit = calculateProfitPerUnit(suggestedPrice, totalUnitCost);
-  const grossMarginPercent = calculateGrossMarginPercent(suggestedPrice, totalUnitCost);
+  const grossMarginPercent = calculateGrossMarginPercent(
+    suggestedPrice,
+    totalUnitCost + totalLaborSharePerUnit
+  );
 
   return {
     ...input,
@@ -100,6 +136,9 @@ export function calculateProduct(
     unitCost: direct.unitCost,
     totalIndirectPerUnit,
     totalUnitCost,
+    totalLaborSharePerUnit,
+    totalLaborSharePercent,
+    laborShareBreakdown,
     suggestedPrice,
     profitPerUnit,
     grossMarginPercent,
@@ -113,7 +152,8 @@ export function recalculateInventory(
   products: ProductCalculation[],
   rawMaterials: RawMaterial[] = [],
   globalFund?: GlobalFundSettings,
-  unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS
+  unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS,
+  laborShareSettings?: LaborShareSettings
 ): ProductCalculation[] {
   return products.map((product) => {
     const others = products.filter((p) => p.id !== product.id);
@@ -124,7 +164,8 @@ export function recalculateInventory(
       globalFund,
       product.id,
       product.timestamp,
-      unitSettings
+      unitSettings,
+      laborShareSettings
     );
   });
 }

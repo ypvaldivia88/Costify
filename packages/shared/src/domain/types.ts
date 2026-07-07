@@ -77,6 +77,43 @@ export interface IndirectCost {
   distributionUnits?: number;
 }
 
+export interface LaborRole {
+  id: string;
+  name: string;
+  /** Porcentaje del precio de venta (ej. 10 = 10%) */
+  percentOfSale: number;
+}
+
+export interface ProductionArea {
+  id: string;
+  name: string;
+  roles: LaborRole[];
+}
+
+export interface LaborShareSettings {
+  enabled: boolean;
+  areas: ProductionArea[];
+}
+
+export interface ProductLaborRole {
+  id: string;
+  name: string;
+  percentOfSale: number;
+}
+
+export interface ProductLaborShare {
+  enabled: boolean;
+  areaId?: string;
+  roles: ProductLaborRole[];
+}
+
+export interface LaborShareBreakdownItem {
+  roleId: string;
+  name: string;
+  percentOfSale: number;
+  perUnit: number;
+}
+
 export interface ProductInput {
   name: string;
   productType: ProductType;
@@ -90,6 +127,8 @@ export interface ProductInput {
   indirectCosts: IndirectCost[];
   profitMargin: number;
   marginType: MarginType;
+  /** Participación salarial por producto (% del precio de venta) */
+  laborShare?: ProductLaborShare;
   /** Presente si el precio de compra se ingresó en divisa (productos simples) */
   purchaseMeta?: PurchaseCurrencyMeta;
 }
@@ -106,6 +145,9 @@ export interface ProductCalculation extends ProductInput {
   unitCost: number;
   totalIndirectPerUnit: number;
   totalUnitCost: number;
+  totalLaborSharePerUnit: number;
+  totalLaborSharePercent: number;
+  laborShareBreakdown: LaborShareBreakdownItem[];
   suggestedPrice: number;
   profitPerUnit: number;
   grossMarginPercent: number;

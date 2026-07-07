@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 import type {
   GlobalFundSettings,
+  LaborShareSettings,
   ProductCalculation,
   RawMaterial,
   UnitSettings,
 } from '@costify/shared/domain/types';
 import { recalculateInventory } from '@costify/shared/domain/calculations';
+import { DEFAULT_LABOR_SHARE_SETTINGS, STORAGE_KEYS } from '@costify/shared/domain/constants';
 import { DEFAULT_UNIT_SETTINGS } from '@costify/shared/domain/unit-settings';
-import { STORAGE_KEYS } from '@costify/shared/domain/constants';
 import { migrateLegacyInventory } from '../storage/types';
 import { useStorage } from '../context/ClientDataProvider';
 import { useAsyncPersistedResource } from './use-persisted-state';
@@ -43,14 +44,21 @@ export function useInventory() {
       product: ProductCalculation,
       rawMaterials: RawMaterial[] = [],
       globalFund?: GlobalFundSettings,
-      unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS
+      unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS,
+      laborShareSettings: LaborShareSettings = DEFAULT_LABOR_SHARE_SETTINGS
     ) => {
       setInventory((prev) => {
         const exists = prev.some((item) => item.id === product.id);
         const updated = exists
           ? prev.map((item) => (item.id === product.id ? product : item))
           : [product, ...prev];
-        return recalculateInventory(updated, rawMaterials, globalFund, unitSettings);
+        return recalculateInventory(
+          updated,
+          rawMaterials,
+          globalFund,
+          unitSettings,
+          laborShareSettings
+        );
       });
     },
     [setInventory]
@@ -61,11 +69,18 @@ export function useInventory() {
       id: string,
       rawMaterials: RawMaterial[] = [],
       globalFund?: GlobalFundSettings,
-      unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS
+      unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS,
+      laborShareSettings: LaborShareSettings = DEFAULT_LABOR_SHARE_SETTINGS
     ) => {
       setInventory((prev) => {
         const filtered = prev.filter((item) => item.id !== id);
-        return recalculateInventory(filtered, rawMaterials, globalFund, unitSettings);
+        return recalculateInventory(
+          filtered,
+          rawMaterials,
+          globalFund,
+          unitSettings,
+          laborShareSettings
+        );
       });
     },
     [setInventory]
@@ -75,9 +90,12 @@ export function useInventory() {
     (
       rawMaterials: RawMaterial[] = [],
       globalFund?: GlobalFundSettings,
-      unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS
+      unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS,
+      laborShareSettings: LaborShareSettings = DEFAULT_LABOR_SHARE_SETTINGS
     ) => {
-      setInventory((prev) => recalculateInventory(prev, rawMaterials, globalFund, unitSettings));
+      setInventory((prev) =>
+        recalculateInventory(prev, rawMaterials, globalFund, unitSettings, laborShareSettings)
+      );
     },
     [setInventory]
   );

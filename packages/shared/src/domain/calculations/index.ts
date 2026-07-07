@@ -15,12 +15,22 @@ export {
 } from '../units';
 export { calculateGlobalFundPerUnit, migrateGlobalFundSettings } from './global-fund';
 export {
+  copyRolesFromArea,
+  DEFAULT_PRODUCT_LABOR_SHARE,
+  getActiveLaborRoles,
+  getTotalLaborSharePercent,
+  migrateLaborShareSettings,
+  migrateProductLaborShare,
+  validateLaborSharePricing,
+} from './labor-share';
+export {
   allocateIndirectCosts,
   getTotalMonthlyIndirectCosts,
   getIndirectCoverage,
 } from './indirect-allocation';
 export {
   calculateSuggestedPrice,
+  calculateSuggestedPriceWithLaborShare,
   calculateGrossMarginPercent,
   calculateProfitPerUnit,
 } from './pricing';

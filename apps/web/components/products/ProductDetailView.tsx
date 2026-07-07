@@ -174,6 +174,17 @@ export function ProductDetailView({
                   </span>
                 </div>
               ))}
+              {product.laborShareBreakdown.map((item) => (
+                <div key={item.roleId} className="flex justify-between gap-2">
+                  <span className="text-muted truncate">
+                    {item.name}{' '}
+                    <span className="text-xs">({formatPercent(item.percentOfSale)} venta)</span>
+                  </span>
+                  <span className="font-medium tabular-nums shrink-0">
+                    {formatCurrency(item.perUnit)}
+                  </span>
+                </div>
+              ))}
               <div className="flex justify-between font-semibold pt-2 border-t border-border">
                 <span>Costo total unitario</span>
                 <span>{formatCurrency(product.totalUnitCost)}</span>

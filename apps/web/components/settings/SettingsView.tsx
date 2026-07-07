@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User, CreditCard } from 'lucide-react';
+import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User, CreditCard, Users } from 'lucide-react';
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   ProductCalculation,
   RawMaterial,
   StockMovement,
@@ -21,6 +22,7 @@ import { DataSyncPanel } from './DataSyncPanel';
 import { AccountSettingsPanel } from './AccountSettingsPanel';
 import { SubscriptionSettingsPanel } from './SubscriptionSettingsPanel';
 import { GlobalFundSettingsPanel } from './GlobalFundSettings';
+import { LaborShareSettingsPanel } from './LaborShareSettings';
 import { IndirectCostsSettings } from './IndirectCostsSettings';
 import { TaxSettingsPanel } from './TaxSettingsPanel';
 import { UnitSettingsPanel } from './UnitSettingsPanel';
@@ -28,13 +30,14 @@ import { ExchangeRatesPanel } from './ExchangeRatesPanel';
 import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 import type { SessionUser } from '@/lib/auth/types';
 
-type SettingsSection = 'taxes' | 'fund' | 'indirect' | 'units' | 'exchange' | 'sync' | 'account' | 'subscription';
+type SettingsSection = 'taxes' | 'fund' | 'labor' | 'indirect' | 'units' | 'exchange' | 'sync' | 'account' | 'subscription';
 
 interface SettingsViewProps {
   inventory: ProductCalculation[];
   rawMaterials: RawMaterial[];
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   exchangeRateSettings: ExchangeRateSettings;
@@ -54,6 +57,7 @@ interface SettingsViewProps {
   };
   onSaveCosts: (costs: IndirectCost[]) => void;
   onUpdateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
+  onUpdateLaborShareSettings: (updates: Partial<LaborShareSettings>) => void;
   onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
   onSaveUnitSettings: (settings: UnitSettings) => void;
   onResetUnitSettings: () => void;
@@ -64,6 +68,7 @@ interface SettingsViewProps {
 const baseSections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
   { id: 'taxes', label: 'Impuestos', icon: Receipt },
   { id: 'fund', label: 'Fondo', icon: PiggyBank },
+  { id: 'labor', label: 'Salarios', icon: Users },
   { id: 'indirect', label: 'Gastos', icon: Percent },
   { id: 'units', label: 'Unidades', icon: Ruler },
   { id: 'exchange', label: 'Tasas', icon: DollarSign },
@@ -76,6 +81,7 @@ export function SettingsView({
   rawMaterials,
   globalCosts,
   globalFund,
+  laborShareSettings,
   taxSettings,
   unitSettings,
   exchangeRateSettings,
@@ -87,6 +93,7 @@ export function SettingsView({
   cloudSync,
   onSaveCosts,
   onUpdateGlobalFund,
+  onUpdateLaborShareSettings,
   onUpdateTaxSettings,
   onSaveUnitSettings,
   onResetUnitSettings,
@@ -143,6 +150,9 @@ export function SettingsView({
       {activeSection === 'fund' && (
         <GlobalFundSettingsPanel settings={globalFund} onChange={onUpdateGlobalFund} />
       )}
+      {activeSection === 'labor' && (
+        <LaborShareSettingsPanel settings={laborShareSettings} onChange={onUpdateLaborShareSettings} />
+      )}
       {activeSection === 'indirect' && (
         <IndirectCostsSettings costs={globalCosts} onSave={onSaveCosts} />
       )}
@@ -162,6 +172,7 @@ export function SettingsView({
           rawMaterials={rawMaterials}
           globalCosts={globalCosts}
           globalFund={globalFund}
+          laborShareSettings={laborShareSettings}
           taxSettings={taxSettings}
           unitSettings={unitSettings}
           exchangeRateSettings={exchangeRateSettings}

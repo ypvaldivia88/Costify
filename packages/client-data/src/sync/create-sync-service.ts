@@ -1,10 +1,12 @@
 import type { AppBackupInput, AppBackupV1 } from '@costify/shared/backup/backup-core';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
+  DEFAULT_LABOR_SHARE_SETTINGS,
   DEFAULT_TAX_SETTINGS,
   STORAGE_KEYS,
 } from '@costify/shared/domain/constants';
 import { migrateGlobalFundSettings } from '@costify/shared/domain/calculations/global-fund';
+import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/labor-share';
 import { migrateTaxSettings } from '@costify/shared/domain/migrate-tax-settings';
 import { migrateExchangeRateSettings } from '@costify/shared/domain/migrate-exchange-rates';
 import { migrateUnitSettings } from '@costify/shared/domain/unit-settings';
@@ -41,6 +43,9 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       rawMaterials: await storage.load(STORAGE_KEYS.rawMaterials, []),
       globalCosts: await storage.load(STORAGE_KEYS.globalCosts, []),
       globalFund: await storage.load(STORAGE_KEYS.globalFund, DEFAULT_GLOBAL_FUND_SETTINGS),
+      laborShareSettings: migrateLaborShareSettings(
+        await storage.load(STORAGE_KEYS.laborShareSettings, DEFAULT_LABOR_SHARE_SETTINGS)
+      ),
       taxSettings: migrateTaxSettings(
         await storage.load(STORAGE_KEYS.taxSettings, DEFAULT_TAX_SETTINGS)
       ),
@@ -67,6 +72,7 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       rawMaterials: data.rawMaterials,
       globalCosts: data.globalCosts,
       globalFund: data.globalFund,
+      laborShareSettings: data.laborShareSettings,
       taxSettings: data.taxSettings,
       unitSettings: data.unitSettings,
       warehouses: data.warehouses,
@@ -87,6 +93,9 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       rawMaterials: workspace.rawMaterials,
       globalCosts: workspace.globalCosts,
       globalFund: migrateGlobalFundSettings(workspace.globalFund),
+      laborShareSettings: migrateLaborShareSettings(
+        workspace.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS
+      ),
       taxSettings: migrateTaxSettings(workspace.taxSettings),
       unitSettings: migrateUnitSettings(workspace.unitSettings),
       warehouses: workspace.warehouses ?? [],
@@ -102,6 +111,7 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       data.rawMaterials.length > 0 ||
       data.globalCosts.length > 0 ||
       data.globalFund.enabled ||
+      data.laborShareSettings.enabled ||
       data.taxSettings.sector !== 'mipyme' ||
       data.warehouses.length > 0 ||
       data.stockMovements.length > 0

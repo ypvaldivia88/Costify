@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, typ
 import type {
   GlobalFundSettings,
   IndirectCost,
+  LaborShareSettings,
   ProductCalculation,
   RawMaterial,
   RawMaterialInput,
@@ -24,6 +25,8 @@ import {
 } from '@costify/shared/domain/calculations';
 import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
 import type { StockThreshold } from '@costify/shared/domain/types';
+import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/labor-share';
+import { DEFAULT_LABOR_SHARE_SETTINGS } from '@costify/shared/domain/constants';
 import { onSyncReload, useSyncApi, createWorkspaceAccessGates } from '@costify/client-data';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -31,6 +34,7 @@ import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { useGlobalCosts } from '@/hooks/use-global-costs';
 import { useGlobalFund } from '@/hooks/use-global-fund';
+import { useLaborShareSettings } from '@/hooks/use-labor-share-settings';
 import { useInventory } from '@/hooks/use-inventory';
 import { useRawMaterials } from '@/hooks/use-raw-materials';
 import { useStockMovements } from '@/hooks/use-stock-movements';
@@ -45,6 +49,7 @@ interface AppDataContextValue {
   materials: RawMaterial[];
   globalCosts: IndirectCost[];
   globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
   warehouses: Warehouse[];
@@ -67,6 +72,7 @@ interface AppDataContextValue {
   updateStock: (id: string, stockQuantity: number) => void;
   saveCosts: (costs: IndirectCost[]) => void;
   updateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
+  updateLaborShareSettings: (updates: Partial<LaborShareSettings>) => void;
   updateTaxSettings: (updates: Partial<TaxSettings>) => void;
   saveUnitSettings: (settings: UnitSettings) => void;
   resetUnitSettings: () => void;
@@ -107,6 +113,7 @@ interface AppDataContextValue {
     rawMaterials: RawMaterial[];
     globalCosts: IndirectCost[];
     globalFund: GlobalFundSettings;
+    laborShareSettings?: LaborShareSettings;
     taxSettings: TaxSettings;
     unitSettings?: UnitSettings;
     warehouses?: Warehouse[];
@@ -129,6 +136,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const rawMaterialsState = useRawMaterials();
   const globalCostsState = useGlobalCosts();
   const globalFundState = useGlobalFund();
+  const laborShareSettingsState = useLaborShareSettings();
   const taxSettingsState = useTaxSettings();
   const unitSettingsState = useUnitSettings();
   const warehousesState = useWarehouses();
@@ -142,6 +150,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     rawMaterialsState.hydrated &&
     globalCostsState.hydrated &&
     globalFundState.hydrated &&
+    laborShareSettingsState.hydrated &&
     taxSettingsState.hydrated &&
     unitSettingsState.hydrated &&
     warehousesState.hydrated &&
@@ -190,6 +199,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       rawMaterials: rawMaterialsState.materials,
       globalCosts: globalCostsState.globalCosts,
       globalFund: globalFundState.globalFund,
+      laborShareSettings: laborShareSettingsState.laborShareSettings,
       taxSettings: taxSettingsState.taxSettings,
       unitSettings: unitSettingsState.unitSettings,
       warehouses: warehousesState.warehouses,
@@ -202,6 +212,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       rawMaterialsState.materials,
       globalCostsState.globalCosts,
       globalFundState.globalFund,
+      laborShareSettingsState.laborShareSettings,
       taxSettingsState.taxSettings,
       unitSettingsState.unitSettings,
       warehousesState.warehouses,
@@ -292,11 +303,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     inventoryState.recalculateAll(
       rawMaterialsState.materials,
       globalFundState.globalFund,
-      unitSettingsState.unitSettings
+      unitSettingsState.unitSettings,
+      laborShareSettingsState.laborShareSettings
     );
   }, [
     globalFundState.globalFund.enabled,
     globalFundState.globalFund.percent,
+    laborShareSettingsState.laborShareSettings.enabled,
+    laborShareSettingsState.laborShareSettings.areas,
     unitSettingsState.unitSettings,
     hydrated,
   ]);
@@ -567,7 +581,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         denyWrite(access.trialProductLimitMessage(user?.trialProductLimit));
         return;
       }
-      inventoryState.saveProduct(product, rawMaterials, globalFund, unitSettings);
+      inventoryState.saveProduct(
+        product,
+        rawMaterials,
+        globalFund,
+        unitSettings,
+        laborShareSettingsState.laborShareSettings
+      );
     },
     [
       access,
@@ -575,6 +595,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       inventoryState,
       rawMaterialsState.materials,
       globalFundState.globalFund,
+      laborShareSettingsState.laborShareSettings,
       unitSettingsState.unitSettings,
       user?.trialProductLimit,
     ]
@@ -590,11 +611,21 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         id,
         rawMaterialsState.materials,
         globalFundState.globalFund,
-        unitSettingsState.unitSettings
+        unitSettingsState.unitSettings,
+        laborShareSettingsState.laborShareSettings
       );
       purgeStockReferences('product', id);
     },
-    [access, denyWrite, inventoryState, rawMaterialsState.materials, globalFundState.globalFund, unitSettingsState.unitSettings, purgeStockReferences]
+    [
+      access,
+      denyWrite,
+      inventoryState,
+      rawMaterialsState.materials,
+      globalFundState.globalFund,
+      laborShareSettingsState.laborShareSettings,
+      unitSettingsState.unitSettings,
+      purgeStockReferences,
+    ]
   );
 
   const saveWarehouse = useCallback(
@@ -641,6 +672,17 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     [access, denyWrite, globalFundState]
   );
 
+  const updateLaborShareSettings = useCallback(
+    (updates: Partial<LaborShareSettings>) => {
+      if (!access.canWrite) {
+        denyWrite(access.readonlyMessage);
+        return;
+      }
+      laborShareSettingsState.updateLaborShareSettings(updates);
+    },
+    [access, denyWrite, laborShareSettingsState]
+  );
+
   const updateTaxSettings = useCallback(
     (updates: Partial<TaxSettings>) => {
       if (!access.canWrite) {
@@ -675,9 +717,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     inventoryState.recalculateAll(
       rawMaterialsState.materials,
       globalFundState.globalFund,
-      unitSettingsState.unitSettings
+      unitSettingsState.unitSettings,
+      laborShareSettingsState.laborShareSettings
     );
-  }, [inventoryState, rawMaterialsState.materials, globalFundState.globalFund, unitSettingsState.unitSettings]);
+  }, [
+    inventoryState,
+    rawMaterialsState.materials,
+    globalFundState.globalFund,
+    laborShareSettingsState.laborShareSettings,
+    unitSettingsState.unitSettings,
+  ]);
 
   const reloadFromBackup = useCallback(
     (backup: {
@@ -685,6 +734,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       rawMaterials: RawMaterial[];
       globalCosts: IndirectCost[];
       globalFund: GlobalFundSettings;
+      laborShareSettings?: LaborShareSettings;
       taxSettings: TaxSettings;
       unitSettings?: UnitSettings;
       warehouses?: Warehouse[];
@@ -696,6 +746,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       rawMaterialsState.replaceMaterials(backup.rawMaterials);
       globalCostsState.saveCosts(backup.globalCosts);
       globalFundState.replaceGlobalFund(backup.globalFund);
+      laborShareSettingsState.replaceLaborShareSettings(
+        migrateLaborShareSettings(backup.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS)
+      );
       taxSettingsState.replaceTaxSettings(backup.taxSettings);
       if (backup.unitSettings) {
         unitSettingsState.replaceUnitSettings(backup.unitSettings);
@@ -712,6 +765,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       rawMaterialsState,
       globalCostsState,
       globalFundState,
+      laborShareSettingsState,
       taxSettingsState,
       unitSettingsState,
       warehousesState,
@@ -737,6 +791,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       materials: rawMaterialsState.materials,
       globalCosts: globalCostsState.globalCosts,
       globalFund: globalFundState.globalFund,
+      laborShareSettings: laborShareSettingsState.laborShareSettings,
       taxSettings: taxSettingsState.taxSettings,
       unitSettings: unitSettingsState.unitSettings,
       warehouses: warehousesState.warehouses,
@@ -754,6 +809,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       updateStock,
       saveCosts,
       updateGlobalFund,
+      updateLaborShareSettings,
       updateTaxSettings,
       saveUnitSettings,
       resetUnitSettings,
@@ -794,6 +850,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       updateStock,
       saveCosts,
       updateGlobalFund,
+      updateLaborShareSettings,
       updateTaxSettings,
       saveUnitSettings,
       resetUnitSettings,

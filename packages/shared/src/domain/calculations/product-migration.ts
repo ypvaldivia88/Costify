@@ -1,5 +1,6 @@
 import type { ProductInput, UnitSettings } from '../types';
 import { DEFAULT_UNIT_SETTINGS, getUnitLabel } from '../unit-settings';
+import { migrateProductLaborShare } from './labor-share';
 
 type LegacyProductInput = Partial<ProductInput> & {
   unitsPerPackage?: number;
@@ -33,6 +34,7 @@ export function migrateProductInput(
     indirectCosts: product.indirectCosts ?? [],
     profitMargin: product.profitMargin ?? 0,
     marginType: product.marginType ?? 'markup',
+    laborShare: migrateProductLaborShare(product.laborShare),
     purchaseMeta: product.purchaseMeta,
   };
 }

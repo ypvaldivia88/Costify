@@ -8,9 +8,11 @@ import {
 } from '@/lib/db/workspace';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
+  DEFAULT_LABOR_SHARE_SETTINGS,
   DEFAULT_TAX_SETTINGS,
 } from '@costify/shared/domain/constants';
 import { migrateGlobalFundSettings } from '@costify/shared/domain/calculations/global-fund';
+import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/labor-share';
 import { migrateTaxSettings } from '@costify/shared/domain/migrate-tax-settings';
 import { migrateExchangeRateSettings } from '@costify/shared/domain/migrate-exchange-rates';
 import { migrateUnitSettings } from '@costify/shared/domain/unit-settings';
@@ -95,6 +97,9 @@ export async function PUT(request: Request) {
       rawMaterials: Array.isArray(body.rawMaterials) ? body.rawMaterials : [],
       globalCosts: Array.isArray(body.globalCosts) ? body.globalCosts : [],
       globalFund: migrateGlobalFundSettings(body.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
+      laborShareSettings: migrateLaborShareSettings(
+        body.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS
+      ),
       taxSettings: migrateTaxSettings(body.taxSettings ?? DEFAULT_TAX_SETTINGS),
       unitSettings: migrateUnitSettings(body.unitSettings),
       warehouses: Array.isArray(body.warehouses) ? body.warehouses : [],

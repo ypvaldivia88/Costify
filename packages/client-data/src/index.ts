@@ -19,6 +19,7 @@ export { useInventory } from './hooks/use-inventory';
 export { useRawMaterials } from './hooks/use-raw-materials';
 export { useGlobalCosts } from './hooks/use-global-costs';
 export { useGlobalFund } from './hooks/use-global-fund';
+export { useLaborShareSettings } from './hooks/use-labor-share-settings';
 export { useTaxSettings } from './hooks/use-tax-settings';
 export { useUnitSettings } from './hooks/use-unit-settings';
 export { useWarehouses } from './hooks/use-warehouses';

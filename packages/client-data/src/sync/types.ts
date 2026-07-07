@@ -16,6 +16,7 @@ export interface WorkspaceDocument {
   rawMaterials: AppBackupV1['rawMaterials'];
   globalCosts: AppBackupV1['globalCosts'];
   globalFund: AppBackupV1['globalFund'];
+  laborShareSettings?: AppBackupV1['laborShareSettings'];
   taxSettings: AppBackupV1['taxSettings'];
   unitSettings: AppBackupV1['unitSettings'];
   warehouses: AppBackupV1['warehouses'];

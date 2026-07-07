@@ -71,6 +71,7 @@ function SettingsTab({
       rawMaterials={data.materials}
       globalCosts={data.globalCosts}
       globalFund={data.globalFund}
+      laborShareSettings={data.laborShareSettings}
       taxSettings={data.taxSettings}
       unitSettings={data.unitSettings}
       exchangeRateSettings={data.exchangeSettings}
@@ -80,6 +81,7 @@ function SettingsTab({
       cloudSync={data.cloudSync}
       onSaveCosts={data.saveCosts}
       onUpdateGlobalFund={data.updateGlobalFund}
+      onUpdateLaborShareSettings={data.updateLaborShareSettings}
       onUpdateTaxSettings={data.updateTaxSettings}
       onSaveUnitSettings={data.saveUnitSettings}
       onResetUnitSettings={data.resetUnitSettings}
@@ -244,6 +246,7 @@ function MainTabs({
                 materials={data.materials}
                 globalIndirectCosts={data.globalCosts}
                 globalFund={data.globalFund}
+                laborShareSettings={data.laborShareSettings}
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
                 warehouses={data.warehouses}

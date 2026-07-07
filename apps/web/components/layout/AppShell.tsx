@@ -104,6 +104,7 @@ export function AppShell() {
                 materials={data.materials}
                 globalIndirectCosts={data.globalCosts}
                 globalFund={data.globalFund}
+                laborShareSettings={data.laborShareSettings}
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
                 warehouses={data.warehouses}
@@ -113,13 +114,22 @@ export function AppShell() {
                 focusProductId={focusTarget?.refType === 'product' ? focusTarget.refId : undefined}
                 onFocusConsumed={() => setFocusTarget(null)}
                 onSaveProduct={(product) =>
-                  data.saveProduct(product, data.materials, data.globalFund, data.unitSettings)
+                  data.saveProduct(
+                    product,
+                    data.materials,
+                    data.globalFund,
+                    data.unitSettings
+                  )
                 }
                 onDeleteProduct={(id) =>
                   data.deleteProduct(id, data.materials, data.globalFund, data.unitSettings)
                 }
                 onRecalculateAll={() =>
-                  data.recalculateAll(data.materials, data.globalFund, data.unitSettings)
+                  data.recalculateAll(
+                    data.materials,
+                    data.globalFund,
+                    data.unitSettings
+                  )
                 }
                 onRegisterProductMovement={(product, input) =>
                   data.registerProductMovement(product, input)
@@ -173,6 +183,7 @@ export function AppShell() {
                 rawMaterials={data.materials}
                 globalCosts={data.globalCosts}
                 globalFund={data.globalFund}
+                laborShareSettings={data.laborShareSettings}
                 taxSettings={data.taxSettings}
                 unitSettings={data.unitSettings}
                 exchangeRateSettings={data.exchangeSettings}
@@ -186,6 +197,7 @@ export function AppShell() {
                 onInitialSectionConsumed={() => setSettingsSection(undefined)}
                 onSaveCosts={data.saveCosts}
                 onUpdateGlobalFund={data.updateGlobalFund}
+                onUpdateLaborShareSettings={data.updateLaborShareSettings}
                 onUpdateTaxSettings={data.updateTaxSettings}
                 onSaveUnitSettings={data.saveUnitSettings}
                 onResetUnitSettings={data.resetUnitSettings}

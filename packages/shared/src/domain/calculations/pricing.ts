@@ -10,15 +10,34 @@ export function calculateSuggestedPrice(
   profitMargin: number,
   marginType: MarginType
 ): number {
-  if (totalUnitCost <= 0) return 0;
+  return calculateSuggestedPriceWithLaborShare(totalUnitCost, profitMargin, marginType, 0);
+}
+
+/**
+ * Precio con participación salarial (% del precio de venta) resuelto algebraicamente.
+ * - margin: Precio = Costo / (1 - %salarios - %margen)
+ * - markup: Precio = Costo × (1 + %recargo) / (1 - %salarios)
+ */
+export function calculateSuggestedPriceWithLaborShare(
+  fixedUnitCost: number,
+  profitMargin: number,
+  marginType: MarginType,
+  laborSharePercent: number
+): number {
+  if (fixedUnitCost <= 0) return 0;
+
+  const labor = laborSharePercent / 100;
 
   if (marginType === 'margin') {
     const marginDecimal = profitMargin / 100;
-    if (marginDecimal >= 1) return totalUnitCost * 2;
-    return totalUnitCost / (1 - marginDecimal);
+    const divisor = 1 - labor - marginDecimal;
+    if (divisor <= 0) return fixedUnitCost * 2;
+    return fixedUnitCost / divisor;
   }
 
-  return totalUnitCost * (1 + profitMargin / 100);
+  const divisor = 1 - labor;
+  if (divisor <= 0) return fixedUnitCost * 2;
+  return (fixedUnitCost * (1 + profitMargin / 100)) / divisor;
 }
 
 /** Margen bruto real sobre venta: (Precio - Costo) / Precio × 100 */

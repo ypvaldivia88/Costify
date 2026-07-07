@@ -13,6 +13,7 @@ import { hashPassword } from '@/lib/auth/password';
 import { WORKSPACES_COLLECTION, type WorkspaceDocument } from '@/lib/db/workspace';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
+  DEFAULT_LABOR_SHARE_SETTINGS,
   DEFAULT_TAX_SETTINGS,
 } from '@costify/shared/domain/constants';
 import { DEFAULT_UNIT_SETTINGS } from '@costify/shared/domain/unit-settings';
@@ -143,6 +144,7 @@ async function insertTenantBundle(input: CreateTenantInput): Promise<{
     rawMaterials: [],
     globalCosts: [],
     globalFund: DEFAULT_GLOBAL_FUND_SETTINGS,
+    laborShareSettings: DEFAULT_LABOR_SHARE_SETTINGS,
     taxSettings: DEFAULT_TAX_SETTINGS,
     unitSettings: DEFAULT_UNIT_SETTINGS,
     warehouses: [],
