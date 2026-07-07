@@ -53,6 +53,8 @@ export default function AdminPage() {
     password: '',
     role: 'tenant_user' as 'tenant_admin' | 'tenant_user',
   });
+  const [passwordEditUserId, setPasswordEditUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
 
   const loadTenants = useCallback(async () => {
     const response = await fetch('/api/admin/tenants', { credentials: 'include' });
@@ -166,6 +168,33 @@ export default function AdminPage() {
       return;
     }
     await loadTenants();
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    if (!selectedTenantId || newPassword.length < 8) return;
+    setCreating(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/admin/tenants/${selectedTenantId}/users/${userId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ password: newPassword }),
+        }
+      );
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(json.error || 'No se pudo cambiar la contraseña.');
+      }
+      setPasswordEditUserId(null);
+      setNewPassword('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cambiar contraseña.');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const selectedTenant = tenants.find((tenant) => tenant.tenantId === selectedTenantId) ?? null;
@@ -534,6 +563,51 @@ export default function AdminPage() {
                       <p className="text-xs text-muted mt-1">
                         {tenantUser.role === 'tenant_admin' ? 'Administrador' : 'Usuario'}
                       </p>
+                      {passwordEditUserId === tenantUser.userId ? (
+                        <div className="mt-3 space-y-3">
+                          <Input
+                            label="Nueva contraseña"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            hint="Mínimo 8 caracteres"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={creating || newPassword.length < 8}
+                              onClick={() => void handleResetPassword(tenantUser.userId)}
+                            >
+                              Guardar
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPasswordEditUserId(null);
+                                setNewPassword('');
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="mt-3"
+                          onClick={() => {
+                            setPasswordEditUserId(tenantUser.userId);
+                            setNewPassword('');
+                          }}
+                        >
+                          Cambiar contraseña
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
