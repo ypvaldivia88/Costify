@@ -2,7 +2,7 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import type { LaborShareSettings, ProductLaborRole, ProductLaborShare } from '@costify/shared/domain/types';
-import { copyRolesFromArea, validateLaborSharePricing } from '@costify/shared/domain/calculations';
+import { appendRolesFromArea, validateLaborSharePricing } from '@costify/shared/domain/calculations';
 import { randomId } from '@costify/shared/random-id';
 import { fieldClassNameCompact } from '@/lib/ui/field-styles';
 import { Button } from '@/components/ui/Button';
@@ -43,7 +43,7 @@ export function LaborShareEditor({
     onChange({
       ...laborShare,
       enabled: true,
-      roles: copyRolesFromArea(area),
+      roles: appendRolesFromArea(laborShare.roles, area),
     });
   };
 
@@ -106,7 +106,7 @@ export function LaborShareEditor({
               onClick={importFromArea}
               disabled={!laborShare.areaId}
             >
-              Importar plantilla
+              Importar roles del área
             </Button>
           </div>
 

@@ -16,6 +16,7 @@ export {
 export { calculateGlobalFundPerUnit, migrateGlobalFundSettings } from './global-fund';
 export {
   copyRolesFromArea,
+  appendRolesFromArea,
   DEFAULT_PRODUCT_LABOR_SHARE,
   getActiveLaborRoles,
   getTotalLaborSharePercent,

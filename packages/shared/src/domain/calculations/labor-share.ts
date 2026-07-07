@@ -66,6 +66,30 @@ export function copyRolesFromArea(area: ProductionArea): ProductLaborRole[] {
   }));
 }
 
+/** Añade roles de un área al producto sin borrar los ya importados (evita duplicados exactos). */
+export function appendRolesFromArea(
+  existingRoles: ProductLaborRole[],
+  area: ProductionArea
+): ProductLaborRole[] {
+  const roleKey = (name: string, percentOfSale: number) =>
+    `${name.trim().toLowerCase()}|${percentOfSale}`;
+
+  const existingKeys = new Set(
+    existingRoles.map((role) => roleKey(role.name, role.percentOfSale))
+  );
+
+  const toAdd = area.roles
+    .filter((role) => role.name.trim() && role.percentOfSale > 0)
+    .filter((role) => !existingKeys.has(roleKey(role.name, role.percentOfSale)))
+    .map((role) => ({
+      id: randomId(),
+      name: role.name,
+      percentOfSale: role.percentOfSale,
+    }));
+
+  return [...existingRoles, ...toAdd];
+}
+
 export function validateProductLaborShare(
   laborShare: ProductLaborShare
 ): { valid: boolean; error?: string } {

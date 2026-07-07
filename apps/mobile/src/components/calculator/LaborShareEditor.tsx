@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-nati
 import { Picker } from '@react-native-picker/picker';
 import { Plus, Trash2 } from 'lucide-react-native';
 import type { LaborShareSettings, ProductLaborRole, ProductLaborShare } from '@costify/shared/domain/types';
-import { copyRolesFromArea, validateLaborSharePricing } from '@costify/shared/domain/calculations';
+import { appendRolesFromArea, validateLaborSharePricing } from '@costify/shared/domain/calculations';
 import { Button } from '@/components/ui/Button';
 import { NumericField } from '@/components/ui/NumericField';
 import { Select } from '@/components/ui/Select';
@@ -44,7 +44,7 @@ export function LaborShareEditor({
     onChange({
       ...laborShare,
       enabled: true,
-      roles: copyRolesFromArea(area),
+      roles: appendRolesFromArea(laborShare.roles, area),
     });
   };
 
@@ -104,7 +104,7 @@ export function LaborShareEditor({
             disabled={!laborShare.areaId}
             style={styles.fullWidthBtn}
           >
-            Importar plantilla del área
+            Añadir roles del área
           </Button>
 
           {laborShare.roles.length === 0 ? (
