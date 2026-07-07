@@ -186,7 +186,7 @@ export function ProductDetailView({
                 </Text>
               </View>
             ))}
-            {product.laborShareBreakdown.map((item) => (
+            {(product.laborShareBreakdown ?? []).map((item) => (
               <View key={item.roleId} style={styles.row}>
                 <Text style={{ color: colors.muted, flex: 1 }} numberOfLines={2}>
                   {item.name}{' '}

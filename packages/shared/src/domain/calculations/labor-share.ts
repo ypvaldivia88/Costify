@@ -66,6 +66,22 @@ export function copyRolesFromArea(area: ProductionArea): ProductLaborRole[] {
   }));
 }
 
+export function validateProductLaborShare(
+  laborShare: ProductLaborShare
+): { valid: boolean; error?: string } {
+  if (!laborShare.enabled) return { valid: true };
+  const activeRoles = laborShare.roles.filter(
+    (role) => role.percentOfSale > 0 && role.name.trim().length > 0
+  );
+  if (activeRoles.length === 0) {
+    return {
+      valid: false,
+      error: 'Agrega al menos un rol con nombre y porcentaje mayor a cero.',
+    };
+  }
+  return { valid: true };
+}
+
 export function validateLaborSharePricing(
   laborSharePercent: number,
   profitMargin: number,

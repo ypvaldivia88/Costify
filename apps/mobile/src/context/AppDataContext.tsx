@@ -312,6 +312,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     laborShareSettingsState.laborShareSettings.enabled,
     laborShareSettingsState.laborShareSettings.areas,
     unitSettingsState.unitSettings,
+    rawMaterialsState.materials,
     hydrated,
   ]);
 
@@ -742,13 +743,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       stockThresholds?: StockThreshold[];
       exchangeRateSettings?: ExchangeRateSettings;
     }) => {
-      inventoryState.replaceInventory(backup.inventory);
+      const migratedLaborShare = migrateLaborShareSettings(
+        backup.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS
+      );
+      const unitSettings = backup.unitSettings ?? unitSettingsState.unitSettings;
+
       rawMaterialsState.replaceMaterials(backup.rawMaterials);
       globalCostsState.saveCosts(backup.globalCosts);
       globalFundState.replaceGlobalFund(backup.globalFund);
-      laborShareSettingsState.replaceLaborShareSettings(
-        migrateLaborShareSettings(backup.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS)
-      );
+      laborShareSettingsState.replaceLaborShareSettings(migratedLaborShare);
       taxSettingsState.replaceTaxSettings(backup.taxSettings);
       if (backup.unitSettings) {
         unitSettingsState.replaceUnitSettings(backup.unitSettings);
@@ -759,6 +762,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       if (backup.exchangeRateSettings) {
         exchangeRatesState.replaceSettings(backup.exchangeRateSettings);
       }
+
+      inventoryState.replaceInventory(
+        backup.inventory,
+        backup.rawMaterials,
+        backup.globalFund,
+        unitSettings,
+        migratedLaborShare
+      );
     },
     [
       inventoryState,

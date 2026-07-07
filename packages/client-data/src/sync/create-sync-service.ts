@@ -180,6 +180,24 @@ export function createSyncService(options: CreateSyncServiceOptions) {
 
       return { status: 'synced', direction: 'none' };
     } catch (error) {
+      const remote =
+        error instanceof Error && 'remote' in error
+          ? (error as Error & { remote?: WorkspaceDocument }).remote
+          : undefined;
+
+      if (remote) {
+        await applyRemoteWorkspace(remote);
+        await saveSyncMetadata(storage, {
+          lastSyncedAt: remote.updatedAt,
+          localUpdatedAt: remote.updatedAt,
+        });
+        return {
+          status: 'synced',
+          direction: 'pull',
+          message: 'Conflicto resuelto: se aplicaron los datos más recientes del servidor.',
+        };
+      }
+
       const message =
         error instanceof Error ? error.message : 'Error desconocido al sincronizar.';
       if (message.includes('Network request failed') || message.includes('Failed to fetch')) {

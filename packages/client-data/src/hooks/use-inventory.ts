@@ -7,8 +7,14 @@ import type {
   UnitSettings,
 } from '@costify/shared/domain/types';
 import { recalculateInventory } from '@costify/shared/domain/calculations';
-import { DEFAULT_LABOR_SHARE_SETTINGS, STORAGE_KEYS } from '@costify/shared/domain/constants';
-import { DEFAULT_UNIT_SETTINGS } from '@costify/shared/domain/unit-settings';
+import { migrateGlobalFundSettings } from '@costify/shared/domain/calculations/global-fund';
+import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/labor-share';
+import {
+  DEFAULT_GLOBAL_FUND_SETTINGS,
+  DEFAULT_LABOR_SHARE_SETTINGS,
+  STORAGE_KEYS,
+} from '@costify/shared/domain/constants';
+import { DEFAULT_UNIT_SETTINGS, migrateUnitSettings } from '@costify/shared/domain/unit-settings';
 import { migrateLegacyInventory } from '../storage/types';
 import { useStorage } from '../context/ClientDataProvider';
 import { useAsyncPersistedResource } from './use-persisted-state';
@@ -16,12 +22,27 @@ import { useAsyncPersistedResource } from './use-persisted-state';
 async function loadInventory(
   storage: ReturnType<typeof useStorage>
 ): Promise<ProductCalculation[]> {
-  const saved = await storage.load<
-    Array<ProductCalculation & { unitsPerPackage?: number; unitType?: string }>
-  >(STORAGE_KEYS.inventory, []);
+  const [saved, rawMaterials, globalFund, unitSettings, laborShareSettings] = await Promise.all([
+    storage.load<Array<ProductCalculation & { unitsPerPackage?: number; unitType?: string }>>(
+      STORAGE_KEYS.inventory,
+      []
+    ),
+    storage.load<RawMaterial[]>(STORAGE_KEYS.rawMaterials, []),
+    storage.load(STORAGE_KEYS.globalFund, DEFAULT_GLOBAL_FUND_SETTINGS),
+    storage.load(STORAGE_KEYS.unitSettings, undefined),
+    storage.load(STORAGE_KEYS.laborShareSettings, DEFAULT_LABOR_SHARE_SETTINGS),
+  ]);
+
   const legacy =
     saved.length > 0 ? saved : ((await migrateLegacyInventory(storage)) as ProductCalculation[]);
-  return recalculateInventory(legacy);
+
+  return recalculateInventory(
+    legacy,
+    rawMaterials,
+    migrateGlobalFundSettings(globalFund),
+    migrateUnitSettings(unitSettings),
+    migrateLaborShareSettings(laborShareSettings)
+  );
 }
 
 export function useInventory() {
@@ -101,8 +122,16 @@ export function useInventory() {
   );
 
   const replaceInventory = useCallback(
-    (items: ProductCalculation[]) => {
-      setInventory(recalculateInventory(items));
+    (
+      items: ProductCalculation[],
+      rawMaterials: RawMaterial[] = [],
+      globalFund?: GlobalFundSettings,
+      unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS,
+      laborShareSettings: LaborShareSettings = DEFAULT_LABOR_SHARE_SETTINGS
+    ) => {
+      setInventory(
+        recalculateInventory(items, rawMaterials, globalFund, unitSettings, laborShareSettings)
+      );
     },
     [setInventory]
   );

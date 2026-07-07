@@ -174,7 +174,7 @@ export function ProductDetailView({
                   </span>
                 </div>
               ))}
-              {product.laborShareBreakdown.map((item) => (
+              {(product.laborShareBreakdown ?? []).map((item) => (
                 <div key={item.roleId} className="flex justify-between gap-2">
                   <span className="text-muted truncate">
                     {item.name}{' '}

@@ -16,7 +16,7 @@ import type {
   TaxSettings,
   UnitSettings,
 } from '@costify/shared/domain/types';
-import { calculateProduct, DEFAULT_PRODUCT_LABOR_SHARE, migrateProductInput, validateLaborSharePricing } from '@costify/shared/domain/calculations';
+import { calculateProduct, DEFAULT_PRODUCT_LABOR_SHARE, migrateProductInput, validateLaborSharePricing, validateProductLaborShare } from '@costify/shared/domain/calculations';
 import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@costify/shared/domain/constants';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
 import { useExchangeRatesContext } from '@/hooks/use-exchange-rates-context';
@@ -241,6 +241,10 @@ export function CostCalculator({
     }
 
     if (form.laborShare.enabled) {
+      const roleValidation = validateProductLaborShare(form.laborShare);
+      if (!roleValidation.valid && roleValidation.error) {
+        next.laborShare = roleValidation.error;
+      }
       const totalPercent = form.laborShare.roles.reduce((sum, role) => sum + role.percentOfSale, 0);
       const validation = validateLaborSharePricing(
         totalPercent,

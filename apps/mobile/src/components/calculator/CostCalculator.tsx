@@ -20,6 +20,7 @@ import {
   DEFAULT_PRODUCT_LABOR_SHARE,
   migrateProductInput,
   validateLaborSharePricing,
+  validateProductLaborShare,
 } from '@costify/shared/domain/calculations';
 import { MARGIN_TYPE_LABELS, PRODUCT_TYPE_LABELS } from '@costify/shared/domain/constants';
 import {
@@ -240,6 +241,10 @@ export function CostCalculator({
       next.productionUnits = 'Las unidades no pueden ser negativas';
     }
     if (form.laborShare.enabled) {
+      const roleValidation = validateProductLaborShare(form.laborShare);
+      if (!roleValidation.valid && roleValidation.error) {
+        next.laborShare = roleValidation.error;
+      }
       const totalPercent = form.laborShare.roles.reduce((sum, role) => sum + role.percentOfSale, 0);
       const validation = validateLaborSharePricing(
         totalPercent,

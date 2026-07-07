@@ -22,6 +22,7 @@ export {
   migrateLaborShareSettings,
   migrateProductLaborShare,
   validateLaborSharePricing,
+  validateProductLaborShare,
 } from './labor-share';
 export {
   allocateIndirectCosts,

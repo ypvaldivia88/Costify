@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { useAppData } from '@/context/AppDataContext';
 import { useConfirm } from '@/context/DialogContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/context/ToastContext';
@@ -72,7 +71,6 @@ export function DataSyncPanel({
   const { colors } = useTheme();
   const { confirm } = useConfirm();
   const { showToast } = useToast();
-  const { reloadFromBackup } = useAppData();
   const [tab, setTab] = useState<SyncTab>('export');
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
@@ -139,14 +137,6 @@ export function DataSyncPanel({
       if (!confirmed) return;
 
       await applyBackupToStorage(backup);
-      reloadFromBackup({
-        inventory: backup.inventory,
-        rawMaterials: backup.rawMaterials,
-        globalCosts: backup.globalCosts,
-        globalFund: backup.globalFund,
-        laborShareSettings: backup.laborShareSettings,
-        taxSettings: backup.taxSettings,
-      });
       onBackupImported?.(backup);
       setImportText('');
       setImportError(null);
@@ -206,7 +196,7 @@ export function DataSyncPanel({
       </View>
 
       {tab === 'export' ? (
-        <View style={styles.section}>
+        <ScrollView style={styles.section} contentContainerStyle={styles.sectionContent}>
           <Text style={{ color: colors.muted, fontSize: 13 }}>
             Respaldo actual: <Text style={{ color: colors.foreground, fontWeight: '700' }}>{summary}</Text>
           </Text>
@@ -223,9 +213,9 @@ export function DataSyncPanel({
           <Button variant="outline" onPress={shareBackupFile}>
             Compartir archivo JSON
           </Button>
-        </View>
+        </ScrollView>
       ) : (
-        <ScrollView style={styles.section}>
+        <ScrollView style={styles.section} contentContainerStyle={styles.sectionContent}>
           <Text style={{ color: colors.muted, fontSize: 13 }}>
             Pega un código de respaldo o selecciona un archivo exportado previamente.
           </Text>
@@ -258,7 +248,8 @@ const styles = StyleSheet.create({
   wrap: { gap: 12 },
   tabs: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   tab: { flex: 1 },
-  section: { gap: 10 },
+  section: { flex: 1 },
+  sectionContent: { gap: 10, paddingBottom: 8 },
   code: {
     borderWidth: 1,
     borderRadius: 12,

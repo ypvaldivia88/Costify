@@ -15,6 +15,32 @@ export function isSuperAdminBootstrapConfigured(): boolean {
   return Boolean(email && password);
 }
 
+function getDemoAdminConfig() {
+  const email = (process.env.DEMO_ADMIN_EMAIL ?? 'demo@costify.local').trim().toLowerCase();
+  const password = process.env.DEMO_ADMIN_PASSWORD ?? 'Demo2026!';
+  return { email, password };
+}
+
+/** Mantiene sincronizada la contraseña del tenant demo de pruebas (staging). */
+export async function ensureDemoAdmin(): Promise<void> {
+  const { email, password } = getDemoAdminConfig();
+  if (!email || !password) return;
+
+  const db = await getDb();
+  const users = db.collection<UserDocument>(USERS_COLLECTION);
+  const user = await users.findOne({ email, role: 'tenant_admin' });
+  if (!user) return;
+
+  const passwordMatches = await verifyPassword(password, user.passwordHash);
+  if (!passwordMatches || user.status !== 'active') {
+    const passwordHash = await hashPassword(password);
+    await users.updateOne(
+      { userId: user.userId },
+      { $set: { passwordHash, status: 'active' } }
+    );
+  }
+}
+
 export async function ensureSuperAdmin(): Promise<UserDocument | null> {
   const { email, password, name } = getSuperAdminConfig();
   if (!email || !password) return null;

@@ -146,7 +146,13 @@ export function parseBackupFileContent(text: string): string {
     return trimmed;
   }
 
-  const json = JSON.parse(text) as AppBackupV1 | { payload?: string };
+  const json = (() => {
+    try {
+      return JSON.parse(text) as AppBackupV1 | { payload?: string };
+    } catch {
+      throw new Error('El archivo no contiene un respaldo JSON válido.');
+    }
+  })();
   if (typeof (json as { payload?: string }).payload === 'string') {
     return (json as { payload: string }).payload;
   }

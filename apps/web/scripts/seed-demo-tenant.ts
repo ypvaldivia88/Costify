@@ -1,5 +1,6 @@
 import { getDb } from '../lib/db/mongodb';
 import { createTenantWithAdmin, createTenantUser } from '../lib/auth/tenants';
+import { hashPassword } from '../lib/auth/password';
 import { USERS_COLLECTION } from '../lib/auth/types';
 import { WORKSPACES_COLLECTION, type WorkspaceDocument } from '../lib/db/workspace';
 import {
@@ -363,6 +364,12 @@ async function main() {
       .findOne({ tenantId });
     workspaceId = existing?.workspaceId ?? tenantId;
     console.log(`Cliente demo ya existe (tenantId: ${tenantId}), actualizando datos…`);
+
+    const passwordHash = await hashPassword(DEMO.adminPassword);
+    await db.collection(USERS_COLLECTION).updateOne(
+      { email: DEMO.adminEmail },
+      { $set: { passwordHash, status: 'active' } }
+    );
   }
 
   const db = await getDb();

@@ -37,9 +37,11 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
   const hasDetails =
     (result.recipeBreakdown && result.recipeBreakdown.length > 0) ||
     result.indirectBreakdown.length > 0 ||
-    result.laborShareBreakdown.length > 0 ||
+    (result.laborShareBreakdown?.length ?? 0) > 0 ||
     totalMonthlyIndirect > 0 ||
     hasMonthlyProjection;
+
+  const hasLaborShare = result.totalLaborSharePerUnit > 0;
 
   return (
     <div className="space-y-3">
@@ -52,6 +54,14 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
           <span>
             Costo: <strong className="text-foreground">{formatCurrency(result.totalUnitCost)}</strong>
           </span>
+          {hasLaborShare ? (
+            <span>
+              Salarios:{' '}
+              <strong className="text-foreground">
+                {formatCurrency(result.totalLaborSharePerUnit)}
+              </strong>
+            </span>
+          ) : null}
           <span>
             Utilidad: <strong className="text-brand">{formatCurrency(result.profitPerUnit)}</strong>
           </span>
@@ -132,13 +142,13 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
               </Card>
             )}
 
-            {result.laborShareBreakdown.length > 0 && (
+            {(result.laborShareBreakdown?.length ?? 0) > 0 && (
               <Card variant="muted" className="!p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
                   Participación salarial ({formatPercent(result.totalLaborSharePercent)})
                 </p>
                 <div className="space-y-1.5">
-                  {result.laborShareBreakdown.map((item) => (
+              {result.laborShareBreakdown?.map((item) => (
                     <div key={item.roleId} className="flex justify-between text-sm gap-2">
                       <span className="text-muted truncate">
                         {item.name}

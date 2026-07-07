@@ -17,6 +17,11 @@ import { apiFetch } from '@/api/client';
 import { fetchEltoqueRates } from '@/api/eltoque';
 import { applyBackupToStorage } from '@/backup/app-backup';
 import { hasBackendApi, hasDirectEltoqueAccess } from '@/config/env';
+import {
+  ensureConnectivityMonitoring,
+  isDeviceOnline,
+  subscribeConnectivity,
+} from '@/config/connectivity';
 import { loadStorageScope, setStorageScope } from '@/storage/scoped-storage';
 
 const MANUAL_ONLY_ERROR =
@@ -46,8 +51,9 @@ const mobileScopeStorage: ScopeStorage = {
 };
 
 const mobileOnlineEvents: OnlineEvents = {
-  subscribe() {
-    return () => undefined;
+  subscribe(onOnline, onOffline) {
+    ensureConnectivityMonitoring();
+    return subscribeConnectivity(onOnline, onOffline);
   },
 };
 
@@ -133,7 +139,10 @@ function buildMobileClientDataValue(): ClientDataContextValue {
 
   syncCore = createSyncService({
     storage,
-    isOnline: () => true,
+    isOnline: () => {
+      ensureConnectivityMonitoring();
+      return isDeviceOnline();
+    },
     fetchRemoteWorkspace,
     pushWorkspace: (workspaceId, tenantId, data, updatedAt) =>
       pushWorkspace(syncCore, workspaceId, tenantId, data, updatedAt),

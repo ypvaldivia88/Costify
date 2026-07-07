@@ -47,9 +47,11 @@ export function PricingResults({
   const hasDetails =
     (result.recipeBreakdown && result.recipeBreakdown.length > 0) ||
     result.indirectBreakdown.length > 0 ||
-    result.laborShareBreakdown.length > 0 ||
+    (result.laborShareBreakdown?.length ?? 0) > 0 ||
     totalMonthlyIndirect > 0 ||
     hasMonthlyProjection;
+
+  const hasLaborShare = result.totalLaborSharePerUnit > 0;
 
   return (
     <View style={styles.wrap}>
@@ -63,6 +65,14 @@ export function PricingResults({
           <Text style={{ color: colors.muted }}>
             Costo: <Text style={{ color: colors.foreground, fontWeight: '700' }}>{formatCurrency(result.totalUnitCost)}</Text>
           </Text>
+          {hasLaborShare ? (
+            <Text style={{ color: colors.muted }}>
+              Salarios:{' '}
+              <Text style={{ color: colors.foreground, fontWeight: '700' }}>
+                {formatCurrency(result.totalLaborSharePerUnit)}
+              </Text>
+            </Text>
+          ) : null}
           <Text style={{ color: colors.muted }}>
             Utilidad: <Text style={{ color: colors.brand, fontWeight: '700' }}>{formatCurrency(result.profitPerUnit)}</Text>
           </Text>
@@ -134,12 +144,12 @@ export function PricingResults({
                 </Card>
               ) : null}
 
-              {result.laborShareBreakdown.length > 0 ? (
+              {(result.laborShareBreakdown?.length ?? 0) > 0 ? (
                 <Card variant="muted" style={styles.subCard}>
                   <Text style={[styles.subCardTitle, { color: colors.muted }]}>
                     Participación salarial ({formatPercent(result.totalLaborSharePercent)})
                   </Text>
-                  {result.laborShareBreakdown.map((item) => (
+                  {result.laborShareBreakdown?.map((item) => (
                     <View key={item.roleId} style={styles.row}>
                       <Text style={[styles.rowLabel, { color: colors.muted }]}>
                         {item.name}

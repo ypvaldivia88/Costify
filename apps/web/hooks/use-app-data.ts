@@ -225,6 +225,7 @@ export function useAppData() {
     laborShareSettingsState.laborShareSettings.enabled,
     laborShareSettingsState.laborShareSettings.areas,
     unitSettingsState.unitSettings,
+    rawMaterialsState.materials,
     hydrated,
   ]);
 

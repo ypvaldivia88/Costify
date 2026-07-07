@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ensureSuperAdmin, findUserByEmail, isSuperAdminBootstrapConfigured } from '@/lib/auth/users';
+import { ensureSuperAdmin, ensureDemoAdmin, findUserByEmail, isSuperAdminBootstrapConfigured } from '@/lib/auth/users';
 import { verifyPassword } from '@/lib/auth/password';
 import {
   createSessionToken,
@@ -13,6 +13,7 @@ import type { SessionUser } from '@/lib/auth/types';
 export async function POST(request: Request) {
   try {
     await ensureSuperAdmin();
+    await ensureDemoAdmin();
 
     const body = (await request.json()) as { email?: string; password?: string };
     const email = body.email?.trim().toLowerCase();

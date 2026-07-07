@@ -1,3 +1,4 @@
+import { calculateSuggestedPriceWithLaborShare } from './calculations/pricing';
 import type { ProductCalculation, PurchaseCurrency, RawMaterial } from './types';
 
 /** Monedas soportadas por la API TRMI de elTOQUE */
@@ -197,14 +198,23 @@ export function calculateMarginSensitivity(
       directCost * (1 + foreignRatio * (multiplier - 1));
     const unitCost = adjustedDirect + indirectPerUnit;
 
+    const laborPercent = product.totalLaborSharePercent ?? 0;
     let suggestedPrice: number;
-    if (marginType === 'markup') {
+    if (laborPercent > 0) {
+      suggestedPrice = calculateSuggestedPriceWithLaborShare(
+        unitCost,
+        margin,
+        marginType,
+        laborPercent
+      );
+    } else if (marginType === 'markup') {
       suggestedPrice = unitCost * (1 + margin / 100);
     } else {
       suggestedPrice = margin >= 100 ? unitCost : unitCost / (1 - margin / 100);
     }
 
-    const profitPerUnit = suggestedPrice - unitCost;
+    const laborPerUnit = laborPercent > 0 ? suggestedPrice * (laborPercent / 100) : 0;
+    const profitPerUnit = suggestedPrice - unitCost - laborPerUnit;
     const marginPercent =
       suggestedPrice > 0 ? (profitPerUnit / suggestedPrice) * 100 : 0;
 
