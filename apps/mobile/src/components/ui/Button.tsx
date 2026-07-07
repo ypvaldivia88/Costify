@@ -81,6 +81,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
+    maxWidth: '100%',
   },
   text: {
     fontWeight: '700',
@@ -91,5 +92,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
 });

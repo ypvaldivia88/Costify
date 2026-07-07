@@ -1,10 +1,9 @@
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Plus, Trash2 } from 'lucide-react-native';
 import type { LaborShareSettings, ProductLaborRole, ProductLaborShare } from '@costify/shared/domain/types';
 import { copyRolesFromArea, validateLaborSharePricing } from '@costify/shared/domain/calculations';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { NumericField } from '@/components/ui/NumericField';
 import { Select } from '@/components/ui/Select';
 import { useTheme } from '@/context/ThemeContext';
@@ -61,14 +60,19 @@ export function LaborShareEditor({
     updateRoles(laborShare.roles.filter((role) => role.id !== roleId));
   };
 
+  const fieldStyle = [
+    styles.field,
+    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.surface },
+  ];
+
   return (
     <View style={styles.container}>
       <View style={styles.toggleRow}>
-        <View style={{ flex: 1 }}>
+        <View style={styles.toggleCopy}>
           <Text style={{ color: colors.foreground, fontWeight: '600' }}>
             Incluir participación salarial
           </Text>
-          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
+          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
             Reparte un % del precio de venta entre los roles involucrados.
           </Text>
         </View>
@@ -93,52 +97,72 @@ export function LaborShareEditor({
               <Picker.Item key={area.id} label={area.name} value={area.id} />
             ))}
           </Select>
-          <Button variant="outline" onPress={importFromArea} disabled={!laborShare.areaId}>
-            Importar plantilla
+
+          <Button
+            variant="outline"
+            onPress={importFromArea}
+            disabled={!laborShare.areaId}
+            style={styles.fullWidthBtn}
+          >
+            Importar plantilla del área
           </Button>
 
           {laborShare.roles.length === 0 ? (
-            <Text style={{ color: colors.muted, fontSize: 13 }}>
+            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
               Agrega roles o importa una plantilla desde un área de producción.
             </Text>
           ) : (
-            laborShare.roles.map((role) => (
-              <View key={role.id} style={styles.roleRow}>
-                <Input
-                  value={role.name}
-                  onChangeText={(name) => updateRole(role.id, { name })}
-                  placeholder="Rol"
-                  style={{ flex: 1 }}
-                />
-                <NumericField
-                  value={role.percentOfSale}
-                  onChange={(percentOfSale) => updateRole(role.id, { percentOfSale })}
-                  placeholder="%"
-                  style={{ width: 72 }}
-                />
-                <Pressable onPress={() => deleteRole(role.id)} style={styles.deleteBtn}>
-                  <Trash2 size={18} color="#ef4444" />
-                </Pressable>
-              </View>
-            ))
+            <View style={styles.rolesList}>
+              {laborShare.roles.map((role) => (
+                <View
+                  key={role.id}
+                  style={[styles.roleCard, { borderColor: colors.border, backgroundColor: colors.surfaceMuted }]}
+                >
+                  <TextInput
+                    value={role.name}
+                    onChangeText={(name) => updateRole(role.id, { name })}
+                    placeholder="Nombre del rol"
+                    placeholderTextColor={colors.muted}
+                    style={fieldStyle}
+                  />
+                  <View style={styles.percentRow}>
+                    <NumericField
+                      value={role.percentOfSale}
+                      onChange={(percentOfSale) => updateRole(role.id, { percentOfSale })}
+                      placeholder="%"
+                      style={styles.percentInput}
+                    />
+                    <Text style={{ color: colors.muted, fontSize: 13, flexShrink: 0 }}>% venta</Text>
+                    <Pressable
+                      onPress={() => deleteRole(role.id)}
+                      style={styles.deleteBtn}
+                      hitSlop={8}
+                      accessibilityLabel="Eliminar rol"
+                    >
+                      <Trash2 size={18} color="#ef4444" />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
           )}
 
-          <Button variant="outline" size="sm" onPress={addRole}>
+          <Button variant="outline" size="sm" onPress={addRole} style={styles.fullWidthBtn}>
             <Plus size={16} color={colors.foreground} />
-            Rol
+            Añadir rol
           </Button>
 
           {totalPercent > 0 ? (
-            <Text style={{ color: colors.muted, fontSize: 12 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>
               Total participación salarial: {totalPercent.toFixed(1)}% del precio de venta
             </Text>
           ) : null}
 
           {!validation.valid && validation.error ? (
-            <Text style={{ color: '#ef4444', fontSize: 12 }}>{validation.error}</Text>
+            <Text style={{ color: colors.danger, fontSize: 12, lineHeight: 18 }}>{validation.error}</Text>
           ) : null}
           {validation.warning ? (
-            <Text style={{ color: '#d97706', fontSize: 12 }}>{validation.warning}</Text>
+            <Text style={{ color: '#d97706', fontSize: 12, lineHeight: 18 }}>{validation.warning}</Text>
           ) : null}
         </View>
       ) : null}
@@ -147,9 +171,39 @@ export function LaborShareEditor({
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 12 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  body: { gap: 10 },
-  roleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  deleteBtn: { padding: 8 },
+  container: { gap: 12, width: '100%' },
+  toggleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  toggleCopy: { flex: 1, minWidth: 0 },
+  body: { gap: 12 },
+  rolesList: { gap: 8 },
+  roleCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+    overflow: 'hidden',
+  },
+  percentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  percentInput: { flex: 1, minWidth: 88, maxWidth: 140 },
+  deleteBtn: {
+    marginLeft: 'auto',
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  field: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    minHeight: 44,
+    width: '100%',
+  },
+  fullWidthBtn: { alignSelf: 'stretch' },
 });

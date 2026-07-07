@@ -26,7 +26,7 @@ export function SectionHeader({ icon: Icon, title, description }: SectionHeaderP
 
 const styles = StyleSheet.create({
   wrap: { gap: 4, marginBottom: 12 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 17, fontWeight: '700' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0 },
+  title: { fontSize: 17, fontWeight: '700', flex: 1, flexShrink: 1 },
   description: { fontSize: 13, lineHeight: 18 },
 });
