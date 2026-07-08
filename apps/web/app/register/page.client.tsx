@@ -283,6 +283,11 @@ export default function RegisterPage() {
                     Iniciar sesión
                   </Link>
                 </p>
+                <p className="text-center text-sm text-muted">
+                  <Link href="/descarga" className="text-brand font-semibold hover:underline">
+                    Descargar app Android
+                  </Link>
+                </p>
               </form>
             </motion.div>
           )}

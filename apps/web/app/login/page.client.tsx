@@ -122,6 +122,11 @@ export default function LoginPage() {
               Registra tu negocio
             </a>
           </p>
+          <p className="text-center text-sm text-muted">
+            <a href="/descarga" className="text-brand font-semibold hover:underline">
+              Descargar app Android
+            </a>
+          </p>
         </motion.div>
       </div>
     </div>
