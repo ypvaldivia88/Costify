@@ -133,8 +133,40 @@ export function InventoryItem({
             </View>
           ))}
           <View style={[styles.row, styles.totalRow, { borderTopColor: colors.border }]}>
-            <Text style={{ color: colors.foreground, fontWeight: '800' }}>Costo total unitario</Text>
-            <Text style={{ color: colors.foreground, fontWeight: '800' }}>{formatCurrency(item.totalUnitCost)}</Text>
+            <Text style={{ color: colors.muted, fontWeight: '600' }}>Costo de producción</Text>
+            <Text style={{ color: colors.foreground, fontWeight: '700' }}>{formatCurrency(item.totalUnitCost)}</Text>
+          </View>
+          {(item.laborShareBreakdown?.length ?? 0) > 0 ? (
+            <>
+              <Text style={[styles.sectionTitle, { color: colors.muted, marginTop: 4 }]}>
+                Participación salarial
+              </Text>
+              {item.laborShareBreakdown?.map((role) => (
+                <View key={role.roleId} style={styles.row}>
+                  <Text style={{ color: colors.muted, flex: 1 }} numberOfLines={2}>
+                    {role.name}{' '}
+                    <Text style={{ fontSize: 11 }}>({formatPercent(role.percentOfSale)} venta)</Text>
+                  </Text>
+                  <Text style={{ color: colors.foreground, fontWeight: '600' }}>
+                    {formatCurrency(role.perUnit)}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.row}>
+                <Text style={{ color: colors.muted }}>Total salarios</Text>
+                <Text style={{ color: colors.foreground, fontWeight: '600' }}>
+                  {formatCurrency(item.totalLaborSharePerUnit)}
+                </Text>
+              </View>
+            </>
+          ) : null}
+          <View style={styles.row}>
+            <Text style={{ color: colors.muted }}>Utilidad</Text>
+            <Text style={{ color: colors.brand, fontWeight: '700' }}>{formatCurrency(item.profitPerUnit)}</Text>
+          </View>
+          <View style={[styles.row, styles.totalRow, { borderTopColor: colors.border }]}>
+            <Text style={{ color: colors.foreground, fontWeight: '800' }}>Precio sugerido</Text>
+            <Text style={{ color: colors.brand, fontWeight: '800' }}>{formatCurrency(item.suggestedPrice)}</Text>
           </View>
 
           {item.productionUnits > 0 ? (

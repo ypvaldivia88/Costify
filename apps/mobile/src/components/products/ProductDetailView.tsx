@@ -186,21 +186,46 @@ export function ProductDetailView({
                 </Text>
               </View>
             ))}
-            {(product.laborShareBreakdown ?? []).map((item) => (
-              <View key={item.roleId} style={styles.row}>
-                <Text style={{ color: colors.muted, flex: 1 }} numberOfLines={2}>
-                  {item.name}{' '}
-                  <Text style={{ fontSize: 12 }}>({formatPercent(item.percentOfSale)} venta)</Text>
-                </Text>
-                <Text style={{ color: colors.foreground, fontWeight: '600' }}>
-                  {formatCurrency(item.perUnit)}
-                </Text>
-              </View>
-            ))}
             <View style={[styles.row, styles.totalRow, { borderTopColor: colors.border }]}>
-              <Text style={{ color: colors.foreground, fontWeight: '800' }}>Costo total unitario</Text>
-              <Text style={{ color: colors.foreground, fontWeight: '800' }}>
+              <Text style={{ color: colors.muted, fontWeight: '600' }}>Costo de producción</Text>
+              <Text style={{ color: colors.foreground, fontWeight: '700' }}>
                 {formatCurrency(product.totalUnitCost)}
+              </Text>
+            </View>
+            {(product.laborShareBreakdown?.length ?? 0) > 0 ? (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.muted, marginTop: 4 }]}>
+                  Participación salarial
+                </Text>
+                {(product.laborShareBreakdown ?? []).map((item) => (
+                  <View key={item.roleId} style={styles.row}>
+                    <Text style={{ color: colors.muted, flex: 1 }} numberOfLines={2}>
+                      {item.name}{' '}
+                      <Text style={{ fontSize: 12 }}>({formatPercent(item.percentOfSale)} venta)</Text>
+                    </Text>
+                    <Text style={{ color: colors.foreground, fontWeight: '600' }}>
+                      {formatCurrency(item.perUnit)}
+                    </Text>
+                  </View>
+                ))}
+                <View style={styles.row}>
+                  <Text style={{ color: colors.muted }}>Total salarios</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: '600' }}>
+                    {formatCurrency(product.totalLaborSharePerUnit)}
+                  </Text>
+                </View>
+              </>
+            ) : null}
+            <View style={styles.row}>
+              <Text style={{ color: colors.muted }}>Utilidad</Text>
+              <Text style={{ color: colors.brand, fontWeight: '700' }}>
+                {formatCurrency(product.profitPerUnit)}
+              </Text>
+            </View>
+            <View style={[styles.row, styles.totalRow, { borderTopColor: colors.border }]}>
+              <Text style={{ color: colors.foreground, fontWeight: '800' }}>Precio sugerido</Text>
+              <Text style={{ color: colors.brand, fontWeight: '800' }}>
+                {formatCurrency(product.suggestedPrice)}
               </Text>
             </View>
           </View>

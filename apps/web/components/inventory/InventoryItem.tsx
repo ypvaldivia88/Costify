@@ -149,9 +149,43 @@ export function InventoryItem({
                       </span>
                     </div>
                   ))}
-                  <div className="flex justify-between font-semibold pt-2 border-t border-border">
-                    <span>Costo total unitario</span>
+                  <div className="flex justify-between font-medium pt-2 border-t border-border">
+                    <span className="text-muted">Costo de producción</span>
                     <span>{formatCurrency(item.totalUnitCost)}</span>
+                  </div>
+                  {(item.laborShareBreakdown?.length ?? 0) > 0 && (
+                    <>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted pt-2">
+                        Participación salarial
+                      </p>
+                      {item.laborShareBreakdown?.map((role) => (
+                        <div key={role.roleId} className="flex justify-between gap-2">
+                          <span className="text-muted truncate">
+                            {role.name}{' '}
+                            <span className="text-xs text-muted">
+                              ({formatPercent(role.percentOfSale)} venta)
+                            </span>
+                          </span>
+                          <span className="font-medium tabular-nums shrink-0">
+                            {formatCurrency(role.perUnit)}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between">
+                        <span className="text-muted">Total salarios</span>
+                        <span className="font-medium">
+                          {formatCurrency(item.totalLaborSharePerUnit)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted">Utilidad</span>
+                    <span className="font-medium text-brand">{formatCurrency(item.profitPerUnit)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold pt-2 border-t border-border">
+                    <span>Precio sugerido</span>
+                    <span className="text-brand">{formatCurrency(item.suggestedPrice)}</span>
                   </div>
                 </div>
               </div>

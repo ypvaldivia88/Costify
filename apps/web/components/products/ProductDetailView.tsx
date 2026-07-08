@@ -174,20 +174,41 @@ export function ProductDetailView({
                   </span>
                 </div>
               ))}
-              {(product.laborShareBreakdown ?? []).map((item) => (
-                <div key={item.roleId} className="flex justify-between gap-2">
-                  <span className="text-muted truncate">
-                    {item.name}{' '}
-                    <span className="text-xs">({formatPercent(item.percentOfSale)} venta)</span>
-                  </span>
-                  <span className="font-medium tabular-nums shrink-0">
-                    {formatCurrency(item.perUnit)}
-                  </span>
-                </div>
-              ))}
-              <div className="flex justify-between font-semibold pt-2 border-t border-border">
-                <span>Costo total unitario</span>
+              <div className="flex justify-between font-medium pt-2 border-t border-border">
+                <span className="text-muted">Costo de producción</span>
                 <span>{formatCurrency(product.totalUnitCost)}</span>
+              </div>
+              {(product.laborShareBreakdown?.length ?? 0) > 0 && (
+                <>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted pt-2">
+                    Participación salarial
+                  </p>
+                  {(product.laborShareBreakdown ?? []).map((item) => (
+                    <div key={item.roleId} className="flex justify-between gap-2">
+                      <span className="text-muted truncate">
+                        {item.name}{' '}
+                        <span className="text-xs">({formatPercent(item.percentOfSale)} venta)</span>
+                      </span>
+                      <span className="font-medium tabular-nums shrink-0">
+                        {formatCurrency(item.perUnit)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between">
+                    <span className="text-muted">Total salarios</span>
+                    <span className="font-medium">
+                      {formatCurrency(product.totalLaborSharePerUnit)}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted">Utilidad</span>
+                <span className="font-medium text-brand">{formatCurrency(product.profitPerUnit)}</span>
+              </div>
+              <div className="flex justify-between font-semibold pt-2 border-t border-border">
+                <span>Precio sugerido</span>
+                <span className="text-brand">{formatCurrency(product.suggestedPrice)}</span>
               </div>
             </div>
           </div>
