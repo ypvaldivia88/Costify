@@ -11,14 +11,20 @@
     "./backup/*": "./src/backup/*",
     "./sync/*": "./src/sync/*",
     "./config/*": "./src/config/*",
+    "./schemas/*": "./src/schemas/*",
     "./purchase-price": "./src/purchase-price.ts",
     "./random-id": "./src/random-id.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^3.2.4"
   }
 }

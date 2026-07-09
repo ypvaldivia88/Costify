@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
+import { brandColors } from '@costify/ui-tokens/colors';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { WebClientDataProvider } from '@/components/client-data/WebClientDataProvider';
 import { ClientProviders } from '@/components/providers/ClientProviders';
@@ -24,8 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#059669' },
-    { media: '(prefers-color-scheme: dark)', color: '#34d399' },
+    { media: '(prefers-color-scheme: light)', color: brandColors.light },
+    { media: '(prefers-color-scheme: dark)', color: brandColors.dark },
   ],
 };
 

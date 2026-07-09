@@ -22,13 +22,12 @@ import { PriceReviewAlerts } from '@/components/settings/PriceReviewAlerts';
 import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
 import { WarehousesView } from '@/components/warehouses/WarehousesView';
 import type { AppBackupV1 } from '@/backup/app-backup';
-import { AppDataProvider, useAppData } from '@/context/AppDataContext';
+import { MobileAppDataProvider, useAppData } from '@/client-data/MobileAppDataProvider';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { DialogProvider } from '@/context/DialogContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ExchangeRatesProvider } from '@/hooks/use-exchange-rates-context';
-import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
 import { NAV_BY_ID, type AppTab, getNavItemsForAccess } from '@/navigation/tabs';
 import { TrialBanner } from '@/components/layout/TrialBanner';
@@ -91,25 +90,17 @@ function SettingsTab({
 }
 
 function ExchangeRatesBridge({ children }: { children: ReactNode }) {
-  const {
-    snapshot,
-    exchangeSettings,
-    refreshing,
-    error,
-    refreshRates,
-    updateSettings,
-    markCostingRate,
-  } = useExchangeRates();
+  const data = useAppData();
 
   return (
     <ExchangeRatesProvider
-      snapshot={snapshot}
-      settings={exchangeSettings}
-      refreshing={refreshing}
-      error={error}
-      refreshRates={refreshRates}
-      updateSettings={updateSettings}
-      markCostingRate={markCostingRate}
+      snapshot={data.exchangeSnapshot}
+      settings={data.exchangeSettings}
+      refreshing={data.exchangeRefreshing}
+      error={data.exchangeError}
+      refreshRates={data.refreshExchangeRates}
+      updateSettings={data.updateExchangeSettings}
+      markCostingRate={data.markCostingRate}
     >
       {children}
     </ExchangeRatesProvider>
@@ -345,11 +336,11 @@ function NavigationRoot() {
   return (
     <NavigationContainer ref={navigationRef} theme={navTheme}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <AppDataProvider key={storageScope ?? 'guest'}>
+      <MobileAppDataProvider key={storageScope ?? 'guest'}>
         <ExchangeRatesBridge>
           <MainTabs onRouteChange={setActiveTab} />
         </ExchangeRatesBridge>
-      </AppDataProvider>
+      </MobileAppDataProvider>
     </NavigationContainer>
   );
 }

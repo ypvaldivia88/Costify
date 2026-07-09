@@ -5,6 +5,7 @@
   "dependencies": {
     "@costify/client-data": "workspace:*",
     "@costify/shared": "workspace:*",
+    "@costify/ui-tokens": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/slider": "^5.2.0",
     "@react-native-picker/picker": "^2.11.4",

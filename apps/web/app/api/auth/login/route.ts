@@ -9,19 +9,19 @@ import {
 import { findTenantById } from '@/lib/auth/tenants';
 import { enrichSessionUser } from '@/lib/auth/session-access';
 import type { SessionUser } from '@/lib/auth/types';
+import { loginRequestSchema, parseJsonBody } from '@costify/shared/schemas/api';
 
 export async function POST(request: Request) {
   try {
     await ensureSuperAdmin();
     await ensureDemoAdmin();
 
-    const body = (await request.json()) as { email?: string; password?: string };
-    const email = body.email?.trim().toLowerCase();
-    const password = body.password;
-
-    if (!email || !password) {
+    const parsed = parseJsonBody(loginRequestSchema, await request.json());
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Correo y contraseña son obligatorios.' }, { status: 400 });
     }
+
+    const { email, password } = parsed.data;
 
     const user = await findUserByEmail(email);
     if (!user) {
