@@ -77,6 +77,20 @@ EXPO_PUBLIC_ELTOQUE_API_TOKEN=
 
 **Default en release:** `apps/mobile/app.config.js` ya usa `https://costify-iota.vercel.app` si no se define la variable. Plantilla: `apps/mobile/env.staging.template`.
 
+### Página /descarga (APK Android)
+
+La web expone `/descarga` (ruta pública en `middleware.ts`). La config vive en `apps/web/lib/mobile-download.ts` o variables de entorno en Vercel:
+
+```env
+MOBILE_APK_VERSION=1.0.16
+# MOBILE_APK_URL=https://github.com/ypvaldivia88/Costify/releases/download/v1.0.16/costify-demo.v1.0.16.apk
+# MOBILE_RELEASE_PAGE_URL=https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.16
+# MOBILE_DRIVE_MIRROR_URL=https://drive.google.com/...
+# MOBILE_APK_UPDATED_AT=2026-07-09
+```
+
+Plantilla: `apps/web/env.staging.template`. Si no hay env vars, usa los defaults del código.
+
 ### Expo / EAS
 
 | Campo | Valor |
@@ -86,6 +100,8 @@ EXPO_PUBLIC_ELTOQUE_API_TOKEN=
 | Project ID | `cee919b6-82ea-411d-b3c7-5154be7eafab` |
 | Android package | `com.costify.app` |
 | Preview APK profile | `eas.json` → `preview` (incluye `EXPO_PUBLIC_API_URL`) |
+
+> **EAS cloud:** solo funciona con cuenta `ypalmero` (owner del proyecto). La sesión `ypvaldivia` recibe `Entity not authorized`. Para CI usar GitHub Actions (ver abajo) o `EXPO_TOKEN` de la cuenta owner.
 
 ---
 
@@ -136,7 +152,7 @@ curl -s -X POST https://costify-iota.vercel.app/api/auth/login \
 | `tenant_user` | `/` | App del negocio (sin gestión de suscripción) |
 | Público | `/login`, `/register` | Sin auth |
 
-**Middleware:** `apps/web/middleware.ts` — rutas públicas: `/login`, `/register`, `/api/auth/login`, `/api/register`.
+**Middleware:** `apps/web/middleware.ts` — rutas públicas: `/login`, `/register`, `/descarga`, `/api/auth/login`, `/api/register`.
 
 ---
 
@@ -213,7 +229,7 @@ export EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app
 cd apps/mobile && pnpm build:apk
 # Salida: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 
-# Build APK vía EAS (requiere `eas login`)
+# Build APK vía EAS cloud (requiere `eas login` como owner `ypalmero`)
 cd apps/mobile && pnpm build:preview
 ```
 
@@ -221,13 +237,51 @@ cd apps/mobile && pnpm build:preview
 
 ## Releases Android (GitHub)
 
-| Release | APK | Notas |
-|---------|-----|-------|
-| `v1.0.0-preview-android` | ❌ Sin API URL | No usar |
-| `v1.0.0-preview-android-2` | ⚠️ Parcial | Puede fallar si `Constants.expoConfig` no carga a tiempo |
-| **`v1.0.0-preview-android-3`** | ✅ Recomendada | Fallback runtime a `costify-iota.vercel.app` (API en `apps/web`) |
+**Versión actual recomendada:** [v1.0.16](https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.16)  
+**APK:** `costify-demo.v1.0.16.apk` · arm64-v8a · API `https://costify-iota.vercel.app`  
+**Página de descarga:** `https://costify-iota.vercel.app/descarga`
 
-Descarga actual: https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.0-preview-android-3
+| Release | Notas |
+|---------|--------|
+| **v1.0.16** | Logo SaaS v2, UI web refactor (shadcn, landing, auth, contraste dark mode), settings móvil vertical |
+| v1.0.15 | Desglose salarios, multi-área, fixes sync |
+| v1.0.0-preview-android-3 | Fallback runtime API URL (legacy) |
+
+### Publicar nueva release (recomendado — GitHub Actions)
+
+Workflow: `.github/workflows/android-release.yml`
+
+```bash
+# 1. Bump version en apps/mobile/app.json
+# 2. Actualizar defaults en apps/web/lib/mobile-download.ts (DEFAULT_VERSION, updatedAt)
+# 3. Commit y push a main
+git tag v1.0.17
+git push origin v1.0.17
+# → CI compila APK y publica GitHub Release automáticamente
+```
+
+Alternativa manual: **GitHub → Actions → Android APK Release → Run workflow** (input `version`).
+
+El asset se nombra `costify-demo.v{version}.apk`. El workflow instala NDK 27.1, CMake 3.22.1, JDK 17, corre `expo prebuild` y `gradlew assembleRelease`.
+
+### Build local (solo Linux/macOS con SDK completo)
+
+```bash
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app
+cd apps/mobile && pnpm build:apk
+# Salida: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+# Renombrar a costify-demo.vX.Y.Z.apk antes de subir a Releases
+```
+
+### Limitaciones conocidas de build
+
+| Entorno | Resultado |
+|---------|-----------|
+| **Windows + Gradle local** | ❌ SDK local suele estar incompleto (sin NDK); Google Maven (`dl.google.com`) a menudo inaccesible |
+| **Windows + EAS local** | ❌ `Unsupported platform, macOS or Linux is required` |
+| **EAS cloud con `ypvaldivia`** | ❌ Sin permisos sobre proyecto de `ypalmero` |
+| **GitHub Actions (ubuntu)** | ✅ Método usado para v1.0.16 |
 
 ---
 
@@ -252,7 +306,16 @@ Descarga actual: https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.0-pre
 - Corregido en `packages/client-data/src/hooks/use-persisted-state.ts` (merge al recargar + refs estables)
 
 ### Gradle falla con Java 21
-- Usar `JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64`
+- Usar `JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64` (JDK 17)
+
+### Gradle local: `Could not find com.android.tools.build:gradle`
+- Google Maven bloqueado en algunas redes (p. ej. Cuba). Usar GitHub Actions o mirror en `android/settings.gradle` (solo builds locales)
+
+### Gradle local: `NDK not configured`
+- Instalar NDK 27.1 via Android Studio SDK Manager o dejar que CI lo haga
+
+### EAS: `Entity not authorized`
+- Loguearse como `ypalmero` o usar `EXPO_TOKEN` de esa cuenta; alternativa: GitHub Actions workflow
 
 ### Expo web en cloud VM
 - Ver `apps/mobile/AGENTS.md` — usar `expo start --web` con `EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK=1`
@@ -274,6 +337,26 @@ Descarga actual: https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.0-pre
 
 ---
 
+## UI / diseño (refactor v1.0.16)
+
+Stack web: **shadcn/ui** + tokens de `@costify/ui-tokens` + Plus Jakarta Sans.
+
+| Área | Archivos |
+|------|----------|
+| Tokens / colores | `packages/ui-tokens/src/`, `apps/web/app/globals.css` |
+| Logo v2 (web) | `apps/web/components/brand/CostifyLogo.tsx` |
+| Logo v2 (móvil) | `apps/mobile/src/components/brand/CostifyLogo.tsx`, `CostifyLogoLockup.tsx` |
+| Marketing / landing | `apps/web/components/marketing/*`, `apps/web/app/page.tsx` |
+| Shell público (login/register/descarga) | `apps/web/components/layout/PublicShell.tsx` |
+| Auth RHF + Zod | `apps/web/lib/schemas/auth.ts`, `apps/web/components/auth/auth-card.tsx` |
+| Password toggle | `apps/web/components/ui/PasswordInput.tsx` |
+| App tenant shell | `apps/web/components/layout/AppShell.tsx`, `AppHeader.tsx` |
+| Página descarga | `apps/web/app/descarga/`, `apps/web/lib/mobile-download.ts` |
+
+**Gotcha CSS:** `--color-muted` debe mapear a `--muted` (fondo), no a `--muted-foreground`. Texto secundario usa `.text-muted-foreground`.
+
+---
+
 ## Archivos clave
 
 | Área | Archivos |
@@ -283,15 +366,18 @@ Descarga actual: https://github.com/ypvaldivia88/Costify/releases/tag/v1.0.0-pre
 | Suscripciones | `packages/shared/src/domain/subscription.ts` |
 | Admin panel | `apps/web/app/admin/page.tsx` |
 | Alertas precio | `packages/client-data/src/hooks/use-price-review-alerts-state.ts` |
-| Config móvil | `apps/mobile/app.config.js`, `apps/mobile/src/config/env.ts` |
+| Config móvil | `apps/mobile/app.config.js`, `apps/mobile/src/config/env.ts`, `apps/mobile/app.json` |
+| Release CI | `.github/workflows/android-release.yml` |
 | Seeds | `apps/web/scripts/seed-super-admin.ts`, `seed-demo-tenant.ts` |
 
 ---
 
 ## Checklist antes de generar APK de prueba
 
+- [ ] Bump `version` en `apps/mobile/app.json`
+- [ ] Actualizar `apps/web/lib/mobile-download.ts` (DEFAULT_VERSION, updatedAt)
 - [ ] `EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app`
-- [ ] `expo prebuild --platform android` (regenera nativo con `extra.apiUrl`)
-- [ ] Build con JDK 17
+- [ ] Tag `vX.Y.Z` y push → GitHub Actions publica release (preferido)
+- [ ] Verificar `/descarga` y [Releases → Latest](https://github.com/ypvaldivia88/Costify/releases/latest)
+- [ ] Si build local: JDK 17, NDK 27.1, `expo prebuild --platform android`
 - [ ] Verificar en APK: `unzip -p app-release.apk assets/app.config` contiene `"apiUrl":"https://costify-iota.vercel.app"`
-- [ ] Subir a GitHub Releases con notas claras

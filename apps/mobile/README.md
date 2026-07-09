@@ -25,11 +25,26 @@ npm run android
 
 **Versión actual:** 1.0.16 — ver [GitHub Releases](https://github.com/ypvaldivia88/Costify/releases/latest).
 
+### Release demo (APK) — GitHub Actions (recomendado)
+
+```bash
+# Desde la raíz del monorepo, tras bump en app.json y mobile-download.ts:
+git tag v1.0.17 && git push origin v1.0.17
+```
+
+Workflow: `.github/workflows/android-release.yml` — compila en Ubuntu y publica `costify-demo.v{version}.apk`.
+
+También: **GitHub → Actions → Android APK Release → Run workflow**.
+
+### EAS Build (requiere cuenta owner `ypalmero`)
+
 1. Instala EAS CLI: `npm install -g eas-cli`
-2. Inicia sesión: `eas login`
+2. Inicia sesión: `eas login` (como `ypalmero`)
 3. Build de prueba (APK): `pnpm build:preview` (desde `apps/mobile`)
 4. Build para Play Store (AAB): `pnpm build:production`
 5. Publicar: `eas submit -p android --profile production`
+
+> **Nota:** `eas build --local` en Android solo funciona en macOS/Linux. En Windows usar GitHub Actions o Linux VM.
 
 La API de producción está configurada en `eas.json` (`EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app` en perfil preview).
 
