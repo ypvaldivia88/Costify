@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
-import { Building2, Calculator, CheckCircle2, Sparkles } from 'lucide-react';
+import { Building2, CheckCircle2 } from 'lucide-react';
 import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   getSubscriptionDiscountPercent,
@@ -11,12 +12,20 @@ import {
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
 } from '@costify/shared/domain/subscription';
+import { CostifyLogo } from '@/components/brand/CostifyLogo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 const PLANS: SubscriptionPlan[] = ['monthly', 'semiannual', 'annual'];
+
+function parsePlanParam(value: string | null): SubscriptionPlan {
+  if (value && PLANS.includes(value as SubscriptionPlan)) {
+    return value as SubscriptionPlan;
+  }
+  return 'monthly';
+}
 
 interface RegisterSuccess {
   planLabel: string;
@@ -26,6 +35,8 @@ interface RegisterSuccess {
 }
 
 export default function RegisterPage() {
+  const searchParams = useSearchParams();
+  const initialPlan = parsePlanParam(searchParams.get('plan'));
   const [form, setForm] = useState({
     businessName: '',
     contactEmail: '',
@@ -33,7 +44,7 @@ export default function RegisterPage() {
     adminEmail: '',
     adminPassword: '',
     confirmPassword: '',
-    plan: 'monthly' as SubscriptionPlan,
+    plan: initialPlan,
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -106,28 +117,17 @@ export default function RegisterPage() {
         >
           <div className="text-center space-y-4">
             <motion.div
-              className="mx-auto relative"
-              initial={{ scale: 0.8, opacity: 0 }}
+              className="flex justify-center"
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="mx-auto w-16 h-16 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow">
-                <Calculator className="w-8 h-8 text-white" strokeWidth={2} />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-brand-light rounded-full flex items-center justify-center shadow-sm">
-                <Sparkles className="w-3 h-3 text-brand-foreground" />
-              </div>
+              <CostifyLogo size="xl" className="justify-center" />
             </motion.div>
-
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-gradient-brand">
-                Registra tu negocio
-              </h1>
-              <p className="text-sm text-muted max-w-md mx-auto leading-relaxed">
-                Crea tu cuenta en Costify. Tu solicitud quedará pendiente hasta que confirmemos el
-                pago por WhatsApp.
-              </p>
-            </div>
+            <p className="text-sm text-muted max-w-md mx-auto leading-relaxed">
+              Registra tu negocio y elige el plan que prefieras. Te contactamos por WhatsApp para
+              activar la cuenta.
+            </p>
           </div>
 
           {success ? (

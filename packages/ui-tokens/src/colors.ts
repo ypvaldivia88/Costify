@@ -54,3 +54,52 @@ export const cssVariables = {
     '--color-brand-foreground': colors.dark.brandForeground,
   },
 } as const;
+
+/** Landing page — "Libreta de Costos" palette (scoped via .landing-theme) */
+export const landingColors = {
+  light: {
+    paper: '#F7F4ED',
+    ink: '#1C1917',
+    brand: brandColors.light,
+    copper: '#B45309',
+    sea: '#0E7490',
+    rule: '#E7E0D4',
+    muted: '#78716C',
+    surface: '#FFFFFF',
+  },
+  dark: {
+    paper: '#0C0A09',
+    ink: '#FAFAF9',
+    brand: brandColors.dark,
+    copper: '#F59E0B',
+    sea: '#22D3EE',
+    rule: '#292524',
+    muted: '#A8A29E',
+    surface: '#1C1917',
+  },
+} as const;
+
+export type LandingColors = (typeof landingColors)[ColorScheme];
+
+export const landingCssVariables = {
+  light: {
+    '--landing-paper': landingColors.light.paper,
+    '--landing-ink': landingColors.light.ink,
+    '--landing-brand': landingColors.light.brand,
+    '--landing-copper': landingColors.light.copper,
+    '--landing-sea': landingColors.light.sea,
+    '--landing-rule': landingColors.light.rule,
+    '--landing-muted': landingColors.light.muted,
+    '--landing-surface': landingColors.light.surface,
+  },
+  dark: {
+    '--landing-paper': landingColors.dark.paper,
+    '--landing-ink': landingColors.dark.ink,
+    '--landing-brand': landingColors.dark.brand,
+    '--landing-copper': landingColors.dark.copper,
+    '--landing-sea': landingColors.dark.sea,
+    '--landing-rule': landingColors.dark.rule,
+    '--landing-muted': landingColors.dark.muted,
+    '--landing-surface': landingColors.dark.surface,
+  },
+} as const;

@@ -27,6 +27,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session) {
+    if (pathname === '/') {
+      return NextResponse.next();
+    }
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }

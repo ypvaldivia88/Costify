@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { IBM_Plex_Mono, Newsreader, Plus_Jakarta_Sans, Source_Sans_3 } from 'next/font/google';
 import Script from 'next/script';
 import { brandColors } from '@costify/ui-tokens/colors';
 import { AuthProvider } from '@/components/auth/AuthProvider';
@@ -10,6 +10,25 @@ import './globals.css';
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-plus-jakarta',
+  display: 'swap',
+});
+
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-newsreader',
+  display: 'swap',
+});
+
+const sourceSans = Source_Sans_3({
+  subsets: ['latin'],
+  variable: '--font-source-sans',
+  display: 'swap',
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-ibm-plex-mono',
   display: 'swap',
 });
 
@@ -44,7 +63,11 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={plusJakarta.variable} suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`${plusJakarta.variable} ${newsreader.variable} ${sourceSans.variable} ${ibmPlexMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <Script id="costify-theme" strategy="beforeInteractive">
           {themeScript}

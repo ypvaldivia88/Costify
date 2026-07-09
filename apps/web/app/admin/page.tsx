@@ -1,5 +1,7 @@
 'use client';
 
+import { BrandSpinner } from '@/components/brand/BrandSpinner';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, CheckCircle2, Clock3, LogOut, Plus, Shield, Users, XCircle } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -244,13 +246,7 @@ export default function AdminPage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-dvh mesh-bg flex items-center justify-center">
-        <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow">
-          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <BrandSpinner />;
   }
 
   return (

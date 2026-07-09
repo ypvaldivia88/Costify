@@ -30,6 +30,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { ExchangeRatesProvider } from '@/hooks/use-exchange-rates-context';
 import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
 import { NAV_BY_ID, type AppTab, getNavItemsForAccess } from '@/navigation/tabs';
+import { CostifyMark } from '@/components/brand/CostifyLogo';
 import { TrialBanner } from '@/components/layout/TrialBanner';
 
 type RootTabParamList = Record<AppTab, undefined>;
@@ -41,7 +42,8 @@ function LoadingScreen({ message = 'Cargando…' }: { message?: string }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.loading, { backgroundColor: colors.background }]}>
-      <ActivityIndicator size="large" color={colors.brand} />
+      <CostifyMark size={56} pageColor={colors.surfaceMuted} lineColor={colors.border} copperColor={colors.warning} />
+      <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: 16 }} />
       <Text style={{ color: colors.muted, marginTop: 12 }}>{message}</Text>
     </View>
   );
@@ -118,14 +120,14 @@ function AppHeader({ title }: { title: string }) {
       style={{ backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1 }}
     >
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.brand, fontSize: 12, fontWeight: '800', letterSpacing: 1 }}>
-            COSTIFY
-          </Text>
-          <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '800' }}>{title}</Text>
-          {user?.tenantName ? (
-            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{user.tenantName}</Text>
-          ) : null}
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <CostifyMark size={28} pageColor={colors.surfaceMuted} lineColor={colors.border} copperColor={colors.warning} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '800' }}>{title}</Text>
+            {user?.tenantName ? (
+              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{user.tenantName}</Text>
+            ) : null}
+          </View>
         </View>
         <View style={styles.headerActions}>
           {data.cloudSync ? (

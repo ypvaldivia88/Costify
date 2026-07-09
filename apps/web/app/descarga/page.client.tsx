@@ -3,15 +3,14 @@
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import {
-  Calculator,
   Download,
   ExternalLink,
   MessageCircle,
   ShieldCheck,
   Smartphone,
-  Sparkles,
 } from 'lucide-react';
 import type { MobileDownloadInfo } from '@/lib/mobile-download';
+import { CostifyLogo } from '@/components/brand/CostifyLogo';
 import { Card } from '@/components/ui/Card';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { cn } from '@/lib/utils';
@@ -49,16 +48,11 @@ export default function DownloadPage({ info }: DownloadPageProps) {
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="text-center space-y-4">
-            <div className="mx-auto relative w-fit">
-              <div className="w-16 h-16 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow mx-auto">
-                <Calculator className="w-8 h-8 text-white" strokeWidth={2} />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-brand-light rounded-full flex items-center justify-center shadow-sm">
-                <Sparkles className="w-3 h-3 text-brand-foreground" />
-              </div>
+            <div className="flex justify-center">
+              <CostifyLogo size="xl" className="justify-center" />
             </div>
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-gradient-brand">Costify Android</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">App Android</h1>
               <p className="text-sm text-muted max-w-sm mx-auto leading-relaxed">
                 Descarga la app para calcular costos, precios e inventario desde tu teléfono, incluso sin
                 conexión estable.

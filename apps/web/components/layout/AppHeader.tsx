@@ -1,9 +1,9 @@
 'use client';
 
-import { Calculator } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/navigation/tabs';
 import type { AppTab } from '@/lib/navigation/tabs';
 import type { NavItemMeta } from '@costify/client-data';
+import { CostifyLogo } from '@/components/brand/CostifyLogo';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -31,15 +31,12 @@ export function AppHeader({ activeTab, onTabChange, cloudSync, user, navItems = 
     <header className="sticky top-0 z-40 glass border-b border-border/60 safe-top">
       <div className="max-w-5xl mx-auto px-4 min-h-14 h-14 flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 bg-brand-gradient rounded-xl flex items-center justify-center shadow-glow shrink-0">
-            <Calculator className="w-4 h-4 text-white" strokeWidth={2.5} />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-bold text-foreground leading-tight truncate">Costify</h1>
-            {user?.tenantName && (
-              <p className="text-[11px] text-muted truncate leading-tight">{user.tenantName}</p>
-            )}
-          </div>
+          <CostifyLogo size="sm" className="shrink-0" />
+          {user?.tenantName && (
+            <p className="text-[11px] text-muted truncate leading-tight hidden sm:block max-w-[120px] md:max-w-[180px]">
+              {user.tenantName}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">

@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Building2, Calculator, CheckCircle2, Moon, Sparkles, Sun } from 'lucide-react-native';
+import { Building2, CheckCircle2, Moon, Sun } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
@@ -21,6 +21,7 @@ import {
   SUBSCRIPTION_PLAN_LABELS,
 } from '@costify/shared/domain/subscription';
 import { registerRequest } from '@/api/client';
+import { CostifyLogoLockup } from '@/components/brand/CostifyLogoLockup';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -120,13 +121,7 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.hero}>
-            <View style={[styles.logo, { backgroundColor: colors.brand }]}>
-              <Calculator size={32} color="#fff" />
-              <View style={[styles.sparkle, { backgroundColor: colors.brandMuted }]}>
-                <Sparkles size={12} color={colors.brand} />
-              </View>
-            </View>
-            <Text style={[styles.title, { color: colors.foreground }]}>Registra tu negocio</Text>
+            <CostifyLogoLockup size="xl" />
             <Text style={[styles.subtitle, { color: colors.muted }]}>
               Tu solicitud quedará pendiente hasta confirmar el pago por WhatsApp
             </Text>
@@ -294,25 +289,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: { paddingHorizontal: 20, paddingBottom: 32, gap: 20 },
-  hero: { alignItems: 'center', gap: 8, paddingTop: 4 },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sparkle: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 26, fontWeight: '800', textAlign: 'center' },
+  hero: { alignItems: 'center', gap: 12, paddingTop: 4 },
   subtitle: { fontSize: 14, textAlign: 'center', maxWidth: 300, lineHeight: 20 },
   card: { borderWidth: 1, borderRadius: 24, padding: 20, gap: 12 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

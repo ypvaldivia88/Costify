@@ -11,8 +11,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Calculator, Moon, Sparkles, Sun } from 'lucide-react-native';
+import { Moon, Sun } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CostifyLogoLockup } from '@/components/brand/CostifyLogoLockup';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/Button';
@@ -102,13 +103,7 @@ export function LoginScreen({ onRegister }: LoginScreenProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.hero}>
-            <View style={[styles.logo, { backgroundColor: colors.brand }]}>
-              <Calculator size={32} color="#fff" />
-              <View style={[styles.sparkle, { backgroundColor: colors.brandMuted }]}>
-                <Sparkles size={12} color={colors.brand} />
-              </View>
-            </View>
-            <Text style={[styles.title, { color: colors.foreground }]}>Costify</Text>
+            <CostifyLogoLockup size="xl" />
             <Text style={[styles.subtitle, { color: colors.muted }]}>
               Inicia sesión para gestionar tu negocio con precisión
             </Text>
@@ -196,25 +191,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 24,
   },
-  hero: { alignItems: 'center', gap: 8, paddingTop: 8 },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sparkle: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 28, fontWeight: '800' },
+  hero: { alignItems: 'center', gap: 12, paddingTop: 8 },
   subtitle: { fontSize: 14, textAlign: 'center', maxWidth: 280, lineHeight: 20 },
   card: {
     borderWidth: 1,

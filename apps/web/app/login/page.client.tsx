@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
-import { Calculator, Sparkles } from 'lucide-react';
+import { CostifyLogo } from '@/components/brand/CostifyLogo';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -52,25 +52,17 @@ export default function LoginPage() {
         >
           <div className="text-center space-y-4">
             <motion.div
-              className="mx-auto relative"
-              initial={{ scale: 0.8, opacity: 0 }}
+              className="flex justify-center"
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="mx-auto w-16 h-16 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow">
-                <Calculator className="w-8 h-8 text-white" strokeWidth={2} />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-brand-light rounded-full flex items-center justify-center shadow-sm">
-                <Sparkles className="w-3 h-3 text-brand-foreground" />
-              </div>
+              <CostifyLogo size="xl" className="justify-center" />
             </motion.div>
 
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-gradient-brand">Costify</h1>
-              <p className="text-sm text-muted max-w-xs mx-auto leading-relaxed">
-                Inicia sesión para gestionar tu negocio con precisión
-              </p>
-            </div>
+            <p className="text-sm text-muted max-w-xs mx-auto leading-relaxed">
+              Inicia sesión para gestionar tu negocio con precisión
+            </p>
           </div>
 
           <motion.div

@@ -21,16 +21,10 @@ import { SettingsView } from '@/components/settings/SettingsView';
 import { WarehousesView } from '@/components/warehouses/WarehousesView';
 import { useAppData } from '@/hooks/use-app-data';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { BrandSpinner } from '@/components/brand/BrandSpinner';
 
 function LoadingScreen() {
-  return (
-    <div className="min-h-dvh mesh-bg flex flex-col items-center justify-center gap-4">
-      <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-glow">
-        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      </div>
-      <p className="text-sm text-muted">Cargando tus datos…</p>
-    </div>
-  );
+  return <BrandSpinner message="Cargando tus datos…" />;
 }
 
 export function AppShell() {

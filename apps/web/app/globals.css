@@ -64,6 +64,17 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-accent-surface: var(--accent-surface);
   --color-accent-border: var(--accent-border);
+  --font-landing-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-landing-body: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-landing-data: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  --color-landing-paper: var(--landing-paper);
+  --color-landing-ink: var(--landing-ink);
+  --color-landing-brand: var(--landing-brand);
+  --color-landing-copper: var(--landing-copper);
+  --color-landing-sea: var(--landing-sea);
+  --color-landing-rule: var(--landing-rule);
+  --color-landing-muted: var(--landing-muted);
+  --color-landing-surface: var(--landing-surface);
   --shadow-elevated: 0 1px 2px rgb(var(--shadow-color) / 0.04), 0 8px 24px rgb(var(--shadow-color) / 0.08);
   --shadow-float: 0 4px 6px rgb(var(--shadow-color) / 0.04), 0 20px 40px rgb(var(--shadow-color) / 0.12);
   --shadow-glow: 0 0 0 1px rgb(var(--shadow-color) / 0.04), 0 8px 32px rgba(5, 150, 105, 0.18);
@@ -232,4 +243,142 @@ input[type="range"]::-moz-range-track {
   background: var(--border);
   border-radius: 9999px;
   height: 8px;
+}
+
+/* ── Landing: Libreta de Costos (scoped) ── */
+.landing-theme {
+  --landing-paper: #f7f4ed;
+  --landing-ink: #1c1917;
+  --landing-brand: #059669;
+  --landing-copper: #b45309;
+  --landing-sea: #0e7490;
+  --landing-rule: #e7e0d4;
+  --landing-muted: #78716c;
+  --landing-surface: #ffffff;
+  background-color: var(--landing-paper);
+  color: var(--landing-ink);
+  font-family: var(--font-landing-body);
+}
+
+.dark .landing-theme {
+  --landing-paper: #0c0a09;
+  --landing-ink: #fafaf9;
+  --landing-brand: #34d399;
+  --landing-copper: #f59e0b;
+  --landing-sea: #22d3ee;
+  --landing-rule: #292524;
+  --landing-muted: #a8a29e;
+  --landing-surface: #1c1917;
+}
+
+.landing-theme .font-display {
+  font-family: var(--font-landing-display);
+}
+
+.landing-theme .font-data {
+  font-family: var(--font-landing-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.landing-theme .text-landing-ink {
+  color: var(--landing-ink);
+}
+
+.landing-theme .text-landing-muted {
+  color: var(--landing-muted);
+}
+
+.landing-theme .text-landing-brand {
+  color: var(--landing-brand);
+}
+
+.landing-theme .text-landing-copper {
+  color: var(--landing-copper);
+}
+
+.landing-theme .text-landing-sea {
+  color: var(--landing-sea);
+}
+
+.landing-theme .bg-landing-paper {
+  background-color: var(--landing-paper);
+}
+
+.landing-theme .bg-landing-surface {
+  background-color: var(--landing-surface);
+}
+
+.landing-theme .border-landing-rule {
+  border-color: var(--landing-rule);
+}
+
+.landing-theme .bg-landing-brand {
+  background-color: var(--landing-brand);
+}
+
+.landing-theme .ring-landing-brand {
+  --tw-ring-color: color-mix(in srgb, var(--landing-brand) 35%, transparent);
+}
+
+/* Notebook ruled lines background */
+.landing-ruled-bg {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 27px,
+    var(--landing-rule) 27px,
+    var(--landing-rule) 28px
+  );
+  background-position: 0 12px;
+}
+
+/* Perforated receipt tear — signature separator */
+.receipt-tear {
+  position: relative;
+  height: 28px;
+  margin: 0;
+  border: none;
+  background: transparent;
+}
+
+.receipt-tear::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  border-top: 2px dashed var(--landing-rule);
+  transform: translateY(-50%);
+}
+
+.receipt-tear::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 7px at 0 50%, var(--landing-paper) 6px, transparent 7px),
+    radial-gradient(circle 7px at 100% 50%, var(--landing-paper) 6px, transparent 7px);
+  pointer-events: none;
+}
+
+/* Ledger row — feature line item */
+.ledger-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--landing-rule);
+}
+
+.ledger-row:first-child {
+  border-top: 1px solid var(--landing-rule);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-theme * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
