@@ -13,7 +13,7 @@ export interface MobileDownloadInfo {
   updatedAt: string;
 }
 
-const DEFAULT_VERSION = '1.0.15';
+const DEFAULT_VERSION = '1.0.16';
 const GITHUB_REPO = 'https://github.com/ypvaldivia88/Costify';
 
 function trimOrNull(value: string | undefined): string | null {
@@ -40,6 +40,6 @@ export function getMobileDownloadInfo(): MobileDownloadInfo {
     driveMirrorUrl: trimOrNull(process.env.MOBILE_DRIVE_MIRROR_URL),
     whatsappUrl: WHATSAPP_SUPPORT_URL,
     whatsappNumber: WHATSAPP_SUPPORT_NUMBER,
-    updatedAt: process.env.MOBILE_APK_UPDATED_AT?.trim() || '2026-07-08',
+    updatedAt: process.env.MOBILE_APK_UPDATED_AT?.trim() || '2026-07-09',
   };
 }

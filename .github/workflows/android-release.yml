@@ -1,0 +1,111 @@
+name: Android APK Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.0.16)'
+        required: true
+        default: '1.0.16'
+
+permissions:
+  contents: write
+
+env:
+  EXPO_PUBLIC_API_URL: https://costify-iota.vercel.app
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;27.1.12297006"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve release tag
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prebuild Android project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -x lintVitalAnalyzeRelease \
+            -PreactNativeArchitectures=arm64-v8a
+
+      - name: Prepare release asset
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk \
+            "costify-demo.v${VERSION}.apk"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: v${{ steps.meta.outputs.version }} — UI SaaS v2 y logo móvil
+          files: costify-demo.v${{ steps.meta.outputs.version }}.apk
+          generate_release_notes: false
+          body: |
+            ## Costify Android v${{ steps.meta.outputs.version }}
+
+            Release desde `main` con el refactor UI SaaS y nueva identidad de marca.
+
+            ### Novedades
+            - **Logo SaaS v2** (web + móvil): marca geométrica unificada
+            - **Landing y auth** renovados con shadcn/ui, contraste dark mode y selects estilizados
+            - **Toggle mostrar/ocultar contraseña** en login y registro
+            - **Enlaces del header** corregidos desde `/login` (`/#faq`, `/#precios`)
+            - **App tenant móvil**: settings vertical, sticky summary en calculadora, cards en sensibilidad
+
+            ### APK
+            - Archivo: `costify-demo.v${{ steps.meta.outputs.version }}.apk`
+            - API: `https://costify-iota.vercel.app`
+            - Arquitectura: arm64-v8a
+            - Commit: `${{ github.sha }}`
