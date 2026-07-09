@@ -52,7 +52,7 @@ export function LandingFooter() {
     <footer className="border-t border-landing-rule bg-landing-paper/80">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex flex-col items-center sm:items-start gap-3">
-          <CostifyLogo size="md" landing />
+          <CostifyLogo size="md" />
           <p className="text-xs text-landing-muted text-center sm:text-left max-w-xs">
             Calculadora de costos e inventario para micro y pequeñas empresas privadas.
           </p>

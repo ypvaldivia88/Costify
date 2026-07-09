@@ -46,7 +46,7 @@ export function PricingResults({ result, taxSettings }: PricingResultsProps) {
   return (
     <div className="space-y-3">
       <Card variant="accent" className="text-center !py-6">
-        <p className="text-sm font-medium text-brand-foreground mb-1">Precio sugerido</p>
+        <p className="text-sm font-medium text-brand-dark dark:text-brand-foreground mb-1">Precio sugerido</p>
         <p className="text-4xl sm:text-5xl font-black text-foreground tabular-nums">
           {formatCurrency(result.suggestedPrice)}
         </p>

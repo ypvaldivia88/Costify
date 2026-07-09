@@ -35,6 +35,7 @@ import { NumericInput } from '@/components/ui/NumericInput';
 import { PurchasePriceInput } from '@/components/ui/PurchasePriceInput';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
+import { formatCurrency, formatPercent } from '@costify/shared/format/currency';
 import { cn } from '@/lib/utils';
 import { IndirectCostsEditor } from './IndirectCostsEditor';
 import { LaborShareEditor } from './LaborShareEditor';
@@ -313,12 +314,14 @@ export function CostCalculator({
   };
 
   return (
-    <div className="space-y-4 pb-4">
-      <PricingResults
-        result={result}
-        inventoryCount={otherProducts.length}
-        taxSettings={taxSettings}
-      />
+    <div className="relative space-y-5 sm:space-y-6 pb-28 md:pb-4">
+      <div className="hidden md:block">
+        <PricingResults
+          result={result}
+          inventoryCount={otherProducts.length}
+          taxSettings={taxSettings}
+        />
+      </div>
 
       <Card>
         <div className="mb-4">
@@ -339,7 +342,7 @@ export function CostCalculator({
             }}
           />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {(Object.entries(PRODUCT_TYPE_LABELS) as [ProductType, string][]).map(([value, label]) => (
               <button
                 key={value}
@@ -349,7 +352,7 @@ export function CostCalculator({
                   'min-h-11 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-colors active:scale-[0.98]',
                   form.productType === value
                     ? 'border-brand bg-brand-muted text-brand-foreground'
-                    : 'border-border bg-surface text-muted hover:border-brand/40'
+                    : 'border-border bg-secondary/50 text-secondary-foreground hover:bg-secondary hover:text-foreground'
                 )}
               >
                 {label}
@@ -587,6 +590,23 @@ export function CostCalculator({
           </div>
         </div>
       </Card>
+
+      <div className="md:hidden fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.25rem)] inset-x-4 z-30 pointer-events-none">
+        <div className="pointer-events-auto rounded-2xl border border-accent-border bg-card/95 backdrop-blur-md shadow-float px-4 py-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">Precio sugerido</p>
+            <p className="text-xl font-bold text-brand tabular-nums">{formatCurrency(result.suggestedPrice)}</p>
+          </div>
+          <div className="text-right text-xs text-muted-foreground space-y-0.5">
+            <p>
+              Costo <span className="font-semibold text-foreground">{formatCurrency(result.totalUnitCost)}</span>
+            </p>
+            <p>
+              Margen <span className="font-semibold text-brand">{formatPercent(result.grossMarginPercent)}</span>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

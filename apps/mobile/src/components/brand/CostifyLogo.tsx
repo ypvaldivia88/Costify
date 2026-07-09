@@ -1,43 +1,42 @@
-import Svg, { Circle, Line, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
+
+const MARK_COLORS = {
+  brand: '#059669',
+  brandDark: '#047857',
+} as const;
 
 export interface CostifyMarkProps {
   size?: number;
-  pageColor?: string;
-  lineColor?: string;
-  copperColor?: string;
+  brandColor?: string;
+  brandDarkColor?: string;
+  isDark?: boolean;
 }
 
-/** "Libreta de Costos" mark for React Native — transparent background. */
+/** Geometric Costify mark — C arc with ascending bars (cost → margin). */
 export function CostifyMark({
   size = 48,
-  pageColor = '#F7F4ED',
-  lineColor = '#D6D3D1',
-  copperColor = '#B45309',
+  brandColor,
+  brandDarkColor,
+  isDark = false,
 }: CostifyMarkProps) {
+  const brand = brandColor ?? (isDark ? '#34D399' : MARK_COLORS.brand);
+  const brandDark = brandDarkColor ?? (isDark ? '#10B981' : MARK_COLORS.brandDark);
+  const bars = isDark
+    ? ['#6EE7B7', '#34D399', '#10B981']
+    : ['#6EE7B7', '#10B981', '#047857'];
+
   return (
     <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-      <Rect x="11" y="10" width="42" height="46" rx="5" fill="#047857" opacity="0.35" />
-      <Rect x="9" y="8" width="42" height="46" rx="5" fill="#059669" />
-      <Circle cx="13" cy="18" r="2.2" fill="#047857" />
-      <Circle cx="13" cy="26" r="2.2" fill="#047857" />
-      <Circle cx="13" cy="34" r="2.2" fill="#047857" />
-      <Circle cx="13" cy="42" r="2.2" fill="#047857" />
-      <Rect x="17" y="12" width="30" height="38" rx="2.5" fill={pageColor} />
-      <Line x1="21" y1="22" x2="43" y2="22" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" />
-      <Line x1="21" y1="28" x2="43" y2="28" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" />
-      <Line x1="21" y1="34" x2="40" y2="34" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" />
-      <Line x1="21" y1="42" x2="38" y2="42" stroke={copperColor} strokeWidth="2.5" strokeLinecap="round" />
-      <Rect x="36" y="38.5" width="10" height="7" rx="1.5" fill={copperColor} opacity="0.15" />
-      <SvgText
-        x="41"
-        y="44"
-        textAnchor="middle"
-        fill={copperColor}
-        fontSize="6"
-        fontWeight="700"
-      >
-        $
-      </SvgText>
+      <Path
+        d="M44 12C33 12 24 21 24 32s9 20 20 20c4 0 8-1 11-3"
+        stroke={brand}
+        strokeWidth={5}
+        strokeLinecap="round"
+      />
+      <Rect x={30} y={38} width={4} height={8} rx={1} fill={bars[0]} />
+      <Rect x={36} y={34} width={4} height={12} rx={1} fill={bars[1]} />
+      <Rect x={42} y={28} width={4} height={18} rx={1} fill={bars[2]} />
+      <Circle cx={32} cy={32} r={3} fill={brandDark} opacity={0.9} />
     </Svg>
   );
 }
@@ -48,44 +47,17 @@ const WORDMARK_SIZE = { sm: 20, md: 26, lg: 32, xl: 38 } as const;
 export interface CostifyLogoProps {
   variant?: 'full' | 'mark';
   size?: keyof typeof SIZE_MAP;
-  foregroundColor?: string;
-  pageColor?: string;
-  lineColor?: string;
-  copperColor?: string;
+  isDark?: boolean;
 }
 
-export function CostifyLogo({
-  variant = 'full',
-  size = 'md',
-  foregroundColor = '#1C1917',
-  pageColor,
-  lineColor,
-  copperColor,
-}: CostifyLogoProps) {
+export function CostifyLogo({ variant = 'full', size = 'md', isDark = false }: CostifyLogoProps) {
   const markSize = SIZE_MAP[size];
 
   if (variant === 'mark') {
-    return (
-      <CostifyMark
-        size={markSize}
-        pageColor={pageColor}
-        lineColor={lineColor}
-        copperColor={copperColor}
-      />
-    );
+    return <CostifyMark size={markSize} isDark={isDark} />;
   }
 
-  return (
-    <>
-      <CostifyMark
-        size={markSize}
-        pageColor={pageColor}
-        lineColor={lineColor}
-        copperColor={copperColor}
-      />
-      {/* Wordmark rendered by parent as Text for native font stack */}
-    </>
-  );
+  return <CostifyMark size={markSize} isDark={isDark} />;
 }
 
 export function getCostifyLogoSizes(size: keyof typeof SIZE_MAP) {

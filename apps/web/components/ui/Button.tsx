@@ -1,44 +1,75 @@
 import { cn } from '@/lib/utils';
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentProps, ReactElement } from 'react';
+import { ShadcnButton, shadcnButtonVariants } from '@/components/ui/shadcn-button';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
+type LegacyVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
+type LegacySize = 'sm' | 'md' | 'lg';
+
+interface ButtonProps extends Omit<ComponentProps<typeof ShadcnButton>, 'variant' | 'size'> {
+  variant?: LegacyVariant | ComponentProps<typeof ShadcnButton>['variant'];
+  size?: LegacySize | ComponentProps<typeof ShadcnButton>['size'];
+  asChild?: boolean;
 }
 
-const variants = {
-  primary:
-    'bg-brand-gradient text-white hover:brightness-110 active:brightness-95 shadow-glow hover:shadow-[0_8px_32px_rgba(5,150,105,0.28)]',
-  secondary: 'bg-foreground text-background hover:opacity-90 active:opacity-80 shadow-elevated',
-  ghost: 'text-muted hover:bg-surface-muted hover:text-foreground',
-  danger: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40',
-  outline: 'border border-border text-foreground hover:bg-surface-muted hover:border-brand/30',
+const variantMap: Record<LegacyVariant, ComponentProps<typeof ShadcnButton>['variant']> = {
+  primary: 'default',
+  secondary: 'secondary',
+  ghost: 'ghost',
+  danger: 'destructive',
+  outline: 'outline',
 };
 
-const sizes = {
-  sm: 'px-3 py-2 text-xs min-h-11',
-  md: 'px-4 py-2.5 text-sm min-h-11',
-  lg: 'px-5 py-3 text-base min-h-12',
+const sizeMap: Record<LegacySize, ComponentProps<typeof ShadcnButton>['size']> = {
+  sm: 'sm',
+  md: 'default',
+  lg: 'lg',
 };
+
+function resolveVariant(variant: ButtonProps['variant']) {
+  if (!variant) return 'default' as const;
+  if (variant in variantMap) return variantMap[variant as LegacyVariant];
+  return variant as ComponentProps<typeof ShadcnButton>['variant'];
+}
+
+function resolveSize(size: ButtonProps['size']) {
+  if (!size) return 'default' as const;
+  if (size in sizeMap) return sizeMap[size as LegacySize];
+  return size as ComponentProps<typeof ShadcnButton>['size'];
+}
 
 export function Button({
   className,
   variant = 'primary',
   size = 'md',
+  asChild,
   children,
   ...props
 }: ButtonProps) {
+  const resolvedVariant = resolveVariant(variant);
+  const resolvedSize = resolveSize(size);
+  const classes = cn(
+    resolvedVariant === 'default' && 'bg-brand-gradient shadow-glow hover:brightness-110',
+    className
+  );
+
+  if (asChild && children && typeof children === 'object' && 'type' in (children as ReactElement)) {
+    return (
+      <ShadcnButton
+        variant={resolvedVariant}
+        size={resolvedSize}
+        className={classes}
+        render={children as ReactElement}
+        nativeButton={false}
+        {...props}
+      />
+    );
+  }
+
   return (
-    <button
-      className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]',
-        variants[variant],
-        sizes[size],
-        className
-      )}
-      {...props}
-    >
+    <ShadcnButton variant={resolvedVariant} size={resolvedSize} className={classes} {...props}>
       {children}
-    </button>
+    </ShadcnButton>
   );
 }
+
+export { shadcnButtonVariants };

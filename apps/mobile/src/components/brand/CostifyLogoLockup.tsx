@@ -21,24 +21,12 @@ export function CostifyLogoLockup({
   const isDark = scheme === 'dark';
 
   if (variant === 'mark') {
-    return (
-      <CostifyMark
-        size={markSize}
-        pageColor={isDark ? '#292524' : '#F7F4ED'}
-        lineColor={isDark ? '#44403C' : '#D6D3D1'}
-        copperColor={isDark ? '#F59E0B' : '#B45309'}
-      />
-    );
+    return <CostifyMark size={markSize} isDark={isDark} />;
   }
 
   return (
     <View style={[styles.row, align === 'center' ? styles.center : styles.left]}>
-      <CostifyMark
-        size={markSize}
-        pageColor={isDark ? '#292524' : '#F7F4ED'}
-        lineColor={isDark ? '#44403C' : '#D6D3D1'}
-        copperColor={isDark ? '#F59E0B' : '#B45309'}
-      />
+      <CostifyMark size={markSize} isDark={isDark} />
       <Text style={[styles.wordmark, { color: colors.foreground, fontSize: WORDMARK_SIZE[size] }]}>
         Costify
       </Text>

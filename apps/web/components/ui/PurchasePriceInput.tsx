@@ -102,7 +102,7 @@ export function PurchasePriceInput({
                 'shrink-0 justify-center min-w-[3.5rem]',
                 active
                   ? 'border-brand bg-brand-muted text-brand-foreground'
-                  : 'border-border text-muted hover:text-foreground hover:bg-surface-muted'
+                  : 'border-border bg-secondary/50 text-secondary-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
               {PURCHASE_CURRENCY_LABELS[c]}
@@ -153,7 +153,7 @@ export function PurchasePriceInput({
                 'flex-1 justify-center',
                 active
                   ? 'border-brand bg-brand-muted text-brand-foreground'
-                  : 'border-border text-muted hover:text-foreground hover:bg-surface-muted'
+                  : 'border-border bg-secondary/50 text-secondary-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
               {optionLabel}

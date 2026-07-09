@@ -23,12 +23,15 @@ npm run android
 
 ## Generar APK / AAB para Play Store
 
+**Versión actual:** 1.0.16 — ver [GitHub Releases](https://github.com/ypvaldivia88/Costify/releases/latest).
+
 1. Instala EAS CLI: `npm install -g eas-cli`
 2. Inicia sesión: `eas login`
-3. Configura el proyecto: `eas build:configure`
-4. Build de prueba (APK): `eas build -p android --profile preview`
-5. Build para Play Store (AAB): `eas build -p android --profile production`
-6. Publicar: `eas submit -p android --profile production`
+3. Build de prueba (APK): `pnpm build:preview` (desde `apps/mobile`)
+4. Build para Play Store (AAB): `pnpm build:production`
+5. Publicar: `eas submit -p android --profile production`
+
+La API de producción está configurada en `eas.json` (`EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app` en perfil preview).
 
 ## Funcionalidades
 
@@ -40,7 +43,7 @@ npm run android
 
 ## Datos
 
-Todos los datos se guardan localmente en el dispositivo con AsyncStorage. No se requiere conexión a internet.
+Los datos se guardan localmente (AsyncStorage) y se sincronizan con la nube cuando hay conexión (`https://costify-iota.vercel.app`).
 
 ## Publicación en Play Store
 

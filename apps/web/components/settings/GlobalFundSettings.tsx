@@ -66,7 +66,7 @@ export function GlobalFundSettingsPanel({ settings, onChange }: GlobalFundSettin
           </div>
 
           {settings.percent > 0 && (
-            <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3 text-sm text-brand-foreground">
+            <div className="rounded-xl bg-accent-surface border border-accent-border px-4 py-3 text-sm text-brand-dark dark:text-brand-foreground">
               Cada producto incluirá un <strong>{settings.percent}%</strong> adicional sobre su
               costo directo como <strong>{settings.name.trim() || 'Fondo global'}</strong>.
             </div>

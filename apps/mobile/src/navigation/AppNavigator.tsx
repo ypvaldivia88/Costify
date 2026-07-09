@@ -39,10 +39,10 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 const navigationRef = createNavigationContainerRef<RootTabParamList>();
 
 function LoadingScreen({ message = 'Cargando…' }: { message?: string }) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   return (
     <View style={[styles.loading, { backgroundColor: colors.background }]}>
-      <CostifyMark size={56} pageColor={colors.surfaceMuted} lineColor={colors.border} copperColor={colors.warning} />
+      <CostifyMark size={56} isDark={scheme === 'dark'} />
       <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: 16 }} />
       <Text style={{ color: colors.muted, marginTop: 12 }}>{message}</Text>
     </View>
@@ -121,7 +121,7 @@ function AppHeader({ title }: { title: string }) {
     >
       <View style={styles.header}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <CostifyMark size={28} pageColor={colors.surfaceMuted} lineColor={colors.border} copperColor={colors.warning} />
+          <CostifyMark size={28} isDark={scheme === 'dark'} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '800' }}>{title}</Text>
             {user?.tenantName ? (

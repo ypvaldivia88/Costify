@@ -23,3 +23,15 @@ export const costifyLogoSizes: Record<
   lg: { mark: 56, wordmarkClass: 'text-3xl' },
   xl: { mark: 72, wordmarkClass: 'text-4xl' },
 };
+
+/** Geometric Costify mark v2 — C arc with ascending bars (cost → margin) */
+export const COSTIFY_MARK_VIEWBOX = '0 0 64 64';
+
+export const costifyMarkColors = {
+  brand: '#059669',
+  brandDark: '#047857',
+  brandLight: '#34d399',
+  barMuted: '#6ee7b7',
+  barMid: '#10b981',
+  barStrong: '#059669',
+} as const;

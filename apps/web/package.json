@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@base-ui/react": "^1.6.0",
     "@costify/client-data": "workspace:*",
     "@costify/shared": "workspace:*",
     "@costify/ui-tokens": "workspace:*",
@@ -31,6 +32,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.2",
+    "shadcn": "^4.13.0",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },

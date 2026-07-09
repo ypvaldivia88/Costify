@@ -75,7 +75,7 @@ export function AppShell() {
           navItems={navItems}
         />
 
-        <main className="max-w-5xl mx-auto px-4 pt-5 pb-32 md:pb-8">
+        <main className="page-container pt-6 pb-28 md:pb-10">
           <TrialBanner user={user} className="mb-4" />
           <PriceReviewAlerts
             materials={data.materials}

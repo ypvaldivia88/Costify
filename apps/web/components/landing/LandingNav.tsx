@@ -36,7 +36,7 @@ export function LandingNav() {
         )}
       >
         <Link href="/" className="flex items-center shrink-0 min-h-11 py-1">
-          <CostifyLogo size="lg" landing />
+          <CostifyLogo size="lg" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1" aria-label="Principal">

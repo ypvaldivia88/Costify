@@ -16,8 +16,6 @@ import type {
 } from '@costify/shared/domain/types';
 import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
 import { cn } from '@/lib/utils';
-import { segmentClassName } from '@/lib/ui/field-styles';
-import { HorizontalScroll } from '@/components/ui/HorizontalScroll';
 import { DataSyncPanel } from './DataSyncPanel';
 import { AccountSettingsPanel } from './AccountSettingsPanel';
 import { SubscriptionSettingsPanel } from './SubscriptionSettingsPanel';
@@ -117,12 +115,8 @@ export function SettingsView({
   }, [initialSection, onInitialSectionConsumed]);
 
   return (
-    <div className="space-y-4 max-w-2xl">
-      <HorizontalScroll
-        as="nav"
-        className="flex gap-2 pb-1 -mx-1 px-1"
-        aria-label="Secciones de ajustes"
-      >
+    <div className="lg:grid lg:grid-cols-[minmax(0,14rem)_1fr] lg:gap-8 space-y-5 lg:space-y-0 max-w-3xl">
+      <nav className="flex flex-col gap-1.5" aria-label="Secciones de ajustes">
         {sections.map(({ id, label, icon: Icon }) => {
           const active = activeSection === id;
           return (
@@ -131,19 +125,20 @@ export function SettingsView({
               type="button"
               onClick={() => setActiveSection(id)}
               className={cn(
-                segmentClassName,
+                'w-full min-h-11 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
                 active
-                  ? 'border-brand bg-brand-muted text-brand-foreground'
-                  : 'border-border text-muted hover:text-foreground hover:bg-surface-muted'
+                  ? 'bg-brand-muted text-brand-foreground border border-brand/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
               )}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4 shrink-0" />
               {label}
             </button>
           );
         })}
-      </HorizontalScroll>
+      </nav>
 
+      <div className="min-w-0">
       {activeSection === 'taxes' && (
         <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
       )}
@@ -187,6 +182,7 @@ export function SettingsView({
       {activeSection === 'subscription' && isTenantAdmin && (
         <SubscriptionSettingsPanel user={user} />
       )}
+      </div>
     </div>
   );
 }

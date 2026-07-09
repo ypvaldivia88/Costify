@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/auth/session';
 import { AuthenticatedHome } from '@/components/landing/AuthenticatedHome';
-import { LandingPage } from '@/components/landing/LandingPage';
+import { MarketingPage } from '@/components/marketing/marketing-page';
 
 export default async function Home() {
   const session = await getServerSession();
@@ -20,5 +20,5 @@ export default async function Home() {
     return <AuthenticatedHome />;
   }
 
-  return <LandingPage />;
+  return <MarketingPage />;
 }

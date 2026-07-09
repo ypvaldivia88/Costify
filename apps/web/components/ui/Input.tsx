@@ -1,4 +1,6 @@
-import { fieldClassName } from '@/lib/ui/field-styles';
+import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { ShadcnInput } from '@/components/ui/shadcn-input';
 import { cn } from '@/lib/utils';
 import type { InputHTMLAttributes } from 'react';
 
@@ -8,27 +10,38 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-export function Input({ label, hint, error, className, id, ...props }: InputProps) {
+export function Input({ label, hint, error, className, id, type, ...props }: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  const isPassword = type === 'password';
 
   return (
-    <div className="space-y-1.5">
-      {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-foreground">
+    <div className="space-y-2">
+      {label ? (
+        <Label htmlFor={inputId} className="text-sm font-medium">
           {label}
-        </label>
+        </Label>
+      ) : null}
+      {isPassword ? (
+        <PasswordInput
+          id={inputId}
+          aria-invalid={Boolean(error)}
+          className={cn(error && 'border-destructive', className)}
+          {...props}
+        />
+      ) : (
+        <ShadcnInput
+          id={inputId}
+          type={type}
+          aria-invalid={Boolean(error)}
+          className={cn(error && 'border-destructive', className)}
+          {...props}
+        />
       )}
-      <input
-        id={inputId}
-        className={cn(
-          fieldClassName,
-          error ? 'border-red-400 dark:border-red-500' : undefined,
-          className
-        )}
-        {...props}
-      />
-      {hint && !error && <p className="text-xs text-muted">{hint}</p>}
-      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : hint ? (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }

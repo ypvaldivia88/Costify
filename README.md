@@ -137,6 +137,32 @@ apps/
 packages/
   shared/           @costify/shared — tipos, cálculos, backup y formatos
   client-data/      @costify/client-data — hooks, sync y storage compartidos
+  ui-tokens/        @costify/ui-tokens — colores, spacing y marca compartida
+```
+
+## App Android (releases)
+
+La APK de prueba se publica en [GitHub Releases](https://github.com/ypvaldivia88/Costify/releases). Versión actual recomendada: **v1.0.16**.
+
+| Release | Notas |
+|---------|--------|
+| **v1.0.16** | Logo SaaS v2, UI web refactor (landing, auth, contraste dark mode) |
+| v1.0.15 | Desglose salarios, multi-área, fixes sync |
+
+Descarga directa: [Releases → Latest](https://github.com/ypvaldivia88/Costify/releases/latest)
+
+Build local (Linux + JDK 17):
+
+```bash
+cd apps/mobile
+EXPO_PUBLIC_API_URL=https://costify-iota.vercel.app pnpm build:apk
+```
+
+Build en la nube (EAS):
+
+```bash
+cd apps/mobile
+pnpm build:preview
 ```
 
 ### Detalle de `apps/web`

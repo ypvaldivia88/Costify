@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { motion } from 'motion/react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, CheckCircle2 } from 'lucide-react';
 import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
@@ -12,10 +13,20 @@ import {
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
 } from '@costify/shared/domain/subscription';
-import { CostifyLogo } from '@/components/brand/CostifyLogo';
+import { AuthCard } from '@/components/auth/auth-card';
+import { PublicShell } from '@/components/layout/PublicShell';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormRoot,
+} from '@/components/ui/form';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { ShadcnInput } from '@/components/ui/shadcn-input';
+import { registerSchema, type RegisterFormValues } from '@/lib/schemas/auth';
 import { cn } from '@/lib/utils';
 
 const PLANS: SubscriptionPlan[] = ['monthly', 'semiannual', 'annual'];
@@ -36,19 +47,21 @@ interface RegisterSuccess {
 
 export default function RegisterPage() {
   const searchParams = useSearchParams();
-  const initialPlan = parsePlanParam(searchParams.get('plan'));
-  const [form, setForm] = useState({
-    businessName: '',
-    contactEmail: '',
-    adminName: '',
-    adminEmail: '',
-    adminPassword: '',
-    confirmPassword: '',
-    plan: initialPlan,
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState<RegisterSuccess | null>(null);
+
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      businessName: '',
+      contactEmail: '',
+      adminName: '',
+      adminEmail: '',
+      adminPassword: '',
+      confirmPassword: '',
+      plan: parsePlanParam(searchParams.get('plan')),
+    },
+  });
 
   const planOptions = useMemo(
     () =>
@@ -61,27 +74,19 @@ export default function RegisterPage() {
     []
   );
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
-
-    if (form.adminPassword !== form.confirmPassword) {
-      setError('La confirmación de contraseña no coincide.');
-      return;
-    }
-
-    setSubmitting(true);
+  const onSubmit = async (values: RegisterFormValues) => {
+    setServerError(null);
     try {
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          businessName: form.businessName,
-          contactEmail: form.contactEmail,
-          adminName: form.adminName,
-          adminEmail: form.adminEmail,
-          adminPassword: form.adminPassword,
-          plan: form.plan,
+          businessName: values.businessName,
+          contactEmail: values.contactEmail,
+          adminName: values.adminName,
+          adminEmail: values.adminEmail,
+          adminPassword: values.adminPassword,
+          plan: values.plan,
         }),
       });
       const json = (await response.json()) as RegisterSuccess & { error?: string };
@@ -96,51 +101,20 @@ export default function RegisterPage() {
       });
       window.open(json.whatsappUrl, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrar.');
-    } finally {
-      setSubmitting(false);
+      setServerError(err instanceof Error ? err.message : 'Error al registrar.');
     }
   };
 
   return (
-    <div className="min-h-dvh mesh-bg grid-pattern text-foreground flex flex-col">
-      <div className="safe-fixed-top-right is-overlay">
-        <ThemeToggle className="glass shadow-sm border border-border/60" />
-      </div>
-
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 py-10">
-        <motion.div
-          className="w-full max-w-2xl space-y-8"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="text-center space-y-4">
-            <motion.div
-              className="flex justify-center"
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <CostifyLogo size="xl" className="justify-center" />
-            </motion.div>
-            <p className="text-sm text-muted max-w-md mx-auto leading-relaxed">
-              Registra tu negocio y elige el plan que prefieras. Te contactamos por WhatsApp para
-              activar la cuenta.
-            </p>
-          </div>
-
-          {success ? (
-            <motion.div
-              className="glass rounded-3xl p-6 sm:p-8 shadow-float space-y-5"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
+    <PublicShell showFooter={false}>
+      <div className="w-full max-w-2xl mx-auto">
+        {success ? (
+          <AuthCard title="Solicitud enviada">
+            <div className="space-y-5">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-6 h-6 text-brand shrink-0 mt-0.5" />
                 <div className="space-y-2">
-                  <h2 className="text-lg font-semibold">Solicitud enviada</h2>
-                  <p className="text-sm text-muted">
+                  <p className="text-sm text-muted-foreground">
                     Te redirigimos a WhatsApp para confirmar el pago y activar tu cuenta.
                   </p>
                   <p className="text-sm">
@@ -148,151 +122,181 @@ export default function RegisterPage() {
                   </p>
                 </div>
               </div>
-
-              <p className="text-center text-sm text-muted">
+              <p className="text-center text-sm text-muted-foreground">
                 ¿Ya tienes cuenta?{' '}
                 <Link href="/login" className="text-brand font-semibold hover:underline">
                   Iniciar sesión
                 </Link>
               </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              className="glass rounded-3xl p-6 sm:p-8 shadow-float"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Building2 className="w-4 h-4 text-brand" />
-                    Datos del negocio
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Input
-                      label="Nombre del negocio"
-                      value={form.businessName}
-                      onChange={(e) => setForm((prev) => ({ ...prev, businessName: e.target.value }))}
-                      required
-                    />
-                    <Input
-                      label="Correo de contacto"
-                      type="email"
-                      value={form.contactEmail}
-                      onChange={(e) => setForm((prev) => ({ ...prev, contactEmail: e.target.value }))}
-                      placeholder="opcional"
-                    />
-                  </div>
+            </div>
+          </AuthCard>
+        ) : (
+          <AuthCard
+            title="Registrar negocio"
+            description="Elige tu plan y te contactamos por WhatsApp para activar la cuenta."
+            className="max-w-2xl"
+          >
+            <FormRoot form={form} onSubmit={onSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Building2 className="w-4 h-4 text-brand" />
+                  Datos del negocio
                 </div>
-
-                <div className="space-y-4">
-                  <p className="text-sm font-semibold text-foreground">Administrador del negocio</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Input
-                      label="Tu nombre"
-                      value={form.adminName}
-                      onChange={(e) => setForm((prev) => ({ ...prev, adminName: e.target.value }))}
-                      required
-                    />
-                    <Input
-                      label="Correo de acceso"
-                      type="email"
-                      autoComplete="email"
-                      value={form.adminEmail}
-                      onChange={(e) => setForm((prev) => ({ ...prev, adminEmail: e.target.value }))}
-                      required
-                    />
-                    <Input
-                      label="Contraseña"
-                      type="password"
-                      autoComplete="new-password"
-                      value={form.adminPassword}
-                      onChange={(e) => setForm((prev) => ({ ...prev, adminPassword: e.target.value }))}
-                      hint="Mínimo 8 caracteres"
-                      required
-                    />
-                    <Input
-                      label="Confirmar contraseña"
-                      type="password"
-                      autoComplete="new-password"
-                      value={form.confirmPassword}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
-                      }
-                      required
-                    />
-                  </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="businessName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre del negocio</FormLabel>
+                        <FormControl>
+                          <ShadcnInput {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contactEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Correo de contacto</FormLabel>
+                        <FormControl>
+                          <ShadcnInput type="email" placeholder="opcional" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+              </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Plan de suscripción</p>
-                    <p className="text-xs text-muted mt-1">
-                      Precio base: {SUBSCRIPTION_MONTHLY_PRICE_USD} USD / mes. Descuentos en planes
-                      de 6 meses y anual.
-                    </p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {planOptions.map((option) => {
-                      const selected = form.plan === option.plan;
-                      return (
-                        <button
-                          key={option.plan}
-                          type="button"
-                          onClick={() => setForm((prev) => ({ ...prev, plan: option.plan }))}
-                          className={cn(
-                            'rounded-2xl border p-4 text-left transition-colors',
-                            selected
-                              ? 'border-brand bg-brand-muted'
-                              : 'border-border hover:bg-surface-muted'
-                          )}
-                        >
-                          <p className="text-sm font-semibold">{option.label}</p>
-                          <p className="text-lg font-bold mt-1">{option.priceUsd} USD</p>
-                          {option.discountPercent > 0 ? (
-                            <p className="text-xs text-muted mt-1">
-                              Ahorra {option.discountPercent}%
-                            </p>
-                          ) : (
-                            <p className="text-xs text-muted mt-1">Sin permanencia</p>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+              <div className="space-y-4">
+                <p className="text-sm font-semibold">Administrador del negocio</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="adminName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tu nombre</FormLabel>
+                        <FormControl>
+                          <ShadcnInput {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="adminEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Correo de acceso</FormLabel>
+                        <FormControl>
+                          <ShadcnInput type="email" autoComplete="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="adminPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contraseña</FormLabel>
+                        <FormControl>
+                          <PasswordInput autoComplete="new-password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar contraseña</FormLabel>
+                        <FormControl>
+                          <PasswordInput autoComplete="new-password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+              </div>
 
-                {error && (
-                  <motion.p
-                    className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-xl"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                  >
-                    {error}
-                  </motion.p>
+              <FormField
+                control={form.control}
+                name="plan"
+                render={({ field }) => (
+                  <FormItem>
+                    <div>
+                      <FormLabel>Plan de suscripción</FormLabel>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Precio base: {SUBSCRIPTION_MONTHLY_PRICE_USD} USD / mes. Descuentos en planes
+                        de 6 meses y anual.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {planOptions.map((option) => {
+                          const selected = field.value === option.plan;
+                          return (
+                            <button
+                              key={option.plan}
+                              type="button"
+                              onClick={() => field.onChange(option.plan)}
+                              className={cn(
+                                'rounded-2xl border p-4 text-left transition-colors min-h-[88px]',
+                                selected
+                                  ? 'border-brand bg-brand-muted ring-2 ring-brand/20'
+                                  : 'border-border hover:bg-muted/50'
+                              )}
+                            >
+                              <p className="text-sm font-semibold">{option.label}</p>
+                              <p className="text-lg font-bold mt-1">{option.priceUsd} USD</p>
+                              {option.discountPercent > 0 ? (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Ahorra {option.discountPercent}%
+                                </p>
+                              ) : (
+                                <p className="text-xs text-muted-foreground mt-1">Sin permanencia</p>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
 
-                <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-                  {submitting ? 'Enviando solicitud…' : 'Solicitar registro'}
-                </Button>
+              {serverError ? (
+                <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-xl">
+                  {serverError}
+                </p>
+              ) : null}
 
-                <p className="text-center text-sm text-muted">
-                  ¿Ya tienes cuenta?{' '}
-                  <Link href="/login" className="text-brand font-semibold hover:underline">
-                    Iniciar sesión
-                  </Link>
-                </p>
-                <p className="text-center text-sm text-muted">
-                  <Link href="/descarga" className="text-brand font-semibold hover:underline">
-                    Descargar app Android
-                  </Link>
-                </p>
-              </form>
-            </motion.div>
-          )}
-        </motion.div>
+              <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Enviando solicitud…' : 'Solicitar registro'}
+              </Button>
+
+              <p className="text-center text-sm text-muted-foreground">
+                ¿Ya tienes cuenta?{' '}
+                <Link href="/login" className="text-brand font-semibold hover:underline">
+                  Iniciar sesión
+                </Link>
+              </p>
+            </FormRoot>
+          </AuthCard>
+        )}
       </div>
-    </div>
+    </PublicShell>
   );
 }
