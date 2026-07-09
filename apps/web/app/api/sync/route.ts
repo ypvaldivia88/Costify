@@ -16,26 +16,28 @@ import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/l
 import { migrateTaxSettings } from '@costify/shared/domain/migrate-tax-settings';
 import { migrateExchangeRateSettings } from '@costify/shared/domain/migrate-exchange-rates';
 import { migrateUnitSettings } from '@costify/shared/domain/unit-settings';
-
-function isValidWorkspaceId(value: unknown): value is string {
-  return typeof value === 'string' && value.length >= 8 && value.length <= 128;
-}
+import {
+  parseJsonBody,
+  workspaceIdSchema,
+  workspaceSyncPutSchema,
+} from '@costify/shared/schemas/api';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get('workspaceId');
+    const parsedId = workspaceIdSchema.safeParse(workspaceId);
 
-    if (!isValidWorkspaceId(workspaceId)) {
+    if (!parsedId.success) {
       return NextResponse.json({ error: 'workspaceId inválido.' }, { status: 400 });
     }
 
-    await requireTenantAccess(workspaceId);
+    await requireTenantAccess(parsedId.data);
 
     const db = await getDb();
     const workspace = await db
       .collection<WorkspaceDocument>(WORKSPACES_COLLECTION)
-      .findOne({ workspaceId });
+      .findOne({ workspaceId: parsedId.data });
 
     if (!workspace) {
       return NextResponse.json({ exists: false }, { status: 404 });
@@ -58,17 +60,16 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const body = (await request.json()) as Partial<WorkspacePayload>;
-    const workspaceId = body.workspaceId;
-    const updatedAt = body.updatedAt;
-
-    if (!isValidWorkspaceId(workspaceId)) {
-      return NextResponse.json({ error: 'workspaceId inválido.' }, { status: 400 });
+    const parsed = parseJsonBody(workspaceSyncPutSchema, await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Solicitud de sincronización inválida.' }, { status: 400 });
     }
 
-    if (typeof updatedAt !== 'number' || !Number.isFinite(updatedAt)) {
-      return NextResponse.json({ error: 'updatedAt inválido.' }, { status: 400 });
-    }
+    const body = parsed.data as Partial<WorkspacePayload> & {
+      workspaceId: string;
+      updatedAt: number;
+    };
+    const { workspaceId, updatedAt } = body;
 
     const session = await requireCloudSyncAccess();
     if (session.workspaceId !== workspaceId) {

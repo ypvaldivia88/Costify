@@ -34,14 +34,14 @@ function LoadingScreen() {
 }
 
 export function AppShell() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const data = useAppData();
   const [activeTab, setActiveTab] = useState<AppTab>('products');
   const [settingsSection, setSettingsSection] = useState<
     'subscription' | undefined
   >(undefined);
   const [focusTarget, setFocusTarget] = useState<PriceReviewAlertTarget | null>(null);
-  const navItems = getNavItemsForAccess(data.user?.accessLevel);
+  const navItems = getNavItemsForAccess(user?.accessLevel);
 
   useEffect(() => {
     if (!navItems.some((item) => item.id === activeTab)) {
@@ -77,12 +77,12 @@ export function AppShell() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           cloudSync={data.cloudSync}
-          user={data.user}
+          user={user}
           navItems={navItems}
         />
 
         <main className="max-w-5xl mx-auto px-4 pt-5 pb-32 md:pb-8">
-          <TrialBanner user={data.user} className="mb-4" />
+          <TrialBanner user={user} className="mb-4" />
           <PriceReviewAlerts
             materials={data.materials}
             products={data.inventory}
@@ -113,24 +113,9 @@ export function AppShell() {
                 defaultWarehouseId={defaultWarehouse?.id}
                 focusProductId={focusTarget?.refType === 'product' ? focusTarget.refId : undefined}
                 onFocusConsumed={() => setFocusTarget(null)}
-                onSaveProduct={(product) =>
-                  data.saveProduct(
-                    product,
-                    data.materials,
-                    data.globalFund,
-                    data.unitSettings
-                  )
-                }
-                onDeleteProduct={(id) =>
-                  data.deleteProduct(id, data.materials, data.globalFund, data.unitSettings)
-                }
-                onRecalculateAll={() =>
-                  data.recalculateAll(
-                    data.materials,
-                    data.globalFund,
-                    data.unitSettings
-                  )
-                }
+                onSaveProduct={(product) => data.saveProduct(product)}
+                onDeleteProduct={(id) => data.deleteProduct(id)}
+                onRecalculateAll={() => data.recalculateAll()}
                 onRegisterProductMovement={(product, input) =>
                   data.registerProductMovement(product, input)
                 }
@@ -190,8 +175,8 @@ export function AppShell() {
                 warehouses={data.warehouses}
                 stockMovements={data.stockMovements}
                 stockThresholds={data.stockThresholds}
-                tenantName={data.user?.tenantName}
-                user={data.user}
+                tenantName={user?.tenantName}
+                user={user}
                 cloudSync={data.cloudSync}
                 initialSection={settingsSection}
                 onInitialSectionConsumed={() => setSettingsSection(undefined)}

@@ -15,6 +15,7 @@
   "dependencies": {
     "@costify/client-data": "workspace:*",
     "@costify/shared": "workspace:*",
+    "@costify/ui-tokens": "workspace:*",
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.2",
     "autoprefixer": "^10.4.21",

@@ -39,3 +39,10 @@ export {
 } from './hooks/use-price-review-alerts-state';
 export { useNumericField } from './hooks/use-numeric-field';
 export { UnitCatalogProvider, useUnitCatalog } from './hooks/use-unit-catalog';
+export {
+  AppDataProvider,
+  useAppData,
+  mapSessionToAppDataUser,
+} from './app-data/AppDataProvider';
+export type { AppDataProviderProps } from './app-data/AppDataProvider';
+export type { AppDataContextValue, AppDataUser, AppBackupReloadInput } from './app-data/types';
