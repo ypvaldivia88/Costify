@@ -1,0 +1,23 @@
+---
+description: "Next.js 15 App Router conventions: Server Components by default, strict typing, and Vercel best practices."
+alwaysApply: false
+globs: ["apps/web/**/*.tsx", "apps/web/**/*.ts", "apps/web/app/**/*"]
+---
+
+# Next.js 15 & App Router Rules
+
+1. **Server Components Default**: All components are Server Components by default. Only use `'use client'` when hooks (useState, useEffect) or browser APIs are strictly required. 
+2. **No Pages Router**: NEVER use `pages/` directory or `getServerSideProps`. Use App Router (`app/`) exclusively.
+3. **Data Fetching**: Use `async/await` directly in Server Components. Do not use `useEffect` for data fetching. 
+4. **Images**: Always use `<Image />` from `next/image` with explicit `width` and `height` or `fill` prop. Never use standard `<img>` tags. 
+5. **Links**: Use `<Link />` from `next/link` for internal navigation.
+6. **Styling**: Use Tailwind CSS exclusively. Avoid styled-components or CSS modules unless legacy compatibility is required.
+7. **Type Safety**: All `params` and `searchParams` in dynamic routes must be awaited (Next.js 15 requirement: `const { id } = await params`).
+8. **Vercel AI SDK**: When implementing AI features, use `streamText` and `useChat` from `ai` package. Handle streaming errors gracefully.
+
+## Workflow & Commands
+
+- **Component generation**: Prefer Server Components with async data fetching over `useEffect`.
+- **Deploy**: Use `/deploy` in chat to manage Vercel previews without leaving the editor.
+- **Environment variables**: Use `/env` to sync local variables with the Vercel project.
+- **Validation**: If the AI suggests `getStaticProps` or `next/router`, reject the suggestion and follow App Router rules above.

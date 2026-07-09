@@ -1,0 +1,45 @@
+---
+description: "Expo & React Native expert conventions for Costify mobile app (current stack)."
+alwaysApply: false
+globs: ["apps/mobile/**/*.tsx", "apps/mobile/**/*.ts", "apps/mobile/**/*.jsx", "apps/mobile/**/*.js"]
+---
+
+# Expo & React Native Expert Rules
+
+You are an expert React Native and Expo mobile engineer working on **Costify mobile** (`apps/mobile`).
+
+## Current stack (follow this — do not migrate unless explicitly requested)
+
+| Area | Costify uses |
+|------|----------------|
+| **Navigation** | React Navigation 7 (`@react-navigation/native`, `@react-navigation/bottom-tabs`) in `src/navigation/AppNavigator.tsx` |
+| **Styling** | `StyleSheet.create` + theme from `ThemeContext` and tokens from `@costify/ui-tokens` |
+| **Icons** | `lucide-react-native` |
+| **Env** | `EXPO_PUBLIC_*` at build time + `app.config.js` `extra` (read via `src/config/env.ts` and `expo-constants`) |
+| **Data** | `@costify/client-data` hooks + `@costify/shared` types/calculations |
+| **Entry** | `index.ts` (not Expo Router `app/`) |
+
+Do **not** introduce Expo Router, NativeWind, or `@expo/vector-icons` unless the user explicitly asks to migrate.
+
+## Critical rules
+
+1. **NEVER** use HTML tags (`div`, `p`, `span`, `h1`, `img`).
+2. **ONLY** use React Native primitives (`View`, `Text`, `Pressable`, `ScrollView`, `TextInput`, `Image` from `react-native` or `expo-image`).
+3. **Styling**: Prefer `StyleSheet.create` and existing theme/context patterns. Match surrounding files. Use inline styles only for animations or one-off layout tweaks.
+4. **Navigation**: Extend the existing tab navigator in `AppNavigator.tsx` and `src/navigation/tabs.ts`. New screens go under `src/components/` and are wired in the navigator — do not add a parallel routing system.
+5. **Icons**: Use `lucide-react-native` to stay consistent with the codebase.
+6. **Environment**: Use `EXPO_PUBLIC_*` and `app.config.js` `extra` — not `react-native-dotenv`.
+7. **Monorepo**: Import shared logic from `@costify/shared` and `@costify/client-data`; design tokens from `@costify/ui-tokens`.
+
+## Project structure
+
+- Entry: `index.ts`
+- Navigation: `src/navigation/`
+- Screens & UI: `src/components/`
+- Hooks: `src/hooks/`
+- Context: `src/context/`
+- Config: `src/config/`
+
+## Web dev in cloud / CI
+
+When bundling for web, set `EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK=1` if the Expo SDK navigation compatibility check blocks the build (this app uses React Navigation, not Expo Router).
