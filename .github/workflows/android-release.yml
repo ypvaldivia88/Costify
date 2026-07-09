@@ -48,16 +48,21 @@ jobs:
         run: yes | sdkmanager --licenses || true
 
       - name: Install Android SDK packages
+        shell: bash
         run: |
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-36" \
-            "build-tools;36.0.0"
-
-      - name: Setup NDK
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r27b
+          set -e
+          for attempt in 1 2 3; do
+            if sdkmanager \
+              "platform-tools" \
+              "platforms;android-36" \
+              "build-tools;36.0.0" \
+              "cmake;3.22.1" \
+              "ndk;27.1.12297006"; then
+              break
+            fi
+            echo "sdkmanager attempt ${attempt} failed, retrying..."
+            sleep 15
+          done
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -79,6 +84,8 @@ jobs:
 
       - name: Build release APK
         working-directory: apps/mobile/android
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.1.12297006
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease \
