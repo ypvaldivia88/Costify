@@ -2,7 +2,7 @@ export type SubscriptionPlan = 'monthly' | 'semiannual' | 'annual';
 
 export type SubscriptionStatus = 'pending_payment' | 'active' | 'expired';
 
-export const SUBSCRIPTION_MONTHLY_PRICE_USD = 10;
+export const SUBSCRIPTION_MONTHLY_PRICE_USD = 15;
 
 export const SUBSCRIPTION_PLAN_DISCOUNTS: Record<SubscriptionPlan, number> = {
   monthly: 0,

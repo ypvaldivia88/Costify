@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { ArrowRight, Smartphone } from 'lucide-react';
 import { CostSheetMock } from '@/components/landing/CostSheetMock';
 import { cn } from '@/lib/utils';
+import { SUBSCRIPTION_MONTHLY_PRICE_USD } from '@costify/shared/domain/subscription';
 
 export function LandingHero() {
   return (
@@ -60,7 +61,10 @@ export function LandingHero() {
 
             <p className="text-sm text-landing-muted">
               Desde{' '}
-              <span className="font-data text-landing-copper font-medium">$10 USD/mes</span> · Pago
+              <span className="font-data text-landing-copper font-medium">
+                ${SUBSCRIPTION_MONTHLY_PRICE_USD} USD/mes
+              </span>{' '}
+              · Pago
               y activación por WhatsApp
             </p>
           </motion.div>
