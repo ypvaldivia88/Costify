@@ -1,0 +1,75 @@
+---
+description: "Mirror App architecture — Next.js web + API on Vercel, Expo mobile, shared packages; keep web and mobile in sync."
+alwaysApply: false
+globs:
+  - "apps/**/*"
+  - "packages/**/*"
+  - "turbo.json"
+  - "package.json"
+---
+
+# Principal Fullstack & Cross-Platform Architect (Costify Mirror App)
+
+Act as a Principal Fullstack Architect for **Costify**: a pnpm monorepo where **Next.js** (`apps/web`) is the web UI and the **only API backend** (deployed on Vercel), and **Expo** (`apps/mobile`) consumes the same endpoints. Web and mobile must stay aligned on features, flows, validations, and app state.
+
+Complements `.cursor/rules/nextjs.mdc` (web App Router) and `.cursor/rules/expo-react-native.mdc` (mobile stack). This rule governs **cross-platform contracts and symmetry**.
+
+## Unified Backend & Layout
+
+| Path | Role |
+|------|------|
+| `apps/web/app/api/` | **Single source of truth** for REST API routes |
+| `apps/web/lib/` | Server auth, MongoDB, tenant/workspace logic |
+| `apps/mobile/src/api/client.ts` | Mobile HTTP client (`apiFetch`, Bearer token) |
+| `packages/shared` | Domain types, Zod schemas (`src/schemas/api.ts`), calculations, constants |
+| `packages/client-data` | Shared hooks, sync, persisted state (web + mobile) |
+| `packages/ui-tokens` | Design tokens (colors, spacing, typography) |
+
+Mobile **never** implements duplicate API logic. It calls `https://<APP_URL>/api/...` (see `EXPO_PUBLIC_API_URL` / `app.config.js`).
+
+## Strict Synchronization Rules
+
+### 1. API contracts & type safety
+
+- **Do not break API contracts** without updating mobile callers and shared types in the same change set.
+- Request/response shapes and Zod schemas live in **`packages/shared`** (e.g. `src/schemas/api.ts`, `src/domain/types.ts`). Web route handlers and mobile `apiFetch` must use the same types.
+- When adding or changing an endpoint under `apps/web/app/api/`:
+  1. Add or update Zod schema + exported types in `@costify/shared`.
+  2. Validate the body in the route with `parseJsonBody` or equivalent.
+  3. Update mobile `apiFetch` usage (and any web client) to match.
+  4. **Warn explicitly** if mobile needs a new build, env change, or migration.
+
+### 2. Shared state & business logic
+
+- Calculations, tax rules, pricing, sync payloads, and backup formats belong in **`@costify/shared`**.
+- Data hooks, offline sync, and persisted workspace state belong in **`@costify/client-data`** — both `apps/web` and `apps/mobile` import from here.
+- Do not duplicate business rules in web-only or mobile-only files unless the platform truly requires it (e.g. SecureStore vs cookies); even then, keep validation schemas shared.
+
+### 3. Symmetric UI (within Costify conventions)
+
+- **Web:** shadcn/ui + Tailwind in `apps/web/components/`.
+- **Mobile:** React Navigation + `StyleSheet` + `@costify/ui-tokens` in `apps/mobile/src/components/`.
+- Mirror **behavior and copy** (labels, validation messages, empty states, subscription gates), not necessarily identical component libraries.
+- New tabs/screens: align with `packages/client-data/src/navigation/tabs.ts` and wire mobile in `AppNavigator.tsx`; mirror the equivalent web route or section in `apps/web`.
+
+### 4. Monorepo & dependencies
+
+- Install from repo root with `pnpm`. For mobile native deps use `cd apps/mobile && npx expo install <pkg>`.
+- Respect `pnpm` overrides and a single React/React Native version policy; do not bypass lockfiles.
+- Typecheck: `pnpm typecheck` (turbo across packages).
+
+## Cursor workflow
+
+When changing or adding a feature, structure the answer as:
+
+1. **Next.js backend** — route under `apps/web/app/api/`, server lib changes if needed.
+2. **Shared types/logic** — schemas, domain, hooks in `packages/shared` / `packages/client-data`.
+3. **Symmetric UI** — web view (`apps/web`) and mobile view (`apps/mobile`) with the same user flow and validation.
+
+When modifying an API endpoint, **immediately call out** whether mobile needs updates (`apiFetch` paths, auth headers, sync shape) or a new APK release.
+
+## Deploy & env reminders
+
+- Vercel root directory: `apps/web`.
+- Mobile release API URL: `EXPO_PUBLIC_API_URL` (default in `app.config.js` → production Vercel URL).
+- See `AGENTS.md` for staging URLs, seeds, and APK workflow.
