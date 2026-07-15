@@ -9,7 +9,7 @@ on:
       version:
         description: 'Release version (e.g. 1.0.16)'
         required: true
-        default: '1.0.16'
+        default: '1.0.18'
 
 permissions:
   contents: write
@@ -102,20 +102,20 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          name: v${{ steps.meta.outputs.version }} — UI SaaS v2 y logo móvil
+          name: v${{ steps.meta.outputs.version }} — Inicio, brand v3 y fix demo
           files: costify-demo.v${{ steps.meta.outputs.version }}.apk
           generate_release_notes: false
           body: |
             ## Costify Android v${{ steps.meta.outputs.version }}
 
-            Release desde `main` con el refactor UI SaaS y nueva identidad de marca.
+            Release desde `main` con navegación Inicio, identidad de marca v3 y correcciones de acceso demo.
 
             ### Novedades
-            - **Logo SaaS v2** (web + móvil): marca geométrica unificada
-            - **Landing y auth** renovados con shadcn/ui, contraste dark mode y selects estilizados
-            - **Toggle mostrar/ocultar contraseña** en login y registro
-            - **Enlaces del header** corregidos desde `/login` (`/#faq`, `/#precios`)
-            - **App tenant móvil**: settings vertical, sticky summary en calculadora, cards en sensibilidad
+            - **Inicio** como pantalla principal con KPIs, alertas y acciones rápidas
+            - **Navegación** reagrupada (Principal, Inventario, Operaciones, Negocio, Cuenta)
+            - **Parámetros de costo** en acordeón (settings unificados)
+            - **Brand v3**: logo, iconos adaptativos y splash actualizados
+            - **Demo**: auto-activación de suscripción al iniciar sesión / refrescar sesión
 
             ### APK
             - Archivo: `costify-demo.v${{ steps.meta.outputs.version }}.apk`
