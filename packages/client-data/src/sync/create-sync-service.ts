@@ -171,6 +171,17 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       }
 
       if (pending) {
+        const remoteHasInventory = remote.inventory.length > 0;
+        const localMissingInventory = localData.inventory.length === 0;
+        if (remoteHasInventory && localMissingInventory) {
+          await applyRemoteWorkspace(remote);
+          await saveSyncMetadata(storage, {
+            lastSyncedAt: remote.updatedAt,
+            localUpdatedAt: remote.updatedAt,
+          });
+          return { status: 'synced', direction: 'pull' };
+        }
+
         const pushAt = Math.max(localUpdatedAt, remote.updatedAt);
         await pushWorkspace(workspaceId, tenantId, localData, pushAt);
         await saveSyncMetadata(storage, { lastSyncedAt: pushAt, localUpdatedAt: pushAt });

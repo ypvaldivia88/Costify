@@ -170,22 +170,32 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
   useEffect(() => {
     if (!hydrated || migrationDone.current) return;
 
-    if (locationsState.locations.length === 0) {
-      locationsState.saveLocation({ name: 'Local principal', code: 'MAIN', active: true });
-    }
+    const isCloudBacked = Boolean(user?.workspaceId && user?.tenantId && access.canSync);
 
-    if (warehousesState.warehouses.length === 0) {
-      const warehouse = warehousesState.saveWarehouse(DEFAULT_WAREHOUSE_PRESETS[0]);
-      const initialMovements = createInitialStockMovements(
-        rawMaterialsState.materials,
-        warehouse.id
-      );
-      if (initialMovements.length > 0) {
-        stockMovementsState.setMovementsDirect([
-          ...initialMovements,
-          ...stockMovementsState.movements,
-        ]);
+    if (!isCloudBacked) {
+      if (locationsState.locations.length === 0) {
+        locationsState.saveLocation({ name: 'Local principal', code: 'MAIN', active: true });
       }
+
+      if (warehousesState.warehouses.length === 0) {
+        const warehouse = warehousesState.saveWarehouse(DEFAULT_WAREHOUSE_PRESETS[0]);
+        const initialMovements = createInitialStockMovements(
+          rawMaterialsState.materials,
+          warehouse.id
+        );
+        if (initialMovements.length > 0) {
+          stockMovementsState.setMovementsDirect([
+            ...initialMovements,
+            ...stockMovementsState.movements,
+          ]);
+        }
+        migrationDone.current = true;
+        return;
+      }
+    } else if (
+      locationsState.locations.length === 0 &&
+      warehousesState.warehouses.length === 0
+    ) {
       migrationDone.current = true;
       return;
     }
@@ -207,7 +217,17 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
     }
 
     migrationDone.current = true;
-  }, [hydrated, locationsState, warehousesState, rawMaterialsState.materials, stockMovementsState, getDefaultWarehouse]);
+  }, [
+    hydrated,
+    user?.workspaceId,
+    user?.tenantId,
+    access.canSync,
+    locationsState,
+    warehousesState,
+    rawMaterialsState.materials,
+    stockMovementsState,
+    getDefaultWarehouse,
+  ]);
 
   useEffect(() => {
     if (!hydrated) return;
