@@ -100,11 +100,24 @@ export async function PUT(request: Request) {
     }
 
     const now = Date.now();
+    const incomingInventory = Array.isArray(body.inventory) ? body.inventory : [];
+
+    if (existing && existing.inventory.length > 0 && incomingInventory.length === 0) {
+      const preserved = withMigratedWorkspace(existing);
+      return NextResponse.json(
+        {
+          error: 'conflict',
+          workspace: preserved,
+        },
+        { status: 409 }
+      );
+    }
+
     const migrated = migrateWorkspaceLocations(
       {
         workspaceId,
         tenantId: session.tenantId!,
-        inventory: Array.isArray(body.inventory) ? body.inventory : [],
+        inventory: incomingInventory,
         rawMaterials: Array.isArray(body.rawMaterials) ? body.rawMaterials : [],
         globalCosts: Array.isArray(body.globalCosts) ? body.globalCosts : [],
         globalFund: migrateGlobalFundSettings(body.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
