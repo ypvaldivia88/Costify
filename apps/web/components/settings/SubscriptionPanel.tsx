@@ -7,6 +7,7 @@ import {
   buildWhatsAppPaymentMessage,
   buildWhatsAppPaymentUrl,
   formatSubscriptionExpiry,
+  formatSubscriptionLocationBreakdown,
   getSubscriptionPlanPriceUsd,
   getSubscriptionStatusLabel,
   SUBSCRIPTION_PLAN_LABELS,
@@ -78,9 +79,10 @@ export function SubscriptionPanel({
   const hasPendingPlanChange =
     Boolean(subscription.requestedPlan) && subscription.requestedPlan !== subscription.plan;
   const canRequestPlan = needsPayment || planChanged;
+  const billedLocationCount = subscription.locationCount;
 
   function openWhatsAppForPlan(plan: SubscriptionPlan) {
-    const priceUsd = getSubscriptionPlanPriceUsd(plan);
+    const priceUsd = getSubscriptionPlanPriceUsd(plan, billedLocationCount);
     const url = buildWhatsAppPaymentUrl(
       buildWhatsAppPaymentMessage({
         businessName,
@@ -88,6 +90,7 @@ export function SubscriptionPanel({
         email: contactEmail,
         plan,
         priceUsd,
+        locationCount: billedLocationCount,
         isRenewal: !needsPayment || isExpired,
       })
     );
@@ -148,6 +151,9 @@ export function SubscriptionPanel({
           <div className="rounded-xl border border-border bg-surface-muted/50 p-3">
             <dt className="text-xs text-muted">Precio del plan</dt>
             <dd className="font-semibold mt-1">{subscription.priceUsd.toFixed(2)} USD</dd>
+            <p className="text-xs text-muted mt-1">
+              {formatSubscriptionLocationBreakdown(subscription.locationCount)}
+            </p>
             {subscription.discountPercent > 0 ? (
               <p className="text-xs text-muted mt-1">
                 {subscription.discountPercent}% de descuento sobre el precio mensual
@@ -186,7 +192,7 @@ export function SubscriptionPanel({
                   >
                     <span className="block">{SUBSCRIPTION_PLAN_LABELS[planId]}</span>
                     <span className="block text-xs text-muted mt-1">
-                      {getSubscriptionPlanPriceUsd(planId).toFixed(2)} USD
+                      {getSubscriptionPlanPriceUsd(planId, subscription.locationCount).toFixed(2)} USD
                     </span>
                   </button>
                 );

@@ -1,4 +1,9 @@
+import path from 'node:path';
+import { loadEnvConfig } from '@next/env';
 import type {NextConfig} from 'next';
+
+// Single source of truth: repo-root `.env.local` (monorepo). Avoid duplicating secrets in apps/web/.env.local.
+loadEnvConfig(path.resolve(__dirname, '..', '..'));
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

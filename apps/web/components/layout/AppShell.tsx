@@ -169,6 +169,8 @@ export function AppShell() {
                 warehouses={data.warehouses}
                 stockMovements={data.stockMovements}
                 stockThresholds={data.stockThresholds}
+                locations={data.locations}
+                sales={data.sales}
                 tenantName={user?.tenantName}
                 user={user}
                 cloudSync={data.cloudSync}
@@ -180,6 +182,9 @@ export function AppShell() {
                 onUpdateTaxSettings={data.updateTaxSettings}
                 onSaveUnitSettings={data.saveUnitSettings}
                 onResetUnitSettings={data.resetUnitSettings}
+                onSaveLocation={data.saveLocation}
+                onDeleteLocation={data.deleteLocation}
+                onImportSales={data.addSales}
               />
             )}
           </motion.div>

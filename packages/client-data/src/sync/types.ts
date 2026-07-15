@@ -1,4 +1,6 @@
 import type { AppBackupV1 } from '@costify/shared/backup/backup-core';
+import type { Location } from '@costify/shared/domain/location';
+import type { SaleRecord } from '@costify/shared/domain/sales';
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 export type SyncDirection = 'none' | 'pull' | 'push';
@@ -19,9 +21,11 @@ export interface WorkspaceDocument {
   laborShareSettings?: AppBackupV1['laborShareSettings'];
   taxSettings: AppBackupV1['taxSettings'];
   unitSettings: AppBackupV1['unitSettings'];
+  locations?: AppBackupV1['locations'];
   warehouses: AppBackupV1['warehouses'];
   stockMovements: AppBackupV1['stockMovements'];
   stockThresholds: AppBackupV1['stockThresholds'];
+  sales?: AppBackupV1['sales'];
   exchangeRateSettings?: AppBackupV1['exchangeRateSettings'];
   updatedAt: number;
   createdAt?: number;

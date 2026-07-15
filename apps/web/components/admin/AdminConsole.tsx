@@ -205,14 +205,21 @@ export function AdminConsole() {
               <p className="text-xs text-muted">{user?.name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={refreshing} onClick={() => void refresh()}>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={refreshing}
+              onClick={() => void refresh()}
+              title="Actualizar"
+            >
               <RefreshCw className={refreshing ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-              Actualizar
+              <span className="hidden sm:inline">Actualizar</span>
             </Button>
-            <Button type="button" variant="outline" onClick={() => void logout()}>
+            <Button type="button" variant="outline" size="sm" onClick={() => void logout()} title="Salir">
               <LogOut className="w-4 h-4" />
-              Salir
+              <span className="hidden sm:inline">Salir</span>
             </Button>
           </div>
         </div>

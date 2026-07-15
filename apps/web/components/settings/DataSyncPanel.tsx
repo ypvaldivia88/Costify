@@ -15,6 +15,8 @@ import type {
   Warehouse,
 } from '@costify/shared/domain/types';
 import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
+import type { Location } from '@costify/shared/domain/location';
+import type { SaleRecord } from '@costify/shared/domain/sales';
 import {
   applyBackupToStorage,
   createBackupPayload,
@@ -43,6 +45,8 @@ interface DataSyncPanelProps {
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
+  locations?: Location[];
+  sales?: SaleRecord[];
   tenantName?: string;
   cloudSync: {
     status: SyncStatus;
@@ -69,6 +73,8 @@ export function DataSyncPanel({
   warehouses,
   stockMovements,
   stockThresholds,
+  locations = [],
+  sales = [],
   tenantName,
   cloudSync,
 }: DataSyncPanelProps) {
@@ -93,6 +99,8 @@ export function DataSyncPanel({
         warehouses,
         stockMovements,
         stockThresholds,
+        locations,
+        sales,
       }),
     [
       inventory,
@@ -106,10 +114,12 @@ export function DataSyncPanel({
       warehouses,
       stockMovements,
       stockThresholds,
+      locations,
+      sales,
     ]
   );
 
-  const summary = `${inventory.length} producto(s), ${rawMaterials.length} materia(s) prima(s), ${warehouses.length} almacén(es)`;
+  const summary = `${inventory.length} producto(s), ${rawMaterials.length} materia(s) prima(s), ${warehouses.length} almacén(es), ${locations.length} local(es)`;
 
   const handleCopy = async () => {
     try {

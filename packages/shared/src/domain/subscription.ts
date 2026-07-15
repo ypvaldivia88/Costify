@@ -4,6 +4,14 @@ export type SubscriptionStatus = 'pending_payment' | 'active' | 'expired';
 
 export const SUBSCRIPTION_MONTHLY_PRICE_USD = 15;
 
+/** Locales incluidos en el precio base sin cargo adicional. */
+export const SUBSCRIPTION_INCLUDED_LOCATIONS = 1;
+
+/** Cargo mensual por cada local activo adicional. */
+export const SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD = 8;
+
+export const SUBSCRIPTION_MAX_LOCATION_COUNT = 20;
+
 export const SUBSCRIPTION_PLAN_DISCOUNTS: Record<SubscriptionPlan, number> = {
   monthly: 0,
   semiannual: 0.1,
@@ -42,12 +50,40 @@ export interface TenantSubscription {
   expiresAt?: number;
   /** Plan solicitado por el cliente; no aplica hasta confirmación del super admin. */
   requestedPlan?: SubscriptionPlan;
+  /** Locales activos facturados (mínimo 1). */
+  locationCount: number;
+  includedLocations: number;
+  additionalLocationPriceUsd: number;
 }
 
-export function getSubscriptionPlanPriceUsd(plan: SubscriptionPlan): number {
+export function normalizeLocationCount(locationCount?: number): number {
+  if (locationCount == null || !Number.isFinite(locationCount)) {
+    return SUBSCRIPTION_INCLUDED_LOCATIONS;
+  }
+  return Math.min(
+    SUBSCRIPTION_MAX_LOCATION_COUNT,
+    Math.max(SUBSCRIPTION_INCLUDED_LOCATIONS, Math.floor(locationCount))
+  );
+}
+
+export function getAdditionalLocationCount(locationCount: number): number {
+  const normalized = normalizeLocationCount(locationCount);
+  return Math.max(0, normalized - SUBSCRIPTION_INCLUDED_LOCATIONS);
+}
+
+export function getSubscriptionMonthlySubtotalUsd(locationCount = SUBSCRIPTION_INCLUDED_LOCATIONS): number {
+  const normalized = normalizeLocationCount(locationCount);
+  const additional = getAdditionalLocationCount(normalized);
+  return SUBSCRIPTION_MONTHLY_PRICE_USD + additional * SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD;
+}
+
+export function getSubscriptionPlanPriceUsd(
+  plan: SubscriptionPlan,
+  locationCount = SUBSCRIPTION_INCLUDED_LOCATIONS
+): number {
   const months = SUBSCRIPTION_PLAN_MONTHS[plan];
   const discount = SUBSCRIPTION_PLAN_DISCOUNTS[plan];
-  const subtotal = SUBSCRIPTION_MONTHLY_PRICE_USD * months;
+  const subtotal = getSubscriptionMonthlySubtotalUsd(locationCount) * months;
   return Math.round(subtotal * (1 - discount) * 100) / 100;
 }
 
@@ -55,14 +91,34 @@ export function getSubscriptionDiscountPercent(plan: SubscriptionPlan): number {
   return Math.round(SUBSCRIPTION_PLAN_DISCOUNTS[plan] * 100);
 }
 
-export function buildPendingSubscription(plan: SubscriptionPlan, requestedAt = Date.now()): TenantSubscription {
+function subscriptionPricingFields(
+  plan: SubscriptionPlan,
+  locationCount: number
+): Pick<
+  TenantSubscription,
+  'monthlyPriceUsd' | 'discountPercent' | 'priceUsd' | 'locationCount' | 'includedLocations' | 'additionalLocationPriceUsd'
+> {
+  const normalized = normalizeLocationCount(locationCount);
+  return {
+    monthlyPriceUsd: getSubscriptionMonthlySubtotalUsd(normalized),
+    discountPercent: getSubscriptionDiscountPercent(plan),
+    priceUsd: getSubscriptionPlanPriceUsd(plan, normalized),
+    locationCount: normalized,
+    includedLocations: SUBSCRIPTION_INCLUDED_LOCATIONS,
+    additionalLocationPriceUsd: SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD,
+  };
+}
+
+export function buildPendingSubscription(
+  plan: SubscriptionPlan,
+  requestedAt = Date.now(),
+  locationCount = SUBSCRIPTION_INCLUDED_LOCATIONS
+): TenantSubscription {
   return {
     plan,
     status: 'pending_payment',
-    monthlyPriceUsd: SUBSCRIPTION_MONTHLY_PRICE_USD,
-    discountPercent: getSubscriptionDiscountPercent(plan),
-    priceUsd: getSubscriptionPlanPriceUsd(plan),
     requestedAt,
+    ...subscriptionPricingFields(plan, locationCount),
   };
 }
 
@@ -94,21 +150,35 @@ export function formatSubscriptionExpiry(expiresAt?: number): string {
   return new Intl.DateTimeFormat('es', { dateStyle: 'long' }).format(new Date(expiresAt));
 }
 
+export function formatSubscriptionLocationBreakdown(locationCount: number): string {
+  const normalized = normalizeLocationCount(locationCount);
+  const additional = getAdditionalLocationCount(normalized);
+  if (additional === 0) {
+    return `${normalized} local incluido en precio base`;
+  }
+  return `${normalized} locales (${SUBSCRIPTION_INCLUDED_LOCATIONS} base + ${additional} adicional${additional === 1 ? '' : 'es'} × $${SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD}/mes)`;
+}
+
 export function buildWhatsAppPaymentMessage(input: {
   businessName: string;
   contactName: string;
   email: string;
   plan: SubscriptionPlan;
   priceUsd: number;
+  locationCount?: number;
   isRenewal?: boolean;
 }): string {
   const action = input.isRenewal ? 'renovar' : 'activar';
   const planLabel = SUBSCRIPTION_PLAN_LABELS[input.plan];
+  const locationLine = formatSubscriptionLocationBreakdown(
+    input.locationCount ?? SUBSCRIPTION_INCLUDED_LOCATIONS
+  );
   return [
     `Hola, quiero ${action} mi cuenta en Costify.`,
     `Negocio: ${input.businessName}`,
     `Contacto: ${input.contactName}`,
     `Correo: ${input.email}`,
+    `Locales: ${locationLine}`,
     `Plan: ${planLabel} (${input.priceUsd} USD)`,
   ].join('\n');
 }
@@ -129,12 +199,27 @@ export function changeSubscriptionPlan(
   return {
     ...subscription,
     plan,
-    priceUsd: getSubscriptionPlanPriceUsd(plan),
-    discountPercent: getSubscriptionDiscountPercent(plan),
-    monthlyPriceUsd: SUBSCRIPTION_MONTHLY_PRICE_USD,
+    ...subscriptionPricingFields(plan, subscription.locationCount),
     status: options?.keepStatus ? subscription.status : 'pending_payment',
     requestedAt: Date.now(),
     requestedPlan: undefined,
+  };
+}
+
+export function changeSubscriptionLocationCount(
+  subscription: TenantSubscription,
+  locationCount: number,
+  options?: { keepStatus?: boolean }
+): TenantSubscription {
+  const normalized = normalizeLocationCount(locationCount);
+  if (normalized === subscription.locationCount) {
+    return subscription;
+  }
+  return {
+    ...subscription,
+    ...subscriptionPricingFields(subscription.plan, normalized),
+    status: options?.keepStatus ? subscription.status : 'pending_payment',
+    requestedAt: Date.now(),
   };
 }
 
@@ -196,18 +281,39 @@ export function renewSubscription(
   };
 }
 
+function migrateLegacySubscription(subscription: TenantSubscription): TenantSubscription {
+  const locationCount = normalizeLocationCount(subscription.locationCount);
+  const includedLocations = subscription.includedLocations ?? SUBSCRIPTION_INCLUDED_LOCATIONS;
+  const additionalLocationPriceUsd =
+    subscription.additionalLocationPriceUsd ?? SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD;
+  const monthlyPriceUsd =
+    subscription.monthlyPriceUsd ?? getSubscriptionMonthlySubtotalUsd(locationCount);
+  const priceUsd =
+    subscription.priceUsd ?? getSubscriptionPlanPriceUsd(subscription.plan, locationCount);
+
+  return {
+    ...subscription,
+    locationCount,
+    includedLocations,
+    additionalLocationPriceUsd,
+    monthlyPriceUsd,
+    priceUsd,
+  };
+}
+
 export function ensureTenantSubscription(subscription?: TenantSubscription | null): TenantSubscription {
   if (!subscription) {
     return buildPendingSubscription('monthly');
   }
+  const migrated = migrateLegacySubscription(subscription);
   if (
-    subscription.status === 'active' &&
-    subscription.expiresAt &&
-    subscription.expiresAt < Date.now()
+    migrated.status === 'active' &&
+    migrated.expiresAt &&
+    migrated.expiresAt < Date.now()
   ) {
-    return { ...subscription, status: 'expired' };
+    return { ...migrated, status: 'expired' };
   }
-  return subscription;
+  return migrated;
 }
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['monthly', 'semiannual', 'annual'];
@@ -217,30 +323,36 @@ export type SubscriptionAdminAction = 'activate' | 'renew' | 'expire' | 'pending
 export function applySubscriptionAdminAction(
   subscription: TenantSubscription,
   action: SubscriptionAdminAction,
-  plan?: SubscriptionPlan
+  plan?: SubscriptionPlan,
+  locationCount?: number
 ): TenantSubscription {
+  let current = ensureTenantSubscription(subscription);
+  if (locationCount != null) {
+    current = changeSubscriptionLocationCount(current, locationCount, { keepStatus: true });
+  }
+
   switch (action) {
     case 'activate':
       return clearRequestedPlan(
         activateSubscription(
-          plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription
+          plan ? changeSubscriptionPlan(current, plan, { keepStatus: true }) : current
         )
       );
     case 'renew':
       return clearRequestedPlan(
         renewSubscription(
-          plan ? changeSubscriptionPlan(subscription, plan, { keepStatus: true }) : subscription
+          plan ? changeSubscriptionPlan(current, plan, { keepStatus: true }) : current
         )
       );
     case 'expire':
-      return clearRequestedPlan(markSubscriptionExpired(subscription));
+      return clearRequestedPlan(markSubscriptionExpired(current));
     case 'pending':
-      return clearRequestedPlan(markSubscriptionPendingPayment(subscription));
+      return clearRequestedPlan(markSubscriptionPendingPayment(current));
     case 'set_plan':
       if (!plan) throw new Error('Plan requerido.');
-      return clearRequestedPlan(changeSubscriptionPlan(subscription, plan));
+      return clearRequestedPlan(changeSubscriptionPlan(current, plan));
     default:
-      return subscription;
+      return current;
   }
 }
 

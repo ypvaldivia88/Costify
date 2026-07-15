@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import type { SessionUser } from '@/lib/auth/types';
 import { formatTrialRemaining, shouldShowAccessBanner } from '@costify/shared/domain/access';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
-const VISIBLE_MS = 4500;
+const VISIBLE_MS = 8000;
 const FADE_MS = 600;
 const dismissedBannerKeys = new Set<string>();
 
@@ -29,8 +32,11 @@ function getBannerMessage(user: SessionUser): string {
 }
 
 export function TrialBanner({ user, className }: TrialBannerProps) {
+  const { refresh } = useAuth();
   const [phase, setPhase] = useState<'in' | 'out' | 'hidden'>('hidden');
+  const [refreshing, setRefreshing] = useState(false);
   const isTrial = user?.accessLevel === 'trial';
+  const isReadonly = user?.accessLevel === 'readonly';
 
   useEffect(() => {
     if (!user || !shouldShowAccessBanner(user)) {
@@ -38,24 +44,61 @@ export function TrialBanner({ user, className }: TrialBannerProps) {
       return;
     }
     const bannerKey = getBannerKey(user);
-    if (dismissedBannerKeys.has(bannerKey)) {
+    if (!isReadonly && dismissedBannerKeys.has(bannerKey)) {
       setPhase('hidden');
       return;
     }
     setPhase('in');
     const fadeTimer = setTimeout(() => setPhase('out'), VISIBLE_MS);
     const hideTimer = setTimeout(() => {
-      dismissedBannerKeys.add(bannerKey);
+      if (!isReadonly) {
+        dismissedBannerKeys.add(bannerKey);
+      }
       setPhase('hidden');
     }, VISIBLE_MS + FADE_MS);
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
-  }, [user?.accessLevel, user?.subscriptionStatus, user?.userId, user]);
+  }, [user?.accessLevel, user?.subscriptionStatus, user?.userId, user, isReadonly]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (!user || phase === 'hidden' || !shouldShowAccessBanner(user)) {
     return null;
+  }
+
+  if (isReadonly) {
+    return (
+      <div
+        className={cn(
+          'flex flex-col sm:flex-row sm:items-center gap-2 text-xs text-center sm:text-left border rounded-lg px-3 py-2 border-amber-500/30 bg-amber-500/10',
+          className
+        )}
+      >
+        <p className="flex-1 text-muted-foreground">
+          {getBannerMessage(user)}. Si el administrador ya activó tu cuenta, actualiza la sesión.
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="shrink-0 w-full sm:w-auto"
+          disabled={refreshing}
+          onClick={() => void handleRefresh()}
+        >
+          <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
+          Actualizar sesión
+        </Button>
+      </div>
+    );
   }
 
   return (

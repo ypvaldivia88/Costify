@@ -201,7 +201,7 @@ export function AdminTenantsTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <div className="overflow-x-auto rounded-xl border border-border hidden md:block">
         <table className="w-full min-w-[960px] text-sm">
           <thead className="bg-surface-muted/80 text-left">
             <tr className="text-xs uppercase tracking-wide text-muted">
@@ -234,6 +234,7 @@ export function AdminTenantsTable({
                           email: tenant.adminEmail,
                           plan: subscription.plan,
                           priceUsd: subscription.priceUsd,
+                          locationCount: subscription.locationCount,
                         })
                       )
                     : null;
@@ -340,6 +341,111 @@ export function AdminTenantsTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="md:hidden space-y-3">
+        {filteredTenants.length === 0 ? (
+          <p className="text-sm text-center text-muted py-8">No hay clientes que coincidan con los filtros.</p>
+        ) : (
+          filteredTenants.map((tenant) => {
+            const subscription = tenant.subscription;
+            const whatsappUrl =
+              tenant.status === 'pending' && subscription && tenant.adminEmail
+                ? buildWhatsAppPaymentUrl(
+                    buildWhatsAppPaymentMessage({
+                      businessName: tenant.name,
+                      contactName: tenant.adminName ?? tenant.name,
+                      email: tenant.adminEmail,
+                      plan: subscription.plan,
+                      priceUsd: subscription.priceUsd,
+                      locationCount: subscription.locationCount,
+                    })
+                  )
+                : null;
+
+            return (
+              <button
+                key={tenant.tenantId}
+                type="button"
+                onClick={() => onSelectTenant(tenant.tenantId)}
+                className={cn(
+                  'w-full text-left rounded-xl border border-border p-4 space-y-3 transition-colors',
+                  selectedTenantId === tenant.tenantId
+                    ? 'border-brand/40 bg-brand-muted/20'
+                    : 'bg-surface hover:bg-surface-muted/60'
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{tenant.name}</p>
+                    <p className="text-xs text-muted truncate mt-0.5">{tenant.contactEmail}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      'shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full',
+                      tenantStatusTone(tenant.status)
+                    )}
+                  >
+                    {tenantStatusLabel(tenant.status)}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 text-xs text-muted">
+                  {subscription ? (
+                    <>
+                      <span
+                        className={cn(
+                          'inline-flex font-semibold px-2 py-0.5 rounded-full',
+                          subscriptionStatusTone(subscription.status)
+                        )}
+                      >
+                        {SUBSCRIPTION_STATUS_LABELS[subscription.status]}
+                      </span>
+                      <span>{SUBSCRIPTION_PLAN_LABELS[subscription.plan]}</span>
+                      <span>{subscription.priceUsd.toFixed(2)} USD</span>
+                    </>
+                  ) : (
+                    <span>Sin suscripción</span>
+                  )}
+                  <span>·</span>
+                  <span>{tenant.userCount} usuario{tenant.userCount === 1 ? '' : 's'}</span>
+                  <span>·</span>
+                  <span>{formatAdminDateShort(tenant.createdAt)}</span>
+                </div>
+
+                {tenant.status === 'pending' || whatsappUrl ? (
+                  <div className="flex flex-wrap gap-2 pt-1" onClick={(event) => event.stopPropagation()}>
+                    {tenant.status === 'pending' ? (
+                      <>
+                        <Button type="button" size="sm" onClick={() => onApprove(tenant.tenantId)}>
+                          <CheckCircle2 className="w-4 h-4" />
+                          Aprobar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onReject(tenant.tenantId)}
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Rechazar
+                        </Button>
+                      </>
+                    ) : null}
+                    {whatsappUrl ? (
+                      <Button type="button" size="sm" variant="outline" asChild>
+                        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                          <MessageCircle className="w-4 h-4" />
+                          WhatsApp
+                        </a>
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </button>
+            );
+          })
+        )}
       </div>
     </Card>
   );

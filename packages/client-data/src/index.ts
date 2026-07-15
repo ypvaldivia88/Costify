@@ -1,6 +1,7 @@
 export * from './auth/types';
 export * from './access/workspace-access';
 export * from './navigation/tabs';
+export * from './navigation/settings-sections';
 export * from './storage/types';
 export * from './sync/sync-events';
 export * from './sync/sync-metadata';
@@ -23,6 +24,8 @@ export { useLaborShareSettings } from './hooks/use-labor-share-settings';
 export { useTaxSettings } from './hooks/use-tax-settings';
 export { useUnitSettings } from './hooks/use-unit-settings';
 export { useWarehouses } from './hooks/use-warehouses';
+export { useLocations } from './hooks/use-locations';
+export { useSales } from './hooks/use-sales';
 export { useStockMovements } from './hooks/use-stock-movements';
 export { useStockThresholds } from './hooks/use-stock-thresholds';
 export { useExchangeRates, parseTrmiApiResponse } from './hooks/use-exchange-rates';

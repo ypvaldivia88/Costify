@@ -6,6 +6,7 @@ import {
   buildWhatsAppPaymentMessage,
   buildWhatsAppPaymentUrl,
   formatSubscriptionExpiry,
+  formatSubscriptionLocationBreakdown,
   getSubscriptionPlanPriceUsd,
   getSubscriptionStatusLabel,
   SUBSCRIPTION_PLAN_LABELS,
@@ -84,9 +85,10 @@ export function SubscriptionPanel({
   const hasPendingPlanChange =
     Boolean(subscription.requestedPlan) && subscription.requestedPlan !== subscription.plan;
   const canRequestPlan = needsPayment || planChanged;
+  const billedLocationCount = subscription.locationCount;
 
   function openWhatsAppForPlan(plan: SubscriptionPlan) {
-    const priceUsd = getSubscriptionPlanPriceUsd(plan);
+    const priceUsd = getSubscriptionPlanPriceUsd(plan, billedLocationCount);
     const url = buildWhatsAppPaymentUrl(
       buildWhatsAppPaymentMessage({
         businessName,
@@ -94,6 +96,7 @@ export function SubscriptionPanel({
         email: contactEmail,
         plan,
         priceUsd,
+        locationCount: billedLocationCount,
         isRenewal: !needsPayment || isExpired,
       })
     );
@@ -170,6 +173,9 @@ export function SubscriptionPanel({
               {subscription.priceUsd.toFixed(2)} USD
             </Text>
             <Text style={[styles.statHint, { color: colors.muted }]}>
+              {formatSubscriptionLocationBreakdown(subscription.locationCount)}
+            </Text>
+            <Text style={[styles.statHint, { color: colors.muted }]}>
               {subscription.discountPercent > 0
                 ? `${subscription.discountPercent}% de descuento`
                 : `${subscription.monthlyPriceUsd.toFixed(2)} USD / mes`}
@@ -207,7 +213,7 @@ export function SubscriptionPanel({
                       {SUBSCRIPTION_PLAN_LABELS[planId]}
                     </Text>
                     <Text style={[styles.planOptionPrice, { color: colors.muted }]}>
-                      {getSubscriptionPlanPriceUsd(planId).toFixed(2)} USD
+                      {getSubscriptionPlanPriceUsd(planId, subscription.locationCount).toFixed(2)} USD
                     </Text>
                   </Pressable>
                 );

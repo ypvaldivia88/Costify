@@ -8,8 +8,9 @@
     "start": "node ../../node_modules/next/dist/bin/next start",
     "lint": "eslint .",
     "clean": "node ../../node_modules/next/dist/bin/next clean",
-    "seed:admin": "tsx --env-file=.env.local scripts/seed-super-admin.ts",
-    "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-tenant.ts",
+    "seed:admin": "tsx --env-file=../../.env.local scripts/seed-super-admin.ts",
+    "seed:demo": "tsx --env-file=../../.env.local scripts/seed-demo-tenant.ts",
+    "seed:demo-multilocal": "tsx --env-file=../../.env.local scripts/seed-demo-multilocal.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

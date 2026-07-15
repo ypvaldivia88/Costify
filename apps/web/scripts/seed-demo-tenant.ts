@@ -19,7 +19,7 @@ import type {
   Warehouse,
 } from '@costify/shared/domain/types';
 
-const DEMO = {
+export const DEMO = {
   tenantName: 'Panadería La Espiga',
   contactEmail: 'demo@costify.local',
   adminName: 'María Demo',
@@ -30,7 +30,7 @@ const DEMO = {
   userPassword: 'Demo2026!',
 } as const;
 
-const IDS = {
+export const DEMO_IDS = {
   warehouses: {
     principal: 'demo-wh-principal',
     venta: 'demo-wh-venta',
@@ -54,24 +54,24 @@ const IDS = {
   },
 } as const;
 
-function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number): WorkspaceDocument {
+export function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number): WorkspaceDocument {
   const warehouses: Warehouse[] = [
     {
-      id: IDS.warehouses.principal,
+      id: DEMO_IDS.warehouses.principal,
       name: 'Bodega principal',
       type: 'principal',
       active: true,
       timestamp: now,
     },
     {
-      id: IDS.warehouses.venta,
+      id: DEMO_IDS.warehouses.venta,
       name: 'Punto de venta',
       type: 'venta',
       active: true,
       timestamp: now,
     },
     {
-      id: IDS.warehouses.produccion,
+      id: DEMO_IDS.warehouses.produccion,
       name: 'Área de producción',
       type: 'produccion',
       active: true,
@@ -88,7 +88,7 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
         packageQuantity: 25,
         stockQuantity: 0,
       },
-      IDS.materials.harina,
+      DEMO_IDS.materials.harina,
       now
     ),
     buildRawMaterial(
@@ -99,7 +99,7 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
         packageQuantity: 10,
         stockQuantity: 0,
       },
-      IDS.materials.azucar,
+      DEMO_IDS.materials.azucar,
       now
     ),
     buildRawMaterial(
@@ -110,7 +110,7 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
         packageQuantity: 5,
         stockQuantity: 0,
       },
-      IDS.materials.aceite,
+      DEMO_IDS.materials.aceite,
       now
     ),
     buildRawMaterial(
@@ -121,7 +121,7 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
         packageQuantity: 30,
         stockQuantity: 0,
       },
-      IDS.materials.huevo,
+      DEMO_IDS.materials.huevo,
       now
     ),
     buildRawMaterial(
@@ -139,21 +139,21 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
           rateFetchedAt: now,
         },
       },
-      IDS.materials.leche,
+      DEMO_IDS.materials.leche,
       now
     ),
   ];
 
   const globalCosts: IndirectCost[] = [
     {
-      id: IDS.globalCosts.alquiler,
+      id: DEMO_IDS.globalCosts.alquiler,
       name: 'Alquiler local',
       amount: 15000,
       distributionCriteria: 'units',
       distributionUnits: 500,
     },
     {
-      id: IDS.globalCosts.energia,
+      id: DEMO_IDS.globalCosts.energia,
       name: 'Electricidad',
       amount: 4500,
       distributionCriteria: 'direct-cost',
@@ -186,10 +186,10 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
       purchaseUnit: 'unidad',
       packageQuantity: 1,
       recipe: [
-        { rawMaterialId: IDS.materials.harina, quantity: 500, unitType: 'gr' },
-        { rawMaterialId: IDS.materials.azucar, quantity: 50, unitType: 'gr' },
-        { rawMaterialId: IDS.materials.aceite, quantity: 30, unitType: 'ml' },
-        { rawMaterialId: IDS.materials.huevo, quantity: 1, unitType: 'ud' },
+        { rawMaterialId: DEMO_IDS.materials.harina, quantity: 500, unitType: 'gr' },
+        { rawMaterialId: DEMO_IDS.materials.azucar, quantity: 50, unitType: 'gr' },
+        { rawMaterialId: DEMO_IDS.materials.aceite, quantity: 30, unitType: 'ml' },
+        { rawMaterialId: DEMO_IDS.materials.huevo, quantity: 1, unitType: 'ud' },
       ],
       productionUnits: 120,
       productWeight: 0.45,
@@ -204,10 +204,10 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
       purchaseUnit: 'unidad',
       packageQuantity: 1,
       recipe: [
-        { rawMaterialId: IDS.materials.harina, quantity: 300, unitType: 'gr' },
-        { rawMaterialId: IDS.materials.azucar, quantity: 200, unitType: 'gr' },
-        { rawMaterialId: IDS.materials.leche, quantity: 150, unitType: 'gr' },
-        { rawMaterialId: IDS.materials.huevo, quantity: 3, unitType: 'ud' },
+        { rawMaterialId: DEMO_IDS.materials.harina, quantity: 300, unitType: 'gr' },
+        { rawMaterialId: DEMO_IDS.materials.azucar, quantity: 200, unitType: 'gr' },
+        { rawMaterialId: DEMO_IDS.materials.leche, quantity: 150, unitType: 'gr' },
+        { rawMaterialId: DEMO_IDS.materials.huevo, quantity: 3, unitType: 'ud' },
       ],
       productionUnits: 24,
       productWeight: 0.8,
@@ -220,9 +220,9 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
   const inventory = recalculateInventory(
     productInputs.map((input, index) => {
       const ids = [
-        IDS.products.refresco,
-        IDS.products.panSobao,
-        IDS.products.pastel,
+        DEMO_IDS.products.refresco,
+        DEMO_IDS.products.panSobao,
+        DEMO_IDS.products.pastel,
       ] as const;
       return calculateProduct(
         input,
@@ -243,43 +243,43 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
     {
       id: 'demo-mv-inventario-inicial',
       type: 'inventario_inicial',
-      warehouseId: IDS.warehouses.principal,
+      warehouseId: DEMO_IDS.warehouses.principal,
       note: 'Inventario inicial de prueba',
       timestamp: now,
       lines: [
-        { refType: 'raw_material', refId: IDS.materials.harina, quantity: 50, unitType: 'kg' },
-        { refType: 'raw_material', refId: IDS.materials.azucar, quantity: 20, unitType: 'kg' },
-        { refType: 'raw_material', refId: IDS.materials.aceite, quantity: 10, unitType: 'lt' },
-        { refType: 'raw_material', refId: IDS.materials.huevo, quantity: 60, unitType: 'ud' },
-        { refType: 'raw_material', refId: IDS.materials.leche, quantity: 5, unitType: 'kg' },
-        { refType: 'product', refId: IDS.products.refresco, quantity: 48, unitType: 'ud' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.harina, quantity: 50, unitType: 'kg' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.azucar, quantity: 20, unitType: 'kg' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.aceite, quantity: 10, unitType: 'lt' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.huevo, quantity: 60, unitType: 'ud' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.leche, quantity: 5, unitType: 'kg' },
+        { refType: 'product', refId: DEMO_IDS.products.refresco, quantity: 48, unitType: 'ud' },
       ],
     },
     {
       id: 'demo-mv-transferencia-venta',
       type: 'transferencia',
-      warehouseId: IDS.warehouses.venta,
-      sourceWarehouseId: IDS.warehouses.principal,
+      warehouseId: DEMO_IDS.warehouses.venta,
+      sourceWarehouseId: DEMO_IDS.warehouses.principal,
       note: 'Traslado a punto de venta',
       timestamp: now + 1,
       lines: [
-        { refType: 'product', refId: IDS.products.refresco, quantity: 24, unitType: 'ud' },
-        { refType: 'product', refId: IDS.products.panSobao, quantity: 30, unitType: 'ud' },
+        { refType: 'product', refId: DEMO_IDS.products.refresco, quantity: 24, unitType: 'ud' },
+        { refType: 'product', refId: DEMO_IDS.products.panSobao, quantity: 30, unitType: 'ud' },
       ],
     },
     {
       id: 'demo-mv-produccion-pan',
       type: 'produccion',
-      warehouseId: IDS.warehouses.produccion,
-      productId: IDS.products.panSobao,
+      warehouseId: DEMO_IDS.warehouses.produccion,
+      productId: DEMO_IDS.products.panSobao,
       note: 'Producción semanal pan sobao',
       timestamp: now + 2,
       lines: [
-        { refType: 'raw_material', refId: IDS.materials.harina, quantity: 15, unitType: 'kg' },
-        { refType: 'raw_material', refId: IDS.materials.azucar, quantity: 2, unitType: 'kg' },
-        { refType: 'raw_material', refId: IDS.materials.aceite, quantity: 1.5, unitType: 'lt' },
-        { refType: 'raw_material', refId: IDS.materials.huevo, quantity: 30, unitType: 'ud' },
-        { refType: 'product', refId: IDS.products.panSobao, quantity: 120, unitType: 'ud' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.harina, quantity: 15, unitType: 'kg' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.azucar, quantity: 2, unitType: 'kg' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.aceite, quantity: 1.5, unitType: 'lt' },
+        { refType: 'raw_material', refId: DEMO_IDS.materials.huevo, quantity: 30, unitType: 'ud' },
+        { refType: 'product', refId: DEMO_IDS.products.panSobao, quantity: 120, unitType: 'ud' },
       ],
     },
   ];
@@ -288,15 +288,15 @@ function buildDemoWorkspace(tenantId: string, workspaceId: string, now: number):
     {
       id: 'demo-th-harina',
       refType: 'raw_material',
-      refId: IDS.materials.harina,
-      warehouseId: IDS.warehouses.principal,
+      refId: DEMO_IDS.materials.harina,
+      warehouseId: DEMO_IDS.warehouses.principal,
       minQuantity: 10,
     },
     {
       id: 'demo-th-refresco',
       refType: 'product',
-      refId: IDS.products.refresco,
-      warehouseId: IDS.warehouses.venta,
+      refId: DEMO_IDS.products.refresco,
+      warehouseId: DEMO_IDS.warehouses.venta,
       minQuantity: 12,
     },
   ];
@@ -422,7 +422,14 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+function isDirectScriptRun(scriptSuffix: string): boolean {
+  const entry = process.argv[1]?.replace(/\\/g, '/');
+  return Boolean(entry?.endsWith(scriptSuffix));
+}
+
+if (isDirectScriptRun('seed-demo-tenant.ts')) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

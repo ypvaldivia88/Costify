@@ -34,6 +34,8 @@ export const appBackupV1Schema = z.object({
   warehouses: z.array(z.record(z.string(), z.unknown())).optional(),
   stockMovements: z.array(z.record(z.string(), z.unknown())).optional(),
   stockThresholds: z.array(z.record(z.string(), z.unknown())).optional(),
+  locations: z.array(z.record(z.string(), z.unknown())).optional(),
+  sales: z.array(z.record(z.string(), z.unknown())).optional(),
   exchangeRateSettings: z.record(z.string(), z.unknown()).optional(),
 });
 

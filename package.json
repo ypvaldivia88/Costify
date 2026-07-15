@@ -12,6 +12,7 @@
     "lint": "pnpm --filter @costify/web lint",
     "seed:admin": "pnpm --filter @costify/web seed:admin",
     "seed:demo": "pnpm --filter @costify/web seed:demo",
+    "seed:demo-multilocal": "pnpm --filter @costify/web seed:demo-multilocal",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "typecheck:shared": "pnpm --filter @costify/shared typecheck",

@@ -65,6 +65,7 @@ function applyMovementToBalances(
       break;
     case 'salida':
     case 'merma':
+    case 'venta':
       for (const line of movement.lines) {
         add(line.refType, line.refId, movement.warehouseId, -line.quantity);
       }

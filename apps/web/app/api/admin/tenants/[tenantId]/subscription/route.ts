@@ -26,6 +26,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = (await request.json()) as {
       action?: SubscriptionAdminAction;
       plan?: SubscriptionPlan;
+      locationCount?: number;
     };
 
     if (!body.action || !VALID_ACTIONS.includes(body.action)) {
@@ -40,7 +41,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: 'Indica el plan a asignar.' }, { status: 400 });
     }
 
-    const tenant = await updateTenantSubscription(tenantId, body.action, body.plan);
+    const tenant = await updateTenantSubscription(
+      tenantId,
+      body.action,
+      body.plan,
+      body.locationCount
+    );
     if (!tenant) {
       return NextResponse.json({ error: 'Cliente no encontrado.' }, { status: 404 });
     }

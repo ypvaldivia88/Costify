@@ -79,6 +79,8 @@ function SettingsTab({
       warehouses={data.warehouses}
       stockMovements={data.stockMovements}
       stockThresholds={data.stockThresholds}
+      locations={data.locations}
+      sales={data.sales}
       cloudSync={data.cloudSync}
       onSaveCosts={data.saveCosts}
       onUpdateGlobalFund={data.updateGlobalFund}
@@ -86,6 +88,9 @@ function SettingsTab({
       onUpdateTaxSettings={data.updateTaxSettings}
       onSaveUnitSettings={data.saveUnitSettings}
       onResetUnitSettings={data.resetUnitSettings}
+      onSaveLocation={data.saveLocation}
+      onDeleteLocation={data.deleteLocation}
+      onImportSales={data.addSales}
       onBackupImported={handleBackupImported}
     />
   );

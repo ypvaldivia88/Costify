@@ -191,6 +191,7 @@ interface RegisterTenantInput {
   adminEmail: string;
   adminPassword: string;
   plan: SubscriptionPlan;
+  locationCount?: number;
 }
 
 export async function registerPendingTenant(input: RegisterTenantInput): Promise<{
@@ -204,7 +205,7 @@ export async function registerPendingTenant(input: RegisterTenantInput): Promise
     adminEmail: input.adminEmail,
     adminPassword: input.adminPassword,
     status: 'pending',
-    subscription: buildPendingSubscription(input.plan),
+    subscription: buildPendingSubscription(input.plan, Date.now(), input.locationCount),
   });
 }
 
@@ -286,13 +287,31 @@ export async function updateTenantStatus(
 ): Promise<PublicTenant | null> {
   const db = await getDb();
   const tenants = db.collection<TenantDocument>(TENANTS_COLLECTION);
+  const existing = await tenants.findOne({ tenantId });
+  if (!existing) return null;
+
+  const update: Partial<TenantDocument> = { status };
+
+  if (status === 'active') {
+    const subscription = ensureTenantSubscription(existing.subscription);
+    if (subscription.status === 'pending_payment' || subscription.status === 'expired') {
+      update.subscription = activateSubscription(subscription);
+    }
+  }
+
   const result = await tenants.findOneAndUpdate(
     { tenantId },
-    { $set: { status } },
+    { $set: update },
     { returnDocument: 'after' }
   );
 
   if (!result) return null;
+
+  if (status === 'active') {
+    await db
+      .collection<UserDocument>(USERS_COLLECTION)
+      .updateMany({ tenantId }, { $set: { status: 'active' } });
+  }
 
   return toPublicTenant(result);
 }
@@ -313,7 +332,8 @@ export async function rejectPendingTenant(tenantId: string): Promise<boolean> {
 export async function updateTenantSubscription(
   tenantId: string,
   action: SubscriptionAdminAction,
-  plan?: SubscriptionPlan
+  plan?: SubscriptionPlan,
+  locationCount?: number
 ): Promise<PublicTenant | null> {
   const tenant = await findTenantById(tenantId);
   if (!tenant) {
@@ -321,7 +341,7 @@ export async function updateTenantSubscription(
   }
 
   const current = ensureTenantSubscription(tenant.subscription);
-  const subscription = applySubscriptionAdminAction(current, action, plan);
+  const subscription = applySubscriptionAdminAction(current, action, plan, locationCount);
 
   const db = await getDb();
   const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOneAndUpdate(

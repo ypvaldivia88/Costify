@@ -19,6 +19,37 @@ Documento de referencia para agentes de IA que trabajen en este repositorio. Inc
 
 ---
 
+## Paridad web ↔ móvil (obligatorio)
+
+**Web y móvil son la misma aplicación.** Un usuario debe poder hacer lo mismo en ambas plataformas (mismos flujos, campos, validaciones y datos vía sync). No cerrar una feature solo con UI en `apps/web`.
+
+### Dónde vive cada capa
+
+| Capa | Ruta |
+|------|------|
+| Dominio / cálculos / CSV | `packages/shared` |
+| Estado, hooks, sync | `packages/client-data` |
+| API | `apps/web/app/api/` |
+| UI web | `apps/web/components/` |
+| UI móvil | `apps/mobile/src/components/` + `AppNavigator.tsx` |
+
+### Checklist antes de dar por terminada una feature
+
+1. ¿Hay pantalla o sección equivalente en **web y móvil**? (p. ej. `SettingsView` → `reconciliation`, `locations`, `CostCalculator`)
+2. ¿Los **callbacks** del hook están cableados en ambos shells? (`AppShell.tsx` vs `AppNavigator.tsx` → `SettingsTab`)
+3. ¿Campos de formulario nuevos existen en **ambos** calculadores / registros? (p. ej. `posSku`, `locationCount` 4+)
+4. ¿El respaldo y sync incluyen las **mismas colecciones**?
+
+### Excepciones (solo web)
+
+- Panel **super admin** (`/admin`)
+- **Marketing / landing** pública
+- Detalles puramente de plataforma (cookies vs SecureStore) con la misma lógica en `@costify/shared`
+
+Regla Cursor detallada: `.cursor/rules/mirror-apps-architect.mdc` (`alwaysApply: true`).
+
+---
+
 ## URLs del entorno de pruebas / producción
 
 | Recurso | URL |
@@ -37,9 +68,17 @@ Documento de referencia para agentes de IA que trabajen en este repositorio. Inc
 
 ## Variables de entorno
 
-### Backend web (`apps/web/.env.local`)
+### Backend web (`.env.local` en la **raíz del repo**)
 
-Usar en desarrollo local. En Vercel, las mismas claves están en **Settings → Environment Variables** del proyecto. Plantilla copiable: `apps/web/env.staging.template`.
+Un solo archivo para web local, seeds y scripts: **`Costify/.env.local`** (no duplicar en `apps/web/.env.local` — un `vercel env pull` ahí con valores vacíos pisa el de la raíz).
+
+En Vercel, las mismas claves están en **Settings → Environment Variables**. Plantilla: `apps/web/env.staging.template` (copiar a la raíz como `.env.local`).
+
+```powershell
+# Bajar vars de producción a la raíz (desde apps/web, donde está linkado Vercel)
+cd apps/web
+vercel env pull ../../.env.local --environment=production
+```
 
 ```env
 # URL pública del despliegue
@@ -207,7 +246,7 @@ Constantes: `packages/shared/src/domain/subscription.ts`
 # Instalar dependencias (siempre desde la raíz)
 pnpm install
 
-# Web en local (requiere apps/web/.env.local)
+# Web en local (requiere .env.local en la raíz del repo)
 pnpm dev
 pnpm seed:admin    # sincroniza super admin
 pnpm seed:demo     # crea/actualiza tenant demo con datos de panadería

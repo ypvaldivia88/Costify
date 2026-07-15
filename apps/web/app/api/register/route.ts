@@ -5,6 +5,7 @@ import {
   buildWhatsAppPaymentMessage,
   buildWhatsAppPaymentUrl,
   getSubscriptionPlanPriceUsd,
+  normalizeLocationCount,
   SUBSCRIPTION_PLAN_LABELS,
 } from '@costify/shared/domain/subscription';
 
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
       adminEmail?: string;
       adminPassword?: string;
       plan?: SubscriptionPlan;
+      locationCount?: number;
     };
 
     if (!body.businessName?.trim()) {
@@ -40,6 +42,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Selecciona un plan de suscripción válido.' }, { status: 400 });
     }
 
+    const locationCount = normalizeLocationCount(body.locationCount);
+
     const result = await registerPendingTenant({
       name: body.businessName,
       contactEmail: body.contactEmail || body.adminEmail,
@@ -47,15 +51,17 @@ export async function POST(request: Request) {
       adminEmail: body.adminEmail,
       adminPassword: body.adminPassword,
       plan: body.plan,
+      locationCount,
     });
 
-    const priceUsd = getSubscriptionPlanPriceUsd(body.plan);
+    const priceUsd = getSubscriptionPlanPriceUsd(body.plan, locationCount);
     const whatsappMessage = buildWhatsAppPaymentMessage({
       businessName: body.businessName.trim(),
       contactName: body.adminName.trim(),
       email: body.adminEmail.trim().toLowerCase(),
       plan: body.plan,
       priceUsd,
+      locationCount,
     });
 
     return NextResponse.json(

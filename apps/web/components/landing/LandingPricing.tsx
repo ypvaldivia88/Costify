@@ -7,6 +7,7 @@ import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   getSubscriptionDiscountPercent,
   getSubscriptionPlanPriceUsd,
+  SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD,
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
 } from '@costify/shared/domain/subscription';
@@ -39,8 +40,9 @@ export function LandingPricing() {
           Un precio claro, sin sorpresas
         </h2>
         <p className="text-landing-muted mt-3">
-          Elige el período que prefieras. Activamos tu cuenta después de confirmar el pago por
-          WhatsApp.
+          Elige el período que prefieras. Incluye 1 local; cada local activo adicional suma $
+          {SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD} USD/mes. Activamos tu cuenta después de confirmar el
+          pago por WhatsApp.
         </p>
       </motion.div>
 
@@ -86,7 +88,8 @@ export function LandingPricing() {
                   </p>
                 ) : (
                   <p className="text-sm text-landing-muted mt-1">
-                    ${SUBSCRIPTION_MONTHLY_PRICE_USD} USD / mes
+                    ${SUBSCRIPTION_MONTHLY_PRICE_USD} USD / mes · 1 local · +$
+                    {SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD}/mes extra
                   </p>
                 )}
               </div>

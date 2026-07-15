@@ -50,9 +50,11 @@ export function createSyncService(options: CreateSyncServiceOptions) {
         await storage.load(STORAGE_KEYS.taxSettings, DEFAULT_TAX_SETTINGS)
       ),
       unitSettings: migrateUnitSettings(await storage.load(STORAGE_KEYS.unitSettings, undefined)),
+      locations: await storage.load(STORAGE_KEYS.locations, []),
       warehouses: await storage.load(STORAGE_KEYS.warehouses, []),
       stockMovements: await storage.load(STORAGE_KEYS.stockMovements, []),
       stockThresholds: await storage.load(STORAGE_KEYS.stockThresholds, []),
+      sales: await storage.load(STORAGE_KEYS.sales, []),
       exchangeRateSettings: migrateExchangeRateSettings(
         await storage.load(STORAGE_KEYS.exchangeRates, null)
       ),
@@ -75,9 +77,11 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       laborShareSettings: data.laborShareSettings,
       taxSettings: data.taxSettings,
       unitSettings: data.unitSettings,
+      locations: data.locations,
       warehouses: data.warehouses,
       stockMovements: data.stockMovements,
       stockThresholds: data.stockThresholds,
+      sales: data.sales,
       exchangeRateSettings: data.exchangeRateSettings,
       updatedAt,
     };
@@ -98,9 +102,11 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       ),
       taxSettings: migrateTaxSettings(workspace.taxSettings),
       unitSettings: migrateUnitSettings(workspace.unitSettings),
+      locations: workspace.locations ?? [],
       warehouses: workspace.warehouses ?? [],
       stockMovements: workspace.stockMovements ?? [],
       stockThresholds: workspace.stockThresholds ?? [],
+      sales: workspace.sales ?? [],
       exchangeRateSettings: migrateExchangeRateSettings(workspace.exchangeRateSettings),
     };
   }
@@ -113,8 +119,10 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       data.globalFund.enabled ||
       data.laborShareSettings.enabled ||
       data.taxSettings.sector !== 'mipyme' ||
+      data.locations.length > 0 ||
       data.warehouses.length > 0 ||
-      data.stockMovements.length > 0
+      data.stockMovements.length > 0 ||
+      data.sales.length > 0
     );
   }
 
@@ -163,6 +171,17 @@ export function createSyncService(options: CreateSyncServiceOptions) {
       }
 
       if (pending) {
+        const remoteHasInventory = remote.inventory.length > 0;
+        const localMissingInventory = localData.inventory.length === 0;
+        if (remoteHasInventory && localMissingInventory) {
+          await applyRemoteWorkspace(remote);
+          await saveSyncMetadata(storage, {
+            lastSyncedAt: remote.updatedAt,
+            localUpdatedAt: remote.updatedAt,
+          });
+          return { status: 'synced', direction: 'pull' };
+        }
+
         const pushAt = Math.max(localUpdatedAt, remote.updatedAt);
         await pushWorkspace(workspaceId, tenantId, localData, pushAt);
         await saveSyncMetadata(storage, { lastSyncedAt: pushAt, localUpdatedAt: pushAt });
