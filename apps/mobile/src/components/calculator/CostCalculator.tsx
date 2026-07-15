@@ -75,6 +75,7 @@ type FormErrors = Partial<
 
 const defaultForm = {
   name: '',
+  posSku: '',
   productType: 'simple' as ProductType,
   purchasePrice: 0,
   purchasePriceMode: 'per-package' as PurchasePriceMode,
@@ -119,6 +120,7 @@ export function CostCalculator({
       );
       setForm({
         name: editingProduct.name,
+        posSku: editingProduct.posSku ?? '',
         productType: editingProduct.productType ?? 'simple',
         purchasePrice: fromMeta.value,
         purchasePriceMode: fromMeta.mode,
@@ -167,6 +169,7 @@ export function CostCalculator({
       calculateProduct(
         {
           name: form.name || 'Producto',
+          posSku: form.posSku.trim() || undefined,
           productType: form.productType,
           purchasePrice: totalPurchasePrice,
           purchaseUnit: form.purchaseUnit,
@@ -280,6 +283,7 @@ export function CostCalculator({
       const saved = calculateProduct(
         {
           name: form.name.trim(),
+          posSku: form.posSku.trim() || undefined,
           productType: form.productType,
           purchasePrice: resolved.purchasePriceCup,
           purchaseUnit: form.purchaseUnit.trim(),
@@ -337,6 +341,13 @@ export function CostCalculator({
               setForm((p) => ({ ...p, name }));
               if (errors.name) setErrors((p) => ({ ...p, name: undefined }));
             }}
+          />
+
+          <Input
+            label="SKU caja (opcional)"
+            placeholder="Ej. CERVEZA_350"
+            value={form.posSku}
+            onChangeText={(posSku) => setForm((p) => ({ ...p, posSku }))}
           />
 
           <View style={styles.typeRow}>

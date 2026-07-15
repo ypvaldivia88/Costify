@@ -90,6 +90,7 @@ function SettingsTab({
       onResetUnitSettings={data.resetUnitSettings}
       onSaveLocation={data.saveLocation}
       onDeleteLocation={data.deleteLocation}
+      onImportSales={data.addSales}
       onBackupImported={handleBackupImported}
     />
   );

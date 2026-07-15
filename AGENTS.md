@@ -19,6 +19,37 @@ Documento de referencia para agentes de IA que trabajen en este repositorio. Inc
 
 ---
 
+## Paridad web ↔ móvil (obligatorio)
+
+**Web y móvil son la misma aplicación.** Un usuario debe poder hacer lo mismo en ambas plataformas (mismos flujos, campos, validaciones y datos vía sync). No cerrar una feature solo con UI en `apps/web`.
+
+### Dónde vive cada capa
+
+| Capa | Ruta |
+|------|------|
+| Dominio / cálculos / CSV | `packages/shared` |
+| Estado, hooks, sync | `packages/client-data` |
+| API | `apps/web/app/api/` |
+| UI web | `apps/web/components/` |
+| UI móvil | `apps/mobile/src/components/` + `AppNavigator.tsx` |
+
+### Checklist antes de dar por terminada una feature
+
+1. ¿Hay pantalla o sección equivalente en **web y móvil**? (p. ej. `SettingsView` → `reconciliation`, `locations`, `CostCalculator`)
+2. ¿Los **callbacks** del hook están cableados en ambos shells? (`AppShell.tsx` vs `AppNavigator.tsx` → `SettingsTab`)
+3. ¿Campos de formulario nuevos existen en **ambos** calculadores / registros? (p. ej. `posSku`, `locationCount` 4+)
+4. ¿El respaldo y sync incluyen las **mismas colecciones**?
+
+### Excepciones (solo web)
+
+- Panel **super admin** (`/admin`)
+- **Marketing / landing** pública
+- Detalles puramente de plataforma (cookies vs SecureStore) con la misma lógica en `@costify/shared`
+
+Regla Cursor detallada: `.cursor/rules/mirror-apps-architect.mdc` (`alwaysApply: true`).
+
+---
+
 ## URLs del entorno de pruebas / producción
 
 | Recurso | URL |

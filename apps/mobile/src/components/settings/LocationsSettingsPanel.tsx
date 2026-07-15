@@ -31,6 +31,7 @@ export function LocationsSettingsPanel({
   const { showToast } = useToast();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [address, setAddress] = useState('');
   const activeCount = countActiveLocations(locations);
   const additional = Math.max(0, activeCount - SUBSCRIPTION_INCLUDED_LOCATIONS);
 
@@ -39,9 +40,10 @@ export function LocationsSettingsPanel({
       showToast('Indica el nombre del local.', 'error');
       return;
     }
-    onSave({ name: name.trim(), code: code.trim() || undefined, active: true });
+    onSave({ name: name.trim(), code: code.trim() || undefined, address: address.trim() || undefined, active: true });
     setName('');
     setCode('');
+    setAddress('');
     showToast('Local guardado.');
   }
 
@@ -108,6 +110,13 @@ export function LocationsSettingsPanel({
         value={code}
         onChangeText={setCode}
         placeholder="Código CSV (opcional)"
+        placeholderTextColor={colors.muted}
+        style={[styles.input, { borderColor: colors.border, color: colors.foreground }]}
+      />
+      <TextInput
+        value={address}
+        onChangeText={setAddress}
+        placeholder="Dirección (opcional)"
         placeholderTextColor={colors.muted}
         style={[styles.input, { borderColor: colors.border, color: colors.foreground }]}
       />

@@ -24,6 +24,7 @@ export function migrateProductInput(
 ): ProductInput {
   return {
     name: product.name ?? '',
+    posSku: product.posSku,
     productType: product.productType ?? 'simple',
     purchasePrice: product.purchasePrice ?? 0,
     purchaseUnit: normalizePurchaseUnit(product.purchaseUnit, product.unitType, unitSettings),

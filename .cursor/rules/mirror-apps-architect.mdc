@@ -1,6 +1,6 @@
 ---
-description: "Mirror App architecture — Next.js web + API on Vercel, Expo mobile, shared packages; keep web and mobile in sync."
-alwaysApply: false
+description: "Costify mirror app — web and mobile are the same product; mandatory feature parity on every change."
+alwaysApply: true
 globs:
   - "apps/**/*"
   - "packages/**/*"
@@ -8,68 +8,70 @@ globs:
   - "package.json"
 ---
 
-# Principal Fullstack & Cross-Platform Architect (Costify Mirror App)
+# Costify — Web + Mobile Feature Parity (Mirror App)
 
-Act as a Principal Fullstack Architect for **Costify**: a pnpm monorepo where **Next.js** (`apps/web`) is the web UI and the **only API backend** (deployed on Vercel), and **Expo** (`apps/mobile`) consumes the same endpoints. Web and mobile must stay aligned on features, flows, validations, and app state.
+**Web (`apps/web`) and mobile (`apps/mobile`) are the same application.** Users must have equivalent capabilities on both platforms. Shared logic lives in `packages/shared` and `packages/client-data`; platform-specific code is UI and storage only.
 
-Complements `.cursor/rules/nextjs.mdc` (web App Router) and `.cursor/rules/expo-react-native.mdc` (mobile stack). This rule governs **cross-platform contracts and symmetry**.
+Complements `nextjs.mdc` (web) and `expo-react-native.mdc` (mobile). See `AGENTS.md` → *Paridad web ↔ móvil*.
 
-## Unified Backend & Layout
+## Architecture
 
 | Path | Role |
 |------|------|
-| `apps/web/app/api/` | **Single source of truth** for REST API routes |
-| `apps/web/lib/` | Server auth, MongoDB, tenant/workspace logic |
-| `apps/mobile/src/api/client.ts` | Mobile HTTP client (`apiFetch`, Bearer token) |
-| `packages/shared` | Domain types, Zod schemas (`src/schemas/api.ts`), calculations, constants |
-| `packages/client-data` | Shared hooks, sync, persisted state (web + mobile) |
-| `packages/ui-tokens` | Design tokens (colors, spacing, typography) |
+| `apps/web/app/api/` | **Only** REST API backend (Vercel) |
+| `apps/web/lib/` | Server auth, MongoDB, tenants |
+| `apps/mobile/src/api/client.ts` | Mobile HTTP (`apiFetch`, Bearer token) |
+| `packages/shared` | Domain, Zod schemas, calculations, CSV parsers |
+| `packages/client-data` | Hooks, sync, persisted workspace (web + mobile) |
 
-Mobile **never** implements duplicate API logic. It calls `https://<APP_URL>/api/...` (see `EXPO_PUBLIC_API_URL` / `app.config.js`).
+Mobile never duplicates API or business rules. It calls `EXPO_PUBLIC_API_URL` / Vercel API.
 
-## Strict Synchronization Rules
+## Mandatory workflow for every feature
 
-### 1. API contracts & type safety
+Do **not** mark a user-facing feature complete until all applicable steps are done:
 
-- **Do not break API contracts** without updating mobile callers and shared types in the same change set.
-- Request/response shapes and Zod schemas live in **`packages/shared`** (e.g. `src/schemas/api.ts`, `src/domain/types.ts`). Web route handlers and mobile `apiFetch` must use the same types.
-- When adding or changing an endpoint under `apps/web/app/api/`:
-  1. Add or update Zod schema + exported types in `@costify/shared`.
-  2. Validate the body in the route with `parseJsonBody` or equivalent.
-  3. Update mobile `apiFetch` usage (and any web client) to match.
-  4. **Warn explicitly** if mobile needs a new build, env change, or migration.
+1. **Shared layer** — types, calculations, parsers in `@costify/shared`; hooks/sync in `@costify/client-data` if needed.
+2. **API** — route in `apps/web/app/api/` when server persistence changes.
+3. **Web UI** — component/section in `apps/web/components/` (or app route).
+4. **Mobile UI** — equivalent screen/section in `apps/mobile/src/components/` wired through `AppNavigator.tsx` (or tab navigator).
+5. **Shell wiring** — expose hook methods in both `AppShell.tsx` (web) and `SettingsTab` / tab screens (mobile).
 
-### 2. Shared state & business logic
+### Pairing map (keep in sync)
 
-- Calculations, tax rules, pricing, sync payloads, and backup formats belong in **`@costify/shared`**.
-- Data hooks, offline sync, and persisted workspace state belong in **`@costify/client-data`** — both `apps/web` and `apps/mobile` import from here.
-- Do not duplicate business rules in web-only or mobile-only files unless the platform truly requires it (e.g. SecureStore vs cookies); even then, keep validation schemas shared.
+| Concern | Web | Mobile |
+|---------|-----|--------|
+| App shell / data wiring | `apps/web/components/layout/AppShell.tsx` | `apps/mobile/src/navigation/AppNavigator.tsx` |
+| Settings sections | `apps/web/components/settings/SettingsView.tsx` | `apps/mobile/src/components/settings/SettingsView.tsx` |
+| Product calculator | `apps/web/components/calculator/CostCalculator.tsx` | `apps/mobile/src/components/calculator/CostCalculator.tsx` |
+| Register | `apps/web/app/register/` | `apps/mobile/src/components/auth/RegisterScreen.tsx` |
+| Auth / admin-only | `/admin`, marketing pages | **Web only** (documented exception) |
 
-### 3. Symmetric UI (within Costify conventions)
+When adding a new **Settings** section on web, add the same `SettingsSection` id, nav item, and panel on mobile in the same PR/branch.
 
-- **Web:** shadcn/ui + Tailwind in `apps/web/components/`.
-- **Mobile:** React Navigation + `StyleSheet` + `@costify/ui-tokens` in `apps/mobile/src/components/`.
-- Mirror **behavior and copy** (labels, validation messages, empty states, subscription gates), not necessarily identical component libraries.
-- New tabs/screens: align with `packages/client-data/src/navigation/tabs.ts` and wire mobile in `AppNavigator.tsx`; mirror the equivalent web route or section in `apps/web`.
+When adding a **form field** (e.g. `posSku`), add it to both calculators and ensure `migrateProductInput` / save paths preserve it.
 
-### 4. Monorepo & dependencies
+When adding **import/export** flows (CSV, backup fields), wire `onImport*` handlers on both shells.
 
-- Install from repo root with `pnpm`. For mobile native deps use `cd apps/mobile && npx expo install <pkg>`.
-- Respect `pnpm` overrides and a single React/React Native version policy; do not bypass lockfiles.
-- Typecheck: `pnpm typecheck` (turbo across packages).
+## API & sync rules
 
-## Cursor workflow
+- Schemas and types in `packages/shared`; validate in API routes.
+- Sync/backup payloads must include the same workspace keys on both clients (`locations`, `sales`, etc.).
+- Call out if mobile needs a **new APK** (native dep, env, or JS bundle not delivered OTA).
 
-When changing or adding a feature, structure the answer as:
+## UI conventions
 
-1. **Next.js backend** — route under `apps/web/app/api/`, server lib changes if needed.
-2. **Shared types/logic** — schemas, domain, hooks in `packages/shared` / `packages/client-data`.
-3. **Symmetric UI** — web view (`apps/web`) and mobile view (`apps/mobile`) with the same user flow and validation.
+- Mirror **Spanish copy**, validation messages, empty states, and subscription gates.
+- Web: shadcn + Tailwind. Mobile: RN + `StyleSheet` + `@costify/ui-tokens`.
+- Platform-specific UX is OK (e.g. `expo-document-picker` on mobile, file input on web) if behavior matches.
 
-When modifying an API endpoint, **immediately call out** whether mobile needs updates (`apiFetch` paths, auth headers, sync shape) or a new APK release.
+## Before finishing / opening PR
 
-## Deploy & env reminders
+Answer explicitly in the PR or chat:
 
-- Vercel root directory: `apps/web`.
-- Mobile release API URL: `EXPO_PUBLIC_API_URL` (default in `app.config.js` → production Vercel URL).
-- See `AGENTS.md` for staging URLs, seeds, and APK workflow.
+- [ ] Web UI implemented
+- [ ] Mobile UI implemented (or N/A with reason)
+- [ ] Shared/client-data updated
+- [ ] Both shells wired (`AppShell` + `AppNavigator`)
+- [ ] `pnpm typecheck` passes
+
+**If mobile parity is missing, the feature is incomplete — do not merge.**

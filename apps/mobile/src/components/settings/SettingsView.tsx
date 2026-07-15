@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { CreditCard, Database, DollarSign, MapPin, Percent, PiggyBank, Receipt, Ruler, User, Users } from 'lucide-react-native';
+import { CreditCard, Database, DollarSign, MapPin, Percent, PiggyBank, Receipt, Ruler, Scale, User, Users } from 'lucide-react-native';
 import type { Location } from '@costify/shared/domain/location';
 import type { SaleRecord } from '@costify/shared/domain/sales';
 import type {
@@ -28,10 +28,22 @@ import { IndirectCostsSettings } from '@/components/settings/IndirectCostsSettin
 import { TaxSettingsPanel } from '@/components/settings/TaxSettingsPanel';
 import { UnitSettingsPanel } from '@/components/settings/UnitSettingsPanel';
 import { LocationsSettingsPanel } from '@/components/settings/LocationsSettingsPanel';
+import { ReconciliationPanel } from '@/components/settings/ReconciliationPanel';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTheme } from '@/context/ThemeContext';
 
-type SettingsSection = 'account' | 'subscription' | 'taxes' | 'fund' | 'labor' | 'indirect' | 'units' | 'exchange' | 'locations' | 'sync';
+type SettingsSection =
+  | 'account'
+  | 'subscription'
+  | 'taxes'
+  | 'fund'
+  | 'labor'
+  | 'indirect'
+  | 'units'
+  | 'exchange'
+  | 'locations'
+  | 'reconciliation'
+  | 'sync';
 
 interface SettingsViewProps {
   user: SessionUser | null;
@@ -61,6 +73,7 @@ interface SettingsViewProps {
     timestamp?: number
   ) => Location;
   onDeleteLocation: (id: string) => void;
+  onImportSales: (records: SaleRecord[]) => void;
   onBackupImported?: (backup: AppBackupV1) => void;
   initialSection?: SettingsSection;
   onInitialSectionConsumed?: () => void;
@@ -75,6 +88,7 @@ const baseSections: { id: SettingsSection; label: string; icon: typeof Database 
   { id: 'units', label: 'Unidades', icon: Ruler },
   { id: 'exchange', label: 'Tasas', icon: DollarSign },
   { id: 'locations', label: 'Locales', icon: MapPin },
+  { id: 'reconciliation', label: 'Conciliación', icon: Scale },
   { id: 'sync', label: 'Respaldo', icon: Database },
 ];
 
@@ -102,6 +116,7 @@ export function SettingsView({
   onResetUnitSettings,
   onSaveLocation,
   onDeleteLocation,
+  onImportSales,
   onBackupImported,
   initialSection,
   onInitialSectionConsumed,
@@ -211,6 +226,15 @@ export function SettingsView({
           locations={locations}
           onSave={onSaveLocation}
           onDelete={onDeleteLocation}
+        />
+      ) : null}
+      {activeSection === 'reconciliation' ? (
+        <ReconciliationPanel
+          locations={locations}
+          products={inventory}
+          sales={sales}
+          stockMovements={stockMovements}
+          onImportSales={onImportSales}
         />
       ) : null}
       {activeSection === 'sync' ? (

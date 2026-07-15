@@ -29,6 +29,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { NumericInput } from '@/components/ui/NumericInput';
 
 const PLANS: SubscriptionPlan[] = ['monthly', 'semiannual', 'annual'];
 
@@ -232,6 +233,36 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
                     </Pressable>
                   );
                 })}
+                {form.locationCount > 3 ? (
+                  <View style={[styles.planCard, { borderColor: colors.brand, minWidth: 120, flex: 1 }]}>
+                    <NumericInput
+                      label="Nº locales"
+                      value={form.locationCount}
+                      onChange={(locationCount) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          locationCount: Math.min(20, Math.max(3, locationCount || 3)),
+                        }))
+                      }
+                    />
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={() => setForm((prev) => ({ ...prev, locationCount: 4 }))}
+                    style={[
+                      styles.planCard,
+                      {
+                        borderColor: colors.border,
+                        backgroundColor: colors.surfaceMuted,
+                        justifyContent: 'center',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.planName, { color: colors.foreground, textAlign: 'center' }]}>
+                      4+
+                    </Text>
+                  </Pressable>
+                )}
               </View>
               <Text style={[styles.planHint, { color: colors.muted }]}>
                 {formatSubscriptionLocationBreakdown(form.locationCount)}
