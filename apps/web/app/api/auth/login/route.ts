@@ -6,7 +6,7 @@ import {
   getSessionCookieOptions,
   SESSION_COOKIE,
 } from '@/lib/auth/session';
-import { findTenantById } from '@/lib/auth/tenants';
+import { ensureDemoTenantSubscription, findTenantById } from '@/lib/auth/tenants';
 import { enrichSessionUser } from '@/lib/auth/session-access';
 import type { SessionUser } from '@/lib/auth/types';
 import { loginRequestSchema, parseJsonBody } from '@costify/shared/schemas/api';
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   try {
     await ensureSuperAdmin();
     await ensureDemoAdmin();
+    await ensureDemoTenantSubscription();
 
     const parsed = parseJsonBody(loginRequestSchema, await request.json());
     if (!parsed.success) {

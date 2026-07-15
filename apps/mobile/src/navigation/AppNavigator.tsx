@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -11,14 +11,21 @@ import { getTabForPriceReviewTarget } from '@/hooks/use-exchange-rates-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Moon, Sun } from 'lucide-react-native';
+import { LayoutGrid, Moon, Sun } from 'lucide-react-native';
 import { AdminScreen } from '@/components/admin/AdminScreen';
 import { LoginScreen } from '@/components/auth/LoginScreen';
 import { RegisterScreen } from '@/components/auth/RegisterScreen';
+import { AppMenuScreen } from '@/components/navigation/AppMenuScreen';
+import { HomeView, type HomeLaunchOptions } from '@/components/home/HomeView';
 import { ProductsView } from '@/components/products/ProductsView';
 import { RawMaterialsManager } from '@/components/raw-materials/RawMaterialsManager';
 import { SettingsView } from '@/components/settings/SettingsView';
-import { PriceReviewAlerts } from '@/components/settings/PriceReviewAlerts';
+import { AccountSettingsPanel } from '@/components/settings/AccountSettingsPanel';
+import { SubscriptionSettingsPanel } from '@/components/settings/SubscriptionSettingsPanel';
+import { ExchangeRatesPanel } from '@/components/settings/ExchangeRatesPanel';
+import { LocationsSettingsPanel } from '@/components/settings/LocationsSettingsPanel';
+import { ReconciliationPanel } from '@/components/settings/ReconciliationPanel';
+import { DataSyncPanel } from '@/components/settings/DataSyncPanel';
 import { CloudSyncStatus } from '@/components/settings/CloudSyncStatus';
 import { WarehousesView } from '@/components/warehouses/WarehousesView';
 import type { AppBackupV1 } from '@/backup/app-backup';
@@ -29,14 +36,20 @@ import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ExchangeRatesProvider } from '@/hooks/use-exchange-rates-context';
 import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
-import { NAV_BY_ID, type AppTab, getNavItemsForAccess } from '@/navigation/tabs';
+import {
+  NAV_BY_ID,
+  PRIMARY_BOTTOM_TAB_IDS,
+  type AppTab,
+} from '@/navigation/tabs';
 import { CostifyMark } from '@/components/brand/CostifyLogo';
-import { TrialBanner } from '@/components/layout/TrialBanner';
 
-type RootTabParamList = Record<AppTab, undefined>;
+type MobileTab = AppTab | 'menu';
+type RootTabParamList = Record<MobileTab, undefined>;
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const navigationRef = createNavigationContainerRef<RootTabParamList>();
+
+const HIDDEN_TAB_BUTTON = () => null;
 
 function LoadingScreen({ message = 'Cargando…' }: { message?: string }) {
   const { colors, scheme } = useTheme();
@@ -49,25 +62,49 @@ function LoadingScreen({ message = 'Cargando…' }: { message?: string }) {
   );
 }
 
-function SettingsTab({
-  initialSection,
-  onInitialSectionConsumed,
-}: {
-  initialSection?: 'subscription';
-  onInitialSectionConsumed?: () => void;
-}) {
+function SettingsTab() {
   const data = useAppData();
+
+  return (
+    <SettingsView
+      inventory={data.inventory}
+      rawMaterials={data.materials}
+      globalCosts={data.globalCosts}
+      globalFund={data.globalFund}
+      laborShareSettings={data.laborShareSettings}
+      taxSettings={data.taxSettings}
+      unitSettings={data.unitSettings}
+      onSaveCosts={data.saveCosts}
+      onUpdateGlobalFund={data.updateGlobalFund}
+      onUpdateLaborShareSettings={data.updateLaborShareSettings}
+      onUpdateTaxSettings={data.updateTaxSettings}
+      onSaveUnitSettings={data.saveUnitSettings}
+      onResetUnitSettings={data.resetUnitSettings}
+    />
+  );
+}
+
+function AccountTab() {
   const { user } = useAuth();
+  const isTenantAdmin = user?.role === 'tenant_admin';
+
+  return (
+    <ScrollView contentContainerStyle={styles.accountContent}>
+      {isTenantAdmin ? <SubscriptionSettingsPanel user={user} /> : null}
+      <AccountSettingsPanel user={user} />
+    </ScrollView>
+  );
+}
+
+function BackupTab() {
+  const data = useAppData();
 
   const handleBackupImported = (backup: AppBackupV1) => {
     data.reloadFromBackup(backup);
   };
 
   return (
-    <SettingsView
-      user={user}
-      initialSection={initialSection}
-      onInitialSectionConsumed={onInitialSectionConsumed}
+    <DataSyncPanel
       inventory={data.inventory}
       rawMaterials={data.materials}
       globalCosts={data.globalCosts}
@@ -82,15 +119,6 @@ function SettingsTab({
       locations={data.locations}
       sales={data.sales}
       cloudSync={data.cloudSync}
-      onSaveCosts={data.saveCosts}
-      onUpdateGlobalFund={data.updateGlobalFund}
-      onUpdateLaborShareSettings={data.updateLaborShareSettings}
-      onUpdateTaxSettings={data.updateTaxSettings}
-      onSaveUnitSettings={data.saveUnitSettings}
-      onResetUnitSettings={data.resetUnitSettings}
-      onSaveLocation={data.saveLocation}
-      onDeleteLocation={data.deleteLocation}
-      onImportSales={data.addSales}
       onBackupImported={handleBackupImported}
     />
   );
@@ -162,20 +190,16 @@ function AppHeader({ title }: { title: string }) {
   );
 }
 
-function MainTabs({
-  onRouteChange,
-}: {
-  onRouteChange: (route: AppTab) => void;
-}) {
+function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void }) {
   const data = useAppData();
   const { user, refresh } = useAuth();
   const { colors } = useTheme();
-  const [activeTab, setActiveTab] = useState<AppTab>('products');
-  const [settingsSection, setSettingsSection] = useState<'subscription' | undefined>();
+  const [activeTab, setActiveTab] = useState<MobileTab>('home');
   const [focusTarget, setFocusTarget] = useState<PriceReviewAlertTarget | null>(null);
+  const [productsInitialMode, setProductsInitialMode] = useState<HomeLaunchOptions['productsMode']>();
+  const [warehouseInitialSubview, setWarehouseInitialSubview] =
+    useState<HomeLaunchOptions['warehouseSubview']>();
   const defaultWarehouse = data.getDefaultWarehouse();
-  const navItems = getNavItemsForAccess(user?.accessLevel);
-  const visibleTabs = new Set(navItems.map((item) => item.id));
 
   useEffect(() => {
     void refresh();
@@ -190,39 +214,49 @@ function MainTabs({
     }
   };
 
+  const navigateToTab = (tab: AppTab) => {
+    setActiveTab(tab);
+    if (navigationRef.isReady()) {
+      navigationRef.navigate(tab);
+    }
+  };
+
+  const handleHomeNavigate = (tab: AppTab, options?: HomeLaunchOptions) => {
+    if (options?.productsMode) setProductsInitialMode(options.productsMode);
+    if (options?.warehouseSubview) setWarehouseInitialSubview(options.warehouseSubview);
+    navigateToTab(tab);
+  };
+
   if (!data.hydrated) return <LoadingScreen message="Cargando tus datos…" />;
 
-  const screenTitle = NAV_BY_ID[activeTab].title;
+  const screenTitle =
+    activeTab === 'menu' ? 'Menú' : NAV_BY_ID[activeTab as AppTab].title;
 
   return (
     <UnitCatalogProvider settings={data.unitSettings}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <AppHeader title={screenTitle} />
-        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          <TrialBanner user={user} />
-        </View>
-        <PriceReviewAlerts
-          materials={data.materials}
-          products={data.inventory}
-          onNavigateToTarget={handleNavigateToTarget}
-          style={styles.alerts}
-        />
         <Tab.Navigator
+          initialRouteName="home"
           screenListeners={{
             state: (e) => {
               const route = e.data.state?.routes[e.data.state.index];
               if (route?.name) {
-                const name = route.name as AppTab;
+                const name = route.name as MobileTab;
                 setActiveTab(name);
                 onRouteChange(name);
               }
             },
           }}
           screenOptions={({ route }) => {
-            const meta = NAV_BY_ID[route.name as AppTab];
-            const Icon = meta.icon;
+            const isMenu = route.name === 'menu';
+            const meta = isMenu ? null : NAV_BY_ID[route.name as AppTab];
+            const showInBar =
+              route.name === 'menu' || PRIMARY_BOTTOM_TAB_IDS.includes(route.name as AppTab);
+
             return {
               headerShown: false,
+              tabBarButton: showInBar ? undefined : HIDDEN_TAB_BUTTON,
               tabBarActiveTintColor: colors.brand,
               tabBarInactiveTintColor: colors.muted,
               tabBarStyle: {
@@ -233,11 +267,31 @@ function MainTabs({
                 paddingTop: 8,
               },
               tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
-              tabBarIcon: ({ color, size }) => <Icon color={color} size={size} />,
+              tabBarIcon: ({ color, size }) => {
+                if (isMenu) return <LayoutGrid color={color} size={size} />;
+                const Icon = meta!.icon;
+                return <Icon color={color} size={size} />;
+              },
+              title: isMenu ? 'Más' : meta?.label,
             };
           }}
         >
-          <Tab.Screen name="products" options={{ title: NAV_BY_ID.products.label }}>
+          <Tab.Screen name="home">
+            {() => (
+              <HomeView
+                user={user}
+                inventory={data.inventory}
+                materials={data.materials}
+                warehouses={data.warehouses}
+                stockAlerts={data.stockAlerts}
+                stockValuation={data.stockValuation}
+                salesCount={data.sales.length}
+                onNavigate={handleHomeNavigate}
+                onNavigateToTarget={handleNavigateToTarget}
+              />
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="products">
             {() => (
               <ProductsView
                 inventory={data.inventory}
@@ -253,6 +307,8 @@ function MainTabs({
                 defaultWarehouseId={defaultWarehouse?.id}
                 focusProductId={focusTarget?.refType === 'product' ? focusTarget.refId : undefined}
                 onFocusConsumed={() => setFocusTarget(null)}
+                initialMode={productsInitialMode}
+                onInitialModeConsumed={() => setProductsInitialMode(undefined)}
                 onSaveProduct={(product) => data.saveProduct(product)}
                 onDeleteProduct={data.deleteProduct}
                 onRecalculateAll={data.recalculateAll}
@@ -262,7 +318,7 @@ function MainTabs({
               />
             )}
           </Tab.Screen>
-          <Tab.Screen name="raw-materials" options={{ title: NAV_BY_ID['raw-materials'].label }}>
+          <Tab.Screen name="raw-materials">
             {() => (
               <RawMaterialsManager
                 materials={data.materials}
@@ -276,8 +332,7 @@ function MainTabs({
               />
             )}
           </Tab.Screen>
-          {visibleTabs.has('warehouses') ? (
-          <Tab.Screen name="warehouses" options={{ title: NAV_BY_ID.warehouses.label }}>
+          <Tab.Screen name="warehouses">
             {() => (
               <WarehousesView
                 warehouses={data.warehouses}
@@ -293,17 +348,47 @@ function MainTabs({
                 onRegisterMovement={data.registerMovement}
                 onSaveThreshold={data.saveStockThreshold}
                 onDeleteThreshold={data.deleteStockThreshold}
+                initialSubview={warehouseInitialSubview}
+                onInitialSubviewConsumed={() => setWarehouseInitialSubview(undefined)}
               />
             )}
           </Tab.Screen>
-          ) : null}
-          <Tab.Screen name="settings" options={{ title: NAV_BY_ID.settings.label }}>
+          <Tab.Screen name="settings">
+            {() => <SettingsTab />}
+          </Tab.Screen>
+          <Tab.Screen name="menu">
             {() => (
-              <SettingsTab
-                initialSection={settingsSection}
-                onInitialSectionConsumed={() => setSettingsSection(undefined)}
+              <AppMenuScreen activeTab={activeTab} onNavigate={navigateToTab} />
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="locations" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+            {() => (
+              <LocationsSettingsPanel
+                locations={data.locations}
+                onSave={data.saveLocation}
+                onDelete={data.deleteLocation}
               />
             )}
+          </Tab.Screen>
+          <Tab.Screen name="reconciliation" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+            {() => (
+              <ReconciliationPanel
+                locations={data.locations}
+                products={data.inventory}
+                sales={data.sales}
+                stockMovements={data.stockMovements}
+                onImportSales={data.addSales}
+              />
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="exchange" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+            {() => <ExchangeRatesPanel />}
+          </Tab.Screen>
+          <Tab.Screen name="backup" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+            {() => <BackupTab />}
+          </Tab.Screen>
+          <Tab.Screen name="account" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+            {() => <AccountTab />}
           </Tab.Screen>
         </Tab.Navigator>
       </View>
@@ -314,7 +399,7 @@ function MainTabs({
 function NavigationRoot() {
   const { scheme, colors } = useTheme();
   const { storageScope } = useAuth();
-  const [, setActiveTab] = useState<AppTab>('products');
+  const [, setActiveTab] = useState<MobileTab>('home');
   const navTheme =
     scheme === 'dark'
       ? {
@@ -406,7 +491,7 @@ export function AppNavigator() {
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  alerts: { paddingHorizontal: 16, paddingBottom: 8 },
+  accountContent: { padding: 16, gap: 16, paddingBottom: 32 },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,

@@ -40,6 +40,10 @@ export {
   useActivePriceReviewAlerts,
   getTabForPriceReviewTarget,
 } from './hooks/use-price-review-alerts-state';
+export {
+  getMainNavGroupsForAccess,
+  getAccountNavGroupForAccess,
+} from './navigation/tabs';
 export { useNumericField } from './hooks/use-numeric-field';
 export { UnitCatalogProvider, useUnitCatalog } from './hooks/use-unit-catalog';
 export {

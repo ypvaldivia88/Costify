@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { ensureSuperAdmin } from '@/lib/auth/users';
 import { getServerSession } from '@/lib/auth/session';
+import { ensureDemoTenantSubscription } from '@/lib/auth/tenants';
 import { enrichSessionUser } from '@/lib/auth/session-access';
 
 export async function GET() {
   try {
     await ensureSuperAdmin();
+    await ensureDemoTenantSubscription();
     const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ user: null }, { status: 401 });

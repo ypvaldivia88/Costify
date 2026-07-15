@@ -28,7 +28,7 @@ export function CostifyLogoLockup({
     <View style={[styles.row, align === 'center' ? styles.center : styles.left]}>
       <CostifyMark size={markSize} isDark={isDark} />
       <Text style={[styles.wordmark, { color: colors.foreground, fontSize: WORDMARK_SIZE[size] }]}>
-        Costify
+        Cost<Text style={{ color: colors.brand }}>ify</Text>
       </Text>
     </View>
   );

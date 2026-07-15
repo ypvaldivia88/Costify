@@ -1,15 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Costify">
-  <rect x="11" y="10" width="42" height="46" rx="5" fill="#047857" opacity="0.35"/>
-  <rect x="9" y="8" width="42" height="46" rx="5" fill="#059669"/>
-  <circle cx="13" cy="18" r="2.2" fill="#047857"/>
-  <circle cx="13" cy="26" r="2.2" fill="#047857"/>
-  <circle cx="13" cy="34" r="2.2" fill="#047857"/>
-  <circle cx="13" cy="42" r="2.2" fill="#047857"/>
-  <rect x="17" y="12" width="30" height="38" rx="2.5" fill="#F7F4ED"/>
-  <line x1="21" y1="22" x2="43" y2="22" stroke="#D6D3D1" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="21" y1="28" x2="43" y2="28" stroke="#D6D3D1" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="21" y1="34" x2="40" y2="34" stroke="#D6D3D1" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="21" y1="42" x2="38" y2="42" stroke="#B45309" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="36" y="38.5" width="10" height="7" rx="1.5" fill="#B45309" opacity="0.15"/>
-  <text x="41" y="44" text-anchor="middle" fill="#B45309" font-size="6" font-family="ui-monospace, monospace" font-weight="700">$</text>
+  <path d="M38 14C26 14 18 22 18 32c0 10 8 18 20 18" stroke="#059669" stroke-width="5" stroke-linecap="round"/>
+  <rect x="30" y="40" width="4.5" height="10" rx="1.25" fill="#6EE7B7" opacity="0.65"/>
+  <rect x="36.5" y="34" width="4.5" height="16" rx="1.25" fill="#10B981" opacity="0.85"/>
+  <rect x="43" y="26" width="4.5" height="24" rx="1.25" fill="#047857"/>
+  <rect x="41" y="22" width="12" height="3.5" rx="1.75" fill="#D97706"/>
 </svg>

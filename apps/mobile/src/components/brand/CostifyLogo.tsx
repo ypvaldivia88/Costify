@@ -1,48 +1,84 @@
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
-
-const MARK_COLORS = {
-  brand: '#059669',
-  brandDark: '#047857',
-} as const;
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import {
+  COSTIFY_APP_ICON_BG,
+  COSTIFY_C_ARC,
+  COSTIFY_ICON_GRADIENT,
+  COSTIFY_MARGIN_TICK,
+  COSTIFY_MARK_BARS,
+  COSTIFY_MARK_VIEWBOX,
+  getCostifyAppIconPalette,
+  getCostifyMarkPalette,
+} from '@costify/ui-tokens';
 
 export interface CostifyMarkProps {
   size?: number;
-  brandColor?: string;
-  brandDarkColor?: string;
   isDark?: boolean;
+  /** Filled app-icon style on brand gradient (splash, store). */
+  variant?: 'inline' | 'app';
 }
 
-/** Geometric Costify mark — C arc with ascending bars (cost → margin). */
 export function CostifyMark({
   size = 48,
-  brandColor,
-  brandDarkColor,
   isDark = false,
+  variant = 'inline',
 }: CostifyMarkProps) {
-  const brand = brandColor ?? (isDark ? '#34D399' : MARK_COLORS.brand);
-  const brandDark = brandDarkColor ?? (isDark ? '#10B981' : MARK_COLORS.brandDark);
-  const bars = isDark
-    ? ['#6EE7B7', '#34D399', '#10B981']
-    : ['#6EE7B7', '#10B981', '#047857'];
+  const inlinePalette = getCostifyMarkPalette(isDark);
+  const appPalette = getCostifyAppIconPalette();
+  const palette = variant === 'app' ? appPalette : inlinePalette;
+  const arcWidth = variant === 'app' ? 5.5 : inlinePalette.arcWidth;
 
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+    <Svg width={size} height={size} viewBox={COSTIFY_MARK_VIEWBOX} fill="none">
+      {variant === 'app' ? (
+        <Defs>
+          <LinearGradient id="costifyIconBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={COSTIFY_ICON_GRADIENT.start} />
+            <Stop offset="1" stopColor={COSTIFY_ICON_GRADIENT.end} />
+          </LinearGradient>
+        </Defs>
+      ) : null}
+      {variant === 'app' ? (
+        <Rect
+          x={COSTIFY_APP_ICON_BG.x}
+          y={COSTIFY_APP_ICON_BG.y}
+          width={COSTIFY_APP_ICON_BG.width}
+          height={COSTIFY_APP_ICON_BG.height}
+          rx={COSTIFY_APP_ICON_BG.rx}
+          fill="url(#costifyIconBg)"
+        />
+      ) : null}
       <Path
-        d="M44 12C33 12 24 21 24 32s9 20 20 20c4 0 8-1 11-3"
-        stroke={brand}
-        strokeWidth={5}
+        d={COSTIFY_C_ARC}
+        stroke={palette.arc}
+        strokeWidth={arcWidth}
         strokeLinecap="round"
+        fill="none"
       />
-      <Rect x={30} y={38} width={4} height={8} rx={1} fill={bars[0]} />
-      <Rect x={36} y={34} width={4} height={12} rx={1} fill={bars[1]} />
-      <Rect x={42} y={28} width={4} height={18} rx={1} fill={bars[2]} />
-      <Circle cx={32} cy={32} r={3} fill={brandDark} opacity={0.9} />
+      {COSTIFY_MARK_BARS.map((bar, index) => (
+        <Rect
+          key={bar.x}
+          x={bar.x}
+          y={bar.y}
+          width={bar.width}
+          height={bar.height}
+          rx={bar.rx}
+          fill={palette.bars[index]}
+          opacity={palette.barOpacities[index]}
+        />
+      ))}
+      <Rect
+        x={COSTIFY_MARGIN_TICK.x}
+        y={COSTIFY_MARGIN_TICK.y}
+        width={COSTIFY_MARGIN_TICK.width}
+        height={COSTIFY_MARGIN_TICK.height}
+        rx={COSTIFY_MARGIN_TICK.rx}
+        fill={palette.margin}
+      />
     </Svg>
   );
 }
 
 const SIZE_MAP = { sm: 32, md: 44, lg: 56, xl: 72 } as const;
-const WORDMARK_SIZE = { sm: 20, md: 26, lg: 32, xl: 38 } as const;
 
 export interface CostifyLogoProps {
   variant?: 'full' | 'mark';
@@ -61,5 +97,5 @@ export function CostifyLogo({ variant = 'full', size = 'md', isDark = false }: C
 }
 
 export function getCostifyLogoSizes(size: keyof typeof SIZE_MAP) {
-  return { mark: SIZE_MAP[size], wordmark: WORDMARK_SIZE[size] };
+  return { mark: SIZE_MAP[size] };
 }

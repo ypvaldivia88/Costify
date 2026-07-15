@@ -6,6 +6,7 @@ import type { SessionUser } from '@/lib/auth/types';
 import { formatTrialRemaining, shouldShowAccessBanner } from '@costify/shared/domain/access';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 const VISIBLE_MS = 8000;
@@ -33,6 +34,7 @@ function getBannerMessage(user: SessionUser): string {
 
 export function TrialBanner({ user, className }: TrialBannerProps) {
   const { refresh } = useAuth();
+  const { showToast } = useToast();
   const [phase, setPhase] = useState<'in' | 'out' | 'hidden'>('hidden');
   const [refreshing, setRefreshing] = useState(false);
   const isTrial = user?.accessLevel === 'trial';
@@ -65,7 +67,17 @@ export function TrialBanner({ user, className }: TrialBannerProps) {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await refresh();
+      const updated = await refresh();
+      if (updated?.accessLevel === 'full') {
+        showToast('Sesión actualizada. Ya puedes editar.', 'success');
+      } else {
+        showToast(
+          'La suscripción sigue pendiente. El administrador debe pulsar «Activar acceso completo» en el panel.',
+          'error'
+        );
+      }
+    } catch {
+      showToast('No se pudo actualizar la sesión. Vuelve a iniciar sesión.', 'error');
     } finally {
       setRefreshing(false);
     }

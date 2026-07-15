@@ -18,6 +18,7 @@ import {
   buildWhatsAppPaymentUrl,
   formatSubscriptionExpiry,
   formatSubscriptionLocationBreakdown,
+  isSubscriptionCurrentlyActive,
   SUBSCRIPTION_PLAN_LABELS,
   SUBSCRIPTION_STATUS_LABELS,
 } from '@costify/shared/domain/subscription';
@@ -98,6 +99,7 @@ export function AdminTenantDetailSheet({
   if (!tenant) return null;
 
   const subscription = tenant.subscription;
+  const subscriptionLive = subscription ? isSubscriptionCurrentlyActive(subscription) : false;
   const whatsappUrl =
     subscription && tenant.adminEmail
       ? buildWhatsAppPaymentUrl(
@@ -111,6 +113,32 @@ export function AdminTenantDetailSheet({
           })
         )
       : null;
+
+  const handleActivateAccess = async () => {
+    setCreating(true);
+    try {
+      const response = await fetch(`/api/admin/tenants/${tenant.tenantId}/subscription`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'activate',
+          plan: subscription?.plan ?? 'monthly',
+          locationCount: subscription?.locationCount ?? 1,
+        }),
+      });
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(json.error || 'No se pudo activar el acceso.');
+      }
+      showToast('Acceso completo activado. El cliente puede actualizar la sesión.', 'success');
+      await onRefresh();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Error al activar.', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const copyTenantId = async () => {
     try {
@@ -231,6 +259,22 @@ export function AdminTenantDetailSheet({
               Copiar ID
             </Button>
           </div>
+
+          {tenant.status === 'active' && subscription && !subscriptionLive ? (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                El negocio está activo pero la suscripción no
+              </p>
+              <p className="text-xs text-muted-foreground">
+                El cliente seguirá en <strong>solo lectura</strong> hasta activar el plan. «Reactivar
+                acceso» no cambia la suscripción.
+              </p>
+              <Button type="button" size="sm" disabled={creating} onClick={() => void handleActivateAccess()}>
+                <CheckCircle2 className="w-4 h-4" />
+                Activar acceso completo
+              </Button>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-border p-3">

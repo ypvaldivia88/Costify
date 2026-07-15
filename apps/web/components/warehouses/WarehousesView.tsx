@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
   ProductCalculation,
   RawMaterial,
@@ -35,6 +35,8 @@ interface WarehousesViewProps {
   onRegisterMovement: (input: Omit<StockMovement, 'id' | 'timestamp'>) => void;
   onSaveThreshold: (input: Omit<StockThreshold, 'id'>, id?: string) => void;
   onDeleteThreshold: (id: string) => void;
+  initialSubview?: WarehouseSubview;
+  onInitialSubviewConsumed?: () => void;
 }
 
 export function WarehousesView({
@@ -51,9 +53,17 @@ export function WarehousesView({
   onRegisterMovement,
   onSaveThreshold,
   onDeleteThreshold,
+  initialSubview,
+  onInitialSubviewConsumed,
 }: WarehousesViewProps) {
-  const [subview, setSubview] = useState<WarehouseSubview>('stock');
+  const [subview, setSubview] = useState<WarehouseSubview>(initialSubview ?? 'stock');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (!initialSubview) return;
+    setSubview(initialSubview);
+    onInitialSubviewConsumed?.();
+  }, [initialSubview, onInitialSubviewConsumed]);
 
   const getItemName = useMemo(() => {
     const materialMap = new Map(materials.map((m) => [m.id, m.name]));

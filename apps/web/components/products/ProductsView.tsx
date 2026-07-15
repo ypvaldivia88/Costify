@@ -33,6 +33,8 @@ interface ProductsViewProps {
   defaultWarehouseId?: string;
   focusProductId?: string;
   onFocusConsumed?: () => void;
+  initialMode?: ProductsMode;
+  onInitialModeConsumed?: () => void;
   onSaveProduct: (product: ProductCalculation) => void;
   onDeleteProduct: (id: string) => void;
   onRecalculateAll: () => void;
@@ -73,6 +75,8 @@ export function ProductsView({
   defaultWarehouseId,
   focusProductId,
   onFocusConsumed,
+  initialMode,
+  onInitialModeConsumed,
   onSaveProduct,
   onDeleteProduct,
   onRecalculateAll,
@@ -96,6 +100,14 @@ export function ProductsView({
     }
     onFocusConsumed?.();
   }, [focusProductId, inventory, onFocusConsumed]);
+
+  useEffect(() => {
+    if (!initialMode) return;
+    setEditingProduct(null);
+    setSelectedProductId(null);
+    setMode(initialMode);
+    onInitialModeConsumed?.();
+  }, [initialMode, onInitialModeConsumed]);
 
   const selectedProduct = inventory.find((p) => p.id === selectedProductId) ?? null;
 

@@ -1,7 +1,8 @@
 import { getDb } from '../lib/db/mongodb';
-import { createTenantWithAdmin, createTenantUser } from '../lib/auth/tenants';
+import { activateSubscription, ensureTenantSubscription } from '@costify/shared/domain/subscription';
 import { hashPassword } from '../lib/auth/password';
-import { USERS_COLLECTION } from '../lib/auth/types';
+import { createTenantWithAdmin, createTenantUser } from '../lib/auth/tenants';
+import { TENANTS_COLLECTION, USERS_COLLECTION } from '../lib/auth/types';
 import { WORKSPACES_COLLECTION, type WorkspaceDocument } from '../lib/db/workspace';
 import {
   DEFAULT_GLOBAL_FUND_SETTINGS,
@@ -369,6 +370,19 @@ async function main() {
     await db.collection(USERS_COLLECTION).updateOne(
       { email: DEMO.adminEmail },
       { $set: { passwordHash, status: 'active' } }
+    );
+
+    const existingTenant = await db.collection(TENANTS_COLLECTION).findOne({ tenantId });
+    await db.collection(TENANTS_COLLECTION).updateOne(
+      { tenantId },
+      {
+        $set: {
+          status: 'active',
+          subscription: activateSubscription(
+            ensureTenantSubscription(existingTenant?.subscription)
+          ),
+        },
+      }
     );
   }
 

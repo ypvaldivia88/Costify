@@ -19,7 +19,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<SessionUser>;
   logout: () => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<SessionUser | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<SessionUser | null> => {
     const response = await fetch('/api/auth/refresh', {
       method: 'POST',
       credentials: 'include',
@@ -50,16 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!fallback.ok) {
         setUser(null);
         applySessionScope(null);
-        return;
+        return null;
       }
       const json = (await fallback.json()) as { user: SessionUser };
       setUser(json.user);
       applySessionScope(json.user);
-      return;
+      return json.user;
     }
     const json = (await response.json()) as { user: SessionUser };
     setUser(json.user);
     applySessionScope(json.user);
+    return json.user;
   }, []);
 
   useEffect(() => {

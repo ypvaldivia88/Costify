@@ -6,11 +6,13 @@ import {
   getSessionCookieOptions,
   SESSION_COOKIE,
 } from '@/lib/auth/session';
+import { ensureDemoTenantSubscription } from '@/lib/auth/tenants';
 import { enrichSessionUser } from '@/lib/auth/session-access';
 
 export async function POST() {
   try {
     await ensureSuperAdmin();
+    await ensureDemoTenantSubscription();
     const session = await requireSession();
     const user = await enrichSessionUser(session);
     const token = await createSessionToken(user);

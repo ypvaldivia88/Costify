@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter @costify/web dev",
+    "brand:export": "node scripts/export-brand-assets.mjs",
     "dev:web": "pnpm --filter @costify/web dev",
     "dev:mobile": "pnpm --filter costify-mobile start",
     "build": "pnpm --filter @costify/web build",
@@ -19,6 +20,7 @@
     "typecheck:client-data": "pnpm --filter @costify/client-data typecheck"
   },
   "devDependencies": {
+    "sharp": "^0.34.3",
     "turbo": "^2.5.4",
     "typescript": "5.9.3"
   },

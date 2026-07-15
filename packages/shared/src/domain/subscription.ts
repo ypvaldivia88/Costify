@@ -184,7 +184,8 @@ export function buildWhatsAppPaymentMessage(input: {
 }
 
 export function markSubscriptionPendingPayment(subscription: TenantSubscription): TenantSubscription {
-  return { ...subscription, status: 'pending_payment', requestedAt: Date.now() };
+  const { activatedAt: _activatedAt, expiresAt: _expiresAt, ...rest } = subscription;
+  return { ...rest, status: 'pending_payment', requestedAt: Date.now() };
 }
 
 export function markSubscriptionExpired(subscription: TenantSubscription): TenantSubscription {

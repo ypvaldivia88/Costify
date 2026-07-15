@@ -1,214 +1,136 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { Database, DollarSign, MapPin, Percent, PiggyBank, Receipt, Ruler, Scale, User, CreditCard, Users } from 'lucide-react';
-import type { Location } from '@costify/shared/domain/location';
-import type { SaleRecord } from '@costify/shared/domain/sales';
-import type {
-  GlobalFundSettings,
-  IndirectCost,
-  LaborShareSettings,
-  ProductCalculation,
-  RawMaterial,
-  StockMovement,
-  StockThreshold,
-  TaxSettings,
-  UnitSettings,
-  Warehouse,
-} from '@costify/shared/domain/types';
-import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
-import { DataSyncPanel } from './DataSyncPanel';
-import { AccountSettingsPanel } from './AccountSettingsPanel';
-import { SubscriptionSettingsPanel } from './SubscriptionSettingsPanel';
-import { SettingsSectionNav, SettingsSectionPicker } from './SettingsSectionNav';
-import { GlobalFundSettingsPanel } from './GlobalFundSettings';
-import { LaborShareSettingsPanel } from './LaborShareSettings';
-import { IndirectCostsSettings } from './IndirectCostsSettings';
-import { TaxSettingsPanel } from './TaxSettingsPanel';
-import { UnitSettingsPanel } from './UnitSettingsPanel';
-import { ExchangeRatesPanel } from './ExchangeRatesPanel';
-import { LocationsSettingsPanel } from './LocationsSettingsPanel';
-import { ReconciliationPanel } from './ReconciliationPanel';
-import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
-import type { SessionUser } from '@/lib/auth/types';
-
-import type { SettingsSectionId } from '@costify/client-data';
-
-export type SettingsSection = SettingsSectionId;
-
-const SETTINGS_ICONS: Record<SettingsSectionId, typeof Database> = {
-  taxes: Receipt,
-  fund: PiggyBank,
-  labor: Users,
-  indirect: Percent,
-  units: Ruler,
-  exchange: DollarSign,
-  locations: MapPin,
-  reconciliation: Scale,
-  sync: Database,
-  account: User,
-  subscription: CreditCard,
-};
-
-interface SettingsViewProps {
-  inventory: ProductCalculation[];
-  rawMaterials: RawMaterial[];
-  globalCosts: IndirectCost[];
-  globalFund: GlobalFundSettings;
-  laborShareSettings: LaborShareSettings;
-  taxSettings: TaxSettings;
-  unitSettings: UnitSettings;
-  exchangeRateSettings: ExchangeRateSettings;
-  warehouses: Warehouse[];
-  stockMovements: StockMovement[];
-  stockThresholds: StockThreshold[];
-  locations: Location[];
-  sales: SaleRecord[];
-  tenantName?: string;
-  user?: SessionUser | null;
-  cloudSync: {
-    status: SyncStatus;
-    direction: SyncDirection;
-    pending: boolean;
-    lastSyncedAt: number;
-    errorMessage: string | null;
-    workspaceId: string;
-    syncNow: () => void;
-  };
-  onSaveCosts: (costs: IndirectCost[]) => void;
-  onUpdateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
-  onUpdateLaborShareSettings: (updates: Partial<LaborShareSettings>) => void;
-  onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
-  onSaveUnitSettings: (settings: UnitSettings) => void;
-  onResetUnitSettings: () => void;
-  onSaveLocation: (
-    input: { name: string; code?: string; active?: boolean; address?: string },
-    id?: string,
-    timestamp?: number
-  ) => Location;
-  onDeleteLocation: (id: string) => void;
-  onImportSales: (records: SaleRecord[]) => void;
-  initialSection?: SettingsSection;
-  onInitialSectionConsumed?: () => void;
-}
-
-export function SettingsView({
-  inventory,
-  rawMaterials,
-  globalCosts,
-  globalFund,
-  laborShareSettings,
-  taxSettings,
-  unitSettings,
-  exchangeRateSettings,
-  warehouses,
-  stockMovements,
-  stockThresholds,
-  locations,
-  sales,
-  tenantName,
-  user,
-  cloudSync,
-  onSaveCosts,
-  onUpdateGlobalFund,
-  onUpdateLaborShareSettings,
-  onUpdateTaxSettings,
-  onSaveUnitSettings,
-  onResetUnitSettings,
-  onSaveLocation,
-  onDeleteLocation,
-  onImportSales,
-  initialSection,
-  onInitialSectionConsumed,
-}: SettingsViewProps) {
-  const isTenantAdmin = user?.role === 'tenant_admin';
-  const [activeSection, setActiveSection] = useState<SettingsSectionId>(initialSection ?? 'taxes');
-
-  useEffect(() => {
-    if (!initialSection) return;
-    setActiveSection(initialSection);
-    onInitialSectionConsumed?.();
-  }, [initialSection, onInitialSectionConsumed]);
-
-  return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,15rem)_1fr] lg:gap-8 w-full max-w-4xl">
-      <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <SettingsSectionPicker
-          value={activeSection}
-          onChange={setActiveSection}
-          includeSubscription={isTenantAdmin}
-        />
-        <SettingsSectionNav
-          value={activeSection}
-          onChange={setActiveSection}
-          includeSubscription={isTenantAdmin}
-          icons={SETTINGS_ICONS}
-        />
-      </aside>
-
-      <div className="min-w-0 mt-4 lg:mt-0">
-      {activeSection === 'taxes' && (
-        <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
-      )}
-      {activeSection === 'fund' && (
-        <GlobalFundSettingsPanel settings={globalFund} onChange={onUpdateGlobalFund} />
-      )}
-      {activeSection === 'labor' && (
-        <LaborShareSettingsPanel settings={laborShareSettings} onChange={onUpdateLaborShareSettings} />
-      )}
-      {activeSection === 'indirect' && (
-        <IndirectCostsSettings costs={globalCosts} onSave={onSaveCosts} />
-      )}
-      {activeSection === 'units' && (
-        <UnitSettingsPanel
-          settings={unitSettings}
-          rawMaterials={rawMaterials}
-          inventory={inventory}
-          onSave={onSaveUnitSettings}
-          onReset={onResetUnitSettings}
-        />
-      )}
-      {activeSection === 'exchange' && <ExchangeRatesPanel />}
-      {activeSection === 'locations' && (
-        <LocationsSettingsPanel
-          locations={locations}
-          onSave={onSaveLocation}
-          onDelete={onDeleteLocation}
-        />
-      )}
-      {activeSection === 'reconciliation' && (
-        <ReconciliationPanel
-          locations={locations}
-          products={inventory}
-          sales={sales}
-          stockMovements={stockMovements}
-          onImportSales={onImportSales}
-        />
-      )}
-      {activeSection === 'sync' && (
-        <DataSyncPanel
-          inventory={inventory}
-          rawMaterials={rawMaterials}
-          globalCosts={globalCosts}
-          globalFund={globalFund}
-          laborShareSettings={laborShareSettings}
-          taxSettings={taxSettings}
-          unitSettings={unitSettings}
-          exchangeRateSettings={exchangeRateSettings}
-          warehouses={warehouses}
-          stockMovements={stockMovements}
-          stockThresholds={stockThresholds}
-          locations={locations}
-          sales={sales}
-          tenantName={tenantName}
-          cloudSync={cloudSync}
-        />
-      )}
-      {activeSection === 'account' && <AccountSettingsPanel user={user} />}
-      {activeSection === 'subscription' && isTenantAdmin && (
-        <SubscriptionSettingsPanel user={user} />
-      )}
-      </div>
-    </div>
-  );
-}
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Percent, PiggyBank, Receipt, Ruler, Users } from 'lucide-react';
+import type {
+  GlobalFundSettings,
+  IndirectCost,
+  LaborShareSettings,
+  ProductCalculation,
+  RawMaterial,
+  TaxSettings,
+  UnitSettings,
+} from '@costify/shared/domain/types';
+import { SETTINGS_SECTIONS, type SettingsSectionId } from '@costify/client-data';
+import { GlobalFundSettingsPanel } from './GlobalFundSettings';
+import { LaborShareSettingsPanel } from './LaborShareSettings';
+import { IndirectCostsSettings } from './IndirectCostsSettings';
+import { TaxSettingsPanel } from './TaxSettingsPanel';
+import { UnitSettingsPanel } from './UnitSettingsPanel';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+
+const SETTINGS_ICONS: Record<SettingsSectionId, typeof Receipt> = {
+  taxes: Receipt,
+  fund: PiggyBank,
+  labor: Users,
+  indirect: Percent,
+  units: Ruler,
+};
+
+export type SettingsSection = SettingsSectionId;
+
+interface SettingsViewProps {
+  inventory: ProductCalculation[];
+  rawMaterials: RawMaterial[];
+  globalCosts: IndirectCost[];
+  globalFund: GlobalFundSettings;
+  laborShareSettings: LaborShareSettings;
+  taxSettings: TaxSettings;
+  unitSettings: UnitSettings;
+  onSaveCosts: (costs: IndirectCost[]) => void;
+  onUpdateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
+  onUpdateLaborShareSettings: (updates: Partial<LaborShareSettings>) => void;
+  onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
+  onSaveUnitSettings: (settings: UnitSettings) => void;
+  onResetUnitSettings: () => void;
+  initialSection?: SettingsSection;
+  onInitialSectionConsumed?: () => void;
+}
+
+export function SettingsView({
+  inventory,
+  rawMaterials,
+  globalCosts,
+  globalFund,
+  laborShareSettings,
+  taxSettings,
+  unitSettings,
+  onSaveCosts,
+  onUpdateGlobalFund,
+  onUpdateLaborShareSettings,
+  onUpdateTaxSettings,
+  onSaveUnitSettings,
+  onResetUnitSettings,
+  initialSection,
+  onInitialSectionConsumed,
+}: SettingsViewProps) {
+  const [openSection, setOpenSection] = useState<string[]>(
+    initialSection ? [initialSection] : ['taxes']
+  );
+
+  useEffect(() => {
+    if (!initialSection) return;
+    setOpenSection([initialSection]);
+    onInitialSectionConsumed?.();
+  }, [initialSection, onInitialSectionConsumed]);
+
+  return (
+    <div className="w-full max-w-2xl space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Estos valores se aplican al calcular costos de todos los productos.
+      </p>
+
+      <Accordion
+        value={openSection}
+        onValueChange={setOpenSection}
+        className="rounded-2xl border border-border bg-card px-4 sm:px-5"
+      >
+        {SETTINGS_SECTIONS.map((section) => {
+          const Icon = SETTINGS_ICONS[section.id];
+          return (
+            <AccordionItem key={section.id} value={section.id}>
+              <AccordionTrigger className="min-h-11 py-3.5 gap-3 hover:no-underline">
+                <span className="flex items-center gap-3">
+                  <Icon className="w-4 h-4 shrink-0 text-muted-foreground" />
+                  <span>{section.label}</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-5">
+                {section.id === 'taxes' ? (
+                  <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
+                ) : null}
+                {section.id === 'fund' ? (
+                  <GlobalFundSettingsPanel settings={globalFund} onChange={onUpdateGlobalFund} />
+                ) : null}
+                {section.id === 'labor' ? (
+                  <LaborShareSettingsPanel
+                    settings={laborShareSettings}
+                    onChange={onUpdateLaborShareSettings}
+                  />
+                ) : null}
+                {section.id === 'indirect' ? (
+                  <IndirectCostsSettings costs={globalCosts} onSave={onSaveCosts} />
+                ) : null}
+                {section.id === 'units' ? (
+                  <UnitSettingsPanel
+                    settings={unitSettings}
+                    rawMaterials={rawMaterials}
+                    inventory={inventory}
+                    onSave={onSaveUnitSettings}
+                    onReset={onResetUnitSettings}
+                  />
+                ) : null}
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
+    </div>
+  );
+}
+

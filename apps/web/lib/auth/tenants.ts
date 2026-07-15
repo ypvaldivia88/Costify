@@ -23,6 +23,7 @@ import {
   buildPendingSubscription,
   changeSubscriptionPlan,
   ensureTenantSubscription,
+  isSubscriptionCurrentlyActive,
   type SubscriptionAdminAction,
   type SubscriptionPlan,
   type TenantSubscription,
@@ -209,20 +210,26 @@ export async function registerPendingTenant(input: RegisterTenantInput): Promise
   });
 }
 
-export async function approveTenant(tenantId: string): Promise<PublicTenant | null> {
+export async function ensureTenantSubscriptionActive(
+  tenantId: string
+): Promise<PublicTenant | null> {
   const tenant = await findTenantById(tenantId);
-  if (!tenant || tenant.status !== 'pending') {
-    throw new Error('El cliente no está pendiente de aprobación.');
-  }
+  if (!tenant) return null;
 
-  const subscription = tenant.subscription
-    ? activateSubscription(tenant.subscription)
-    : activateSubscription(buildPendingSubscription('monthly'));
+  const subscription = ensureTenantSubscription(tenant.subscription);
+  if (isSubscriptionCurrentlyActive(subscription)) {
+    return toPublicTenant(tenant);
+  }
 
   const db = await getDb();
   const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOneAndUpdate(
     { tenantId },
-    { $set: { status: 'active', subscription } },
+    {
+      $set: {
+        status: 'active',
+        subscription: activateSubscription(subscription),
+      },
+    },
     { returnDocument: 'after' }
   );
 
@@ -233,6 +240,39 @@ export async function approveTenant(tenantId: string): Promise<PublicTenant | nu
     .updateMany({ tenantId }, { $set: { status: 'active' } });
 
   return toPublicTenant(result);
+}
+
+export async function approveTenant(tenantId: string): Promise<PublicTenant | null> {
+  const tenant = await findTenantById(tenantId);
+  if (!tenant) {
+    throw new Error('Cliente no encontrado.');
+  }
+
+  if (tenant.status === 'active') {
+    return ensureTenantSubscriptionActive(tenantId);
+  }
+
+  if (tenant.status !== 'pending') {
+    throw new Error('El cliente no está pendiente de aprobación.');
+  }
+
+  return ensureTenantSubscriptionActive(tenantId);
+}
+
+const DEMO_ADMIN_EMAIL = (process.env.DEMO_ADMIN_EMAIL ?? 'demo@costify.local')
+  .trim()
+  .toLowerCase();
+
+/** Keeps the staging demo tenant writable after trial expiry. */
+export async function ensureDemoTenantSubscription(): Promise<void> {
+  const db = await getDb();
+  const demoAdmin = await db.collection<UserDocument>(USERS_COLLECTION).findOne({
+    email: DEMO_ADMIN_EMAIL,
+    role: 'tenant_admin',
+  });
+  if (!demoAdmin?.tenantId) return;
+
+  await ensureTenantSubscriptionActive(demoAdmin.tenantId);
 }
 
 interface CreateTenantUserInput {
@@ -294,7 +334,7 @@ export async function updateTenantStatus(
 
   if (status === 'active') {
     const subscription = ensureTenantSubscription(existing.subscription);
-    if (subscription.status === 'pending_payment' || subscription.status === 'expired') {
+    if (!isSubscriptionCurrentlyActive(subscription)) {
       update.subscription = activateSubscription(subscription);
     }
   }
