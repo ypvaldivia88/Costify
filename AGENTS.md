@@ -68,9 +68,17 @@ Regla Cursor detallada: `.cursor/rules/mirror-apps-architect.mdc` (`alwaysApply:
 
 ## Variables de entorno
 
-### Backend web (`apps/web/.env.local`)
+### Backend web (`.env.local` en la **raíz del repo**)
 
-Usar en desarrollo local. En Vercel, las mismas claves están en **Settings → Environment Variables** del proyecto. Plantilla copiable: `apps/web/env.staging.template`.
+Un solo archivo para web local, seeds y scripts: **`Costify/.env.local`** (no duplicar en `apps/web/.env.local` — un `vercel env pull` ahí con valores vacíos pisa el de la raíz).
+
+En Vercel, las mismas claves están en **Settings → Environment Variables**. Plantilla: `apps/web/env.staging.template` (copiar a la raíz como `.env.local`).
+
+```powershell
+# Bajar vars de producción a la raíz (desde apps/web, donde está linkado Vercel)
+cd apps/web
+vercel env pull ../../.env.local --environment=production
+```
 
 ```env
 # URL pública del despliegue
@@ -238,7 +246,7 @@ Constantes: `packages/shared/src/domain/subscription.ts`
 # Instalar dependencias (siempre desde la raíz)
 pnpm install
 
-# Web en local (requiere apps/web/.env.local)
+# Web en local (requiere .env.local en la raíz del repo)
 pnpm dev
 pnpm seed:admin    # sincroniza super admin
 pnpm seed:demo     # crea/actualiza tenant demo con datos de panadería
