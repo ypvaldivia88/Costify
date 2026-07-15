@@ -287,13 +287,31 @@ export async function updateTenantStatus(
 ): Promise<PublicTenant | null> {
   const db = await getDb();
   const tenants = db.collection<TenantDocument>(TENANTS_COLLECTION);
+  const existing = await tenants.findOne({ tenantId });
+  if (!existing) return null;
+
+  const update: Partial<TenantDocument> = { status };
+
+  if (status === 'active') {
+    const subscription = ensureTenantSubscription(existing.subscription);
+    if (subscription.status === 'pending_payment' || subscription.status === 'expired') {
+      update.subscription = activateSubscription(subscription);
+    }
+  }
+
   const result = await tenants.findOneAndUpdate(
     { tenantId },
-    { $set: { status } },
+    { $set: update },
     { returnDocument: 'after' }
   );
 
   if (!result) return null;
+
+  if (status === 'active') {
+    await db
+      .collection<UserDocument>(USERS_COLLECTION)
+      .updateMany({ tenantId }, { $set: { status: 'active' } });
+  }
 
   return toPublicTenant(result);
 }

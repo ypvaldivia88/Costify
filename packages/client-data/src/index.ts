@@ -1,6 +1,7 @@
 export * from './auth/types';
 export * from './access/workspace-access';
 export * from './navigation/tabs';
+export * from './navigation/settings-sections';
 export * from './storage/types';
 export * from './sync/sync-events';
 export * from './sync/sync-metadata';

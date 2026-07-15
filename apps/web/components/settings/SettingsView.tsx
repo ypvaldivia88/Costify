@@ -17,10 +17,10 @@ import type {
   Warehouse,
 } from '@costify/shared/domain/types';
 import type { ExchangeRateSettings } from '@costify/shared/domain/exchange-rates';
-import { cn } from '@/lib/utils';
 import { DataSyncPanel } from './DataSyncPanel';
 import { AccountSettingsPanel } from './AccountSettingsPanel';
 import { SubscriptionSettingsPanel } from './SubscriptionSettingsPanel';
+import { SettingsSectionNav, SettingsSectionPicker } from './SettingsSectionNav';
 import { GlobalFundSettingsPanel } from './GlobalFundSettings';
 import { LaborShareSettingsPanel } from './LaborShareSettings';
 import { IndirectCostsSettings } from './IndirectCostsSettings';
@@ -32,18 +32,23 @@ import { ReconciliationPanel } from './ReconciliationPanel';
 import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 import type { SessionUser } from '@/lib/auth/types';
 
-export type SettingsSection =
-  | 'taxes'
-  | 'fund'
-  | 'labor'
-  | 'indirect'
-  | 'units'
-  | 'exchange'
-  | 'locations'
-  | 'reconciliation'
-  | 'sync'
-  | 'account'
-  | 'subscription';
+import type { SettingsSectionId } from '@costify/client-data';
+
+export type SettingsSection = SettingsSectionId;
+
+const SETTINGS_ICONS: Record<SettingsSectionId, typeof Database> = {
+  taxes: Receipt,
+  fund: PiggyBank,
+  labor: Users,
+  indirect: Percent,
+  units: Ruler,
+  exchange: DollarSign,
+  locations: MapPin,
+  reconciliation: Scale,
+  sync: Database,
+  account: User,
+  subscription: CreditCard,
+};
 
 interface SettingsViewProps {
   inventory: ProductCalculation[];
@@ -87,19 +92,6 @@ interface SettingsViewProps {
   onInitialSectionConsumed?: () => void;
 }
 
-const baseSections: { id: SettingsSection; label: string; icon: typeof Database }[] = [
-  { id: 'taxes', label: 'Impuestos', icon: Receipt },
-  { id: 'fund', label: 'Fondo', icon: PiggyBank },
-  { id: 'labor', label: 'Salarios', icon: Users },
-  { id: 'indirect', label: 'Gastos', icon: Percent },
-  { id: 'units', label: 'Unidades', icon: Ruler },
-  { id: 'exchange', label: 'Tasas', icon: DollarSign },
-  { id: 'locations', label: 'Locales', icon: MapPin },
-  { id: 'reconciliation', label: 'Conciliación', icon: Scale },
-  { id: 'sync', label: 'Respaldo', icon: Database },
-  { id: 'account', label: 'Cuenta', icon: User },
-];
-
 export function SettingsView({
   inventory,
   rawMaterials,
@@ -130,14 +122,7 @@ export function SettingsView({
   onInitialSectionConsumed,
 }: SettingsViewProps) {
   const isTenantAdmin = user?.role === 'tenant_admin';
-  const sections = isTenantAdmin
-    ? [
-        ...baseSections.slice(0, -1),
-        { id: 'subscription' as const, label: 'Suscripción', icon: CreditCard },
-        baseSections[baseSections.length - 1],
-      ]
-    : baseSections;
-  const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection ?? 'taxes');
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>(initialSection ?? 'taxes');
 
   useEffect(() => {
     if (!initialSection) return;
@@ -146,30 +131,22 @@ export function SettingsView({
   }, [initialSection, onInitialSectionConsumed]);
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,14rem)_1fr] lg:gap-8 space-y-5 lg:space-y-0 max-w-3xl">
-      <nav className="flex flex-col gap-1.5" aria-label="Secciones de ajustes">
-        {sections.map(({ id, label, icon: Icon }) => {
-          const active = activeSection === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveSection(id)}
-              className={cn(
-                'w-full min-h-11 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                active
-                  ? 'bg-brand-muted text-brand-foreground border border-brand/20'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </button>
-          );
-        })}
-      </nav>
+    <div className="lg:grid lg:grid-cols-[minmax(0,15rem)_1fr] lg:gap-8 w-full max-w-4xl">
+      <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <SettingsSectionPicker
+          value={activeSection}
+          onChange={setActiveSection}
+          includeSubscription={isTenantAdmin}
+        />
+        <SettingsSectionNav
+          value={activeSection}
+          onChange={setActiveSection}
+          includeSubscription={isTenantAdmin}
+          icons={SETTINGS_ICONS}
+        />
+      </aside>
 
-      <div className="min-w-0">
+      <div className="min-w-0 mt-4 lg:mt-0">
       {activeSection === 'taxes' && (
         <TaxSettingsPanel settings={taxSettings} onChange={onUpdateTaxSettings} />
       )}

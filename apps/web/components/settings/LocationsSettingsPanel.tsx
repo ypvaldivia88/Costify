@@ -68,16 +68,16 @@ export function LocationsSettingsPanel({
         {locations.map((location) => (
           <div
             key={location.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
+            className="flex items-center gap-3 rounded-xl border border-border px-4 py-3"
           >
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-medium">{location.name}</p>
               <p className="text-xs text-muted-foreground">
                 {location.code ? `Código: ${location.code}` : 'Sin código CSV'} ·{' '}
                 {location.active ? 'Activo' : 'Inactivo'}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -113,7 +113,7 @@ export function LocationsSettingsPanel({
         ))}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Input label="Nombre del local" value={name} onChange={(e) => setName(e.target.value)} />
         <Input label="Código CSV (opcional)" value={code} onChange={(e) => setCode(e.target.value)} />
         <Input label="Dirección (opcional)" value={address} onChange={(e) => setAddress(e.target.value)} />

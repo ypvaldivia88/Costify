@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, RefreshCw } from 'lucide-react';
 import type { PublicTenant } from '@/lib/auth/types';
 import type { SubscriptionAdminAction, SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
@@ -9,6 +9,7 @@ import {
   formatSubscriptionLocationBreakdown,
   getSubscriptionPlanPriceUsd,
   getSubscriptionStatusLabel,
+  isSubscriptionCurrentlyActive,
   normalizeLocationCount,
   SUBSCRIPTION_MAX_LOCATION_COUNT,
   SUBSCRIPTION_PLAN_LABELS,
@@ -16,6 +17,7 @@ import {
 } from '@costify/shared/domain/subscription';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
@@ -31,18 +33,19 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(
     subscription?.requestedPlan ?? subscription?.plan ?? 'monthly'
   );
-  const [locationCount, setLocationCount] = useState(
-    subscription?.locationCount ?? 1
-  );
+  const [locationCount, setLocationCount] = useState(subscription?.locationCount ?? 1);
   const [saving, setSaving] = useState(false);
 
   if (!subscription) {
     return (
       <Card className="p-4">
-        <p className="text-sm text-muted">Sin datos de suscripción.</p>
+        <p className="text-sm text-muted-foreground">Sin datos de suscripción.</p>
       </Card>
     );
   }
+
+  const subscriptionLive = isSubscriptionCurrentlyActive(subscription);
+  const previewPrice = getSubscriptionPlanPriceUsd(selectedPlan, locationCount);
 
   const runAction = async (action: SubscriptionAdminAction, plan?: SubscriptionPlan) => {
     setSaving(true);
@@ -74,52 +77,55 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
     <Card className="p-4 border-brand/30 bg-brand-muted/20">
       <SectionHeader
         icon={CreditCard}
-        title="Gestionar suscripción"
-        description="Activa, renueva o cambia el plan del cliente"
+        title="Suscripción"
+        description="Activa el plan para que el cliente deje el modo solo lectura"
       />
 
-      <div className="space-y-4 mt-2">
-        <div>
-          <p className="text-xs text-muted">Estado actual</p>
-          <p className="text-sm font-semibold">
-            {getSubscriptionStatusLabel(subscription)} · {SUBSCRIPTION_PLAN_LABELS[subscription.plan]}
+      <div className="mt-3 rounded-xl border border-border bg-background/80 p-3 space-y-1">
+        <p className="text-xs text-muted-foreground">Estado en base de datos</p>
+        <p className="text-sm font-semibold">
+          {getSubscriptionStatusLabel(subscription)} · {SUBSCRIPTION_PLAN_LABELS[subscription.plan]}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {subscription.priceUsd.toFixed(2)} USD · {formatSubscriptionLocationBreakdown(subscription.locationCount)}
+          {subscription.expiresAt ? ` · Vence ${formatSubscriptionExpiry(subscription.expiresAt)}` : ''}
+        </p>
+        {!subscriptionLive ? (
+          <p className="text-xs text-amber-700 dark:text-amber-300 font-medium pt-1">
+            El cliente verá <strong>solo lectura</strong> hasta que pulses «Activar acceso completo».
+            Debe recargar la app o volver a entrar.
           </p>
-          <p className="text-xs text-muted mt-1">
-            {subscription.priceUsd.toFixed(2)} USD ·{' '}
-            {formatSubscriptionLocationBreakdown(subscription.locationCount)}
-            {subscription.expiresAt
-              ? ` · Vence: ${formatSubscriptionExpiry(subscription.expiresAt)}`
-              : ''}
+        ) : (
+          <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium pt-1">
+            Acceso completo activo en el servidor.
           </p>
-          {subscription.requestedPlan && subscription.requestedPlan !== subscription.plan ? (
-            <p className="text-xs text-amber-700 dark:text-amber-300 mt-2 font-medium">
-              Solicitud del cliente: cambio a {SUBSCRIPTION_PLAN_LABELS[subscription.requestedPlan]}
-            </p>
-          ) : null}
-        </div>
+        )}
+        {subscription.requestedPlan && subscription.requestedPlan !== subscription.plan ? (
+          <p className="text-xs text-amber-700 dark:text-amber-300 pt-1">
+            Solicitud del cliente: {SUBSCRIPTION_PLAN_LABELS[subscription.requestedPlan]}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <Input
+          label="Locales facturados"
+          type="number"
+          min={1}
+          max={SUBSCRIPTION_MAX_LOCATION_COUNT}
+          value={String(locationCount)}
+          onChange={(e) =>
+            setLocationCount(normalizeLocationCount(Number(e.target.value) || 1))
+          }
+        />
+        <p className="text-xs text-muted-foreground -mt-2">
+          {formatSubscriptionLocationBreakdown(locationCount)} · {previewPrice.toFixed(2)} USD /{' '}
+          {SUBSCRIPTION_PLAN_LABELS[selectedPlan]}
+        </p>
 
         <div>
-          <p className="text-sm font-semibold mb-2">Locales facturados</p>
-          <input
-            type="number"
-            min={1}
-            max={SUBSCRIPTION_MAX_LOCATION_COUNT}
-            value={locationCount}
-            onChange={(e) =>
-              setLocationCount(normalizeLocationCount(Number(e.target.value) || 1))
-            }
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <p className="text-xs text-muted mt-1">
-            {formatSubscriptionLocationBreakdown(locationCount)} ·{' '}
-            {getSubscriptionPlanPriceUsd(selectedPlan, locationCount).toFixed(2)} USD con plan{' '}
-            {SUBSCRIPTION_PLAN_LABELS[selectedPlan]}
-          </p>
-        </div>
-
-        <div>
-          <p className="text-sm font-semibold mb-2">Plan a aplicar</p>
-          <div className="grid grid-cols-3 gap-2">
+          <p className="text-sm font-semibold mb-2">Plan</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {SUBSCRIPTION_PLANS.map((plan) => {
               const selected = selectedPlan === plan;
               return (
@@ -128,8 +134,8 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
                   type="button"
                   onClick={() => setSelectedPlan(plan)}
                   className={cn(
-                    'rounded-xl border px-3 py-2 text-sm font-semibold transition-colors',
-                    selected ? 'border-brand bg-brand-muted' : 'border-border hover:bg-surface-muted'
+                    'min-h-11 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors text-left',
+                    selected ? 'border-brand bg-brand-muted' : 'border-border hover:bg-muted/50'
                   )}
                 >
                   {SUBSCRIPTION_PLAN_LABELS[plan]}
@@ -139,22 +145,60 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" disabled={saving} onClick={() => void runAction('activate', selectedPlan)}>
-            Activar plan
+        <div className="space-y-2">
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            disabled={saving}
+            onClick={() => void runAction('activate', selectedPlan)}
+          >
+            <RefreshCw className="w-4 h-4" />
+            Activar acceso completo
           </Button>
-          <Button type="button" variant="outline" disabled={saving} onClick={() => void runAction('renew', selectedPlan)}>
-            Renovar
-          </Button>
-          <Button type="button" variant="outline" disabled={saving} onClick={() => void runAction('set_plan', selectedPlan)}>
-            Cambiar plan
-          </Button>
-          <Button type="button" variant="outline" disabled={saving} onClick={() => void runAction('pending')}>
-            Pendiente de pago
-          </Button>
-          <Button type="button" variant="outline" disabled={saving} onClick={() => void runAction('expire')}>
-            Marcar vencida
-          </Button>
+          <p className="text-xs text-muted-foreground">
+            Equivale a cobrar y activar el plan seleccionado. Usa esto tras aprobar un cliente o renovar el demo.
+          </p>
+        </div>
+
+        <div className="border-t border-border pt-4 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Otras acciones
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => void runAction('renew', selectedPlan)}
+            >
+              Renovar periodo
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => void runAction('set_plan', selectedPlan)}
+            >
+              Cambiar plan (pendiente pago)
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => void runAction('pending')}
+            >
+              Marcar pendiente de pago
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              className="text-destructive hover:text-destructive"
+              onClick={() => void runAction('expire')}
+            >
+              Marcar vencida
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
