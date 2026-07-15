@@ -11,6 +11,8 @@ import type {
   Warehouse,
 } from '../domain/types';
 import type { ExchangeRateSettings } from '../domain/exchange-rates';
+import type { Location } from '../domain/location';
+import type { SaleRecord } from '../domain/sales';
 import { migrateExchangeRateSettings } from '../domain/migrate-exchange-rates';
 import { migrateGlobalFundSettings } from '../domain/calculations/global-fund';
 import { migrateLaborShareSettings } from '../domain/calculations/labor-share';
@@ -34,9 +36,11 @@ export interface AppBackupV1 {
   laborShareSettings?: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings?: UnitSettings;
+  locations?: Location[];
   warehouses?: Warehouse[];
   stockMovements?: StockMovement[];
   stockThresholds?: StockThreshold[];
+  sales?: SaleRecord[];
   exchangeRateSettings?: ExchangeRateSettings;
 }
 
@@ -48,9 +52,11 @@ export interface AppBackupInput {
   laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  locations: Location[];
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
+  sales: SaleRecord[];
   exchangeRateSettings: ExchangeRateSettings;
 }
 
@@ -91,9 +97,11 @@ export function createBackupPayload(input: AppBackupInput): string {
     laborShareSettings: input.laborShareSettings,
     taxSettings: input.taxSettings,
     unitSettings: input.unitSettings,
+    locations: input.locations,
     warehouses: input.warehouses,
     stockMovements: input.stockMovements,
     stockThresholds: input.stockThresholds,
+    sales: input.sales,
     exchangeRateSettings: input.exchangeRateSettings,
   };
   return BACKUP_PREFIX + encodeBase64Url(JSON.stringify(backup));
@@ -133,9 +141,11 @@ export function parseBackupPayload(raw: string): AppBackupV1 {
     ),
     taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
     unitSettings: migrateUnitSettings(backup.unitSettings),
+    locations: Array.isArray(backup.locations) ? backup.locations : [],
     warehouses: Array.isArray(backup.warehouses) ? backup.warehouses : [],
     stockMovements: Array.isArray(backup.stockMovements) ? backup.stockMovements : [],
     stockThresholds: Array.isArray(backup.stockThresholds) ? backup.stockThresholds : [],
+    sales: Array.isArray(backup.sales) ? backup.sales : [],
     exchangeRateSettings: migrateExchangeRateSettings(backup.exchangeRateSettings),
   };
 }
@@ -168,9 +178,11 @@ export function parseBackupFileContent(text: string): string {
       ),
       taxSettings: migrateTaxSettings(backup.taxSettings ?? DEFAULT_TAX_SETTINGS),
       unitSettings: migrateUnitSettings(backup.unitSettings),
+      locations: backup.locations ?? [],
       warehouses: backup.warehouses ?? [],
       stockMovements: backup.stockMovements ?? [],
       stockThresholds: backup.stockThresholds ?? [],
+      sales: backup.sales ?? [],
       exchangeRateSettings: migrateExchangeRateSettings(backup.exchangeRateSettings),
     });
   }

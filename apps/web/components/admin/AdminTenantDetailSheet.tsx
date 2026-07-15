@@ -17,6 +17,7 @@ import {
   buildWhatsAppPaymentMessage,
   buildWhatsAppPaymentUrl,
   formatSubscriptionExpiry,
+  formatSubscriptionLocationBreakdown,
   SUBSCRIPTION_PLAN_LABELS,
   SUBSCRIPTION_STATUS_LABELS,
 } from '@costify/shared/domain/subscription';
@@ -106,6 +107,7 @@ export function AdminTenantDetailSheet({
             email: tenant.adminEmail,
             plan: subscription.plan,
             priceUsd: subscription.priceUsd,
+            locationCount: subscription.locationCount,
           })
         )
       : null;
@@ -279,6 +281,7 @@ export function AdminTenantDetailSheet({
                 <p>
                   <span className="text-foreground font-medium">Plan:</span>{' '}
                   {SUBSCRIPTION_PLAN_LABELS[subscription.plan]} · {subscription.priceUsd.toFixed(2)} USD ·{' '}
+                  {formatSubscriptionLocationBreakdown(subscription.locationCount)} ·{' '}
                   {SUBSCRIPTION_STATUS_LABELS[subscription.status]}
                   {subscription.expiresAt
                     ? ` · Vence ${formatSubscriptionExpiry(subscription.expiresAt)}`

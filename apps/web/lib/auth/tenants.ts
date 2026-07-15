@@ -191,6 +191,7 @@ interface RegisterTenantInput {
   adminEmail: string;
   adminPassword: string;
   plan: SubscriptionPlan;
+  locationCount?: number;
 }
 
 export async function registerPendingTenant(input: RegisterTenantInput): Promise<{
@@ -204,7 +205,7 @@ export async function registerPendingTenant(input: RegisterTenantInput): Promise
     adminEmail: input.adminEmail,
     adminPassword: input.adminPassword,
     status: 'pending',
-    subscription: buildPendingSubscription(input.plan),
+    subscription: buildPendingSubscription(input.plan, Date.now(), input.locationCount),
   });
 }
 
@@ -313,7 +314,8 @@ export async function rejectPendingTenant(tenantId: string): Promise<boolean> {
 export async function updateTenantSubscription(
   tenantId: string,
   action: SubscriptionAdminAction,
-  plan?: SubscriptionPlan
+  plan?: SubscriptionPlan,
+  locationCount?: number
 ): Promise<PublicTenant | null> {
   const tenant = await findTenantById(tenantId);
   if (!tenant) {
@@ -321,7 +323,7 @@ export async function updateTenantSubscription(
   }
 
   const current = ensureTenantSubscription(tenant.subscription);
-  const subscription = applySubscriptionAdminAction(current, action, plan);
+  const subscription = applySubscriptionAdminAction(current, action, plan, locationCount);
 
   const db = await getDb();
   const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOneAndUpdate(

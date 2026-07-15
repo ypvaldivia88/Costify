@@ -6,7 +6,11 @@ import type { PublicTenant } from '@/lib/auth/types';
 import type { SubscriptionAdminAction, SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   formatSubscriptionExpiry,
+  formatSubscriptionLocationBreakdown,
+  getSubscriptionPlanPriceUsd,
   getSubscriptionStatusLabel,
+  normalizeLocationCount,
+  SUBSCRIPTION_MAX_LOCATION_COUNT,
   SUBSCRIPTION_PLAN_LABELS,
   SUBSCRIPTION_PLANS,
 } from '@costify/shared/domain/subscription';
@@ -27,6 +31,9 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(
     subscription?.requestedPlan ?? subscription?.plan ?? 'monthly'
   );
+  const [locationCount, setLocationCount] = useState(
+    subscription?.locationCount ?? 1
+  );
   const [saving, setSaving] = useState(false);
 
   if (!subscription) {
@@ -44,7 +51,11 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ action, plan }),
+        body: JSON.stringify({
+          action,
+          plan,
+          locationCount: normalizeLocationCount(locationCount),
+        }),
       });
       const json = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -74,7 +85,8 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
             {getSubscriptionStatusLabel(subscription)} · {SUBSCRIPTION_PLAN_LABELS[subscription.plan]}
           </p>
           <p className="text-xs text-muted mt-1">
-            {subscription.priceUsd.toFixed(2)} USD
+            {subscription.priceUsd.toFixed(2)} USD ·{' '}
+            {formatSubscriptionLocationBreakdown(subscription.locationCount)}
             {subscription.expiresAt
               ? ` · Vence: ${formatSubscriptionExpiry(subscription.expiresAt)}`
               : ''}
@@ -84,6 +96,25 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
               Solicitud del cliente: cambio a {SUBSCRIPTION_PLAN_LABELS[subscription.requestedPlan]}
             </p>
           ) : null}
+        </div>
+
+        <div>
+          <p className="text-sm font-semibold mb-2">Locales facturados</p>
+          <input
+            type="number"
+            min={1}
+            max={SUBSCRIPTION_MAX_LOCATION_COUNT}
+            value={locationCount}
+            onChange={(e) =>
+              setLocationCount(normalizeLocationCount(Number(e.target.value) || 1))
+            }
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <p className="text-xs text-muted mt-1">
+            {formatSubscriptionLocationBreakdown(locationCount)} ·{' '}
+            {getSubscriptionPlanPriceUsd(selectedPlan, locationCount).toFixed(2)} USD con plan{' '}
+            {SUBSCRIPTION_PLAN_LABELS[selectedPlan]}
+          </p>
         </div>
 
         <div>

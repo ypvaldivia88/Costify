@@ -234,6 +234,7 @@ export function AdminTenantsTable({
                           email: tenant.adminEmail,
                           plan: subscription.plan,
                           priceUsd: subscription.priceUsd,
+                          locationCount: subscription.locationCount,
                         })
                       )
                     : null;

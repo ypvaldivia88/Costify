@@ -55,9 +55,11 @@ export const STORAGE_KEYS = {
   globalFund: 'costify_global_fund_v2',
   laborShareSettings: 'costify_labor_share_settings_v1',
   unitSettings: 'costify_unit_settings_v1',
+  locations: 'costify_locations_v1',
   warehouses: 'costify_warehouses_v1',
   stockMovements: 'costify_stock_movements_v1',
   stockThresholds: 'costify_stock_thresholds_v1',
+  sales: 'costify_sales_v1',
   theme: 'costify_theme_v1',
   syncWorkspaceId: 'costify_workspace_id_v1',
   syncMetadata: 'costify_sync_metadata_v1',
@@ -79,6 +81,7 @@ export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
   merma: 'Merma',
   ajuste: 'Ajuste',
   produccion: 'Producción',
+  venta: 'Venta',
 };
 
 export const PRODUCT_TYPE_LABELS = {

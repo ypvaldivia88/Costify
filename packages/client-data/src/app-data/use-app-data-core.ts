@@ -14,6 +14,11 @@ import {
   getStockQuantity,
   syncRawMaterialStockFromLevels,
 } from '@costify/shared/domain/calculations';
+import {
+  ensureDefaultLocations,
+  getDefaultLocationId,
+} from '@costify/shared/domain/location';
+import type { LocationInput } from '@costify/shared/domain/location';
 import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/labor-share';
 import { DEFAULT_LABOR_SHARE_SETTINGS } from '@costify/shared/domain/constants';
 import { createWorkspaceAccessGates } from '../access/workspace-access';
@@ -31,6 +36,8 @@ import { useStockThresholds } from '../hooks/use-stock-thresholds';
 import { useTaxSettings } from '../hooks/use-tax-settings';
 import { useUnitSettings } from '../hooks/use-unit-settings';
 import { useWarehouses } from '../hooks/use-warehouses';
+import { useLocations } from '../hooks/use-locations';
+import { useSales } from '../hooks/use-sales';
 import type { AppBackupReloadInput, AppDataContextValue, AppDataUser } from './types';
 
 export interface UseAppDataCoreOptions {
@@ -49,6 +56,8 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
   const taxSettingsState = useTaxSettings();
   const unitSettingsState = useUnitSettings();
   const warehousesState = useWarehouses();
+  const locationsState = useLocations();
+  const salesState = useSales();
   const stockMovementsState = useStockMovements();
   const stockThresholdsState = useStockThresholds();
   const exchangeRatesState = useExchangeRates();
@@ -63,6 +72,8 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
     taxSettingsState.hydrated &&
     unitSettingsState.hydrated &&
     warehousesState.hydrated &&
+    locationsState.hydrated &&
+    salesState.hydrated &&
     stockMovementsState.hydrated &&
     stockThresholdsState.hydrated &&
     exchangeRatesState.hydrated;
@@ -111,9 +122,11 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
       laborShareSettings: laborShareSettingsState.laborShareSettings,
       taxSettings: taxSettingsState.taxSettings,
       unitSettings: unitSettingsState.unitSettings,
+      locations: locationsState.locations,
       warehouses: warehousesState.warehouses,
       stockMovements: stockMovementsState.movements,
       stockThresholds: stockThresholdsState.thresholds,
+      sales: salesState.sales,
       exchangeRateSettings: exchangeRatesState.exchangeSettings,
     }),
     [
@@ -124,9 +137,11 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
       laborShareSettingsState.laborShareSettings,
       taxSettingsState.taxSettings,
       unitSettingsState.unitSettings,
+      locationsState.locations,
       warehousesState.warehouses,
       stockMovementsState.movements,
       stockThresholdsState.thresholds,
+      salesState.sales,
       exchangeRatesState.exchangeSettings,
     ]
   );
@@ -147,8 +162,17 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
     );
   }, [warehousesState.warehouses]);
 
+  const getDefaultLocation = useCallback(() => {
+    const list = ensureDefaultLocations(locationsState.locations);
+    return list.find((location) => location.active) ?? list[0];
+  }, [locationsState.locations]);
+
   useEffect(() => {
     if (!hydrated || migrationDone.current) return;
+
+    if (locationsState.locations.length === 0) {
+      locationsState.saveLocation({ name: 'Local principal', code: 'MAIN', active: true });
+    }
 
     if (warehousesState.warehouses.length === 0) {
       const warehouse = warehousesState.saveWarehouse(DEFAULT_WAREHOUSE_PRESETS[0]);
@@ -183,7 +207,30 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
     }
 
     migrationDone.current = true;
-  }, [hydrated, warehousesState, rawMaterialsState.materials, stockMovementsState, getDefaultWarehouse]);
+  }, [hydrated, locationsState, warehousesState, rawMaterialsState.materials, stockMovementsState, getDefaultWarehouse]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const defaultLocationId = getDefaultLocationId(ensureDefaultLocations(locationsState.locations));
+    const needsWarehousePatch = warehousesState.warehouses.some((w) => !w.locationId);
+    const needsMovementPatch = stockMovementsState.movements.some((m) => !m.locationId);
+    if (!needsWarehousePatch && !needsMovementPatch) return;
+
+    if (needsWarehousePatch) {
+      warehousesState.setWarehousesDirect(
+        warehousesState.warehouses.map((warehouse) =>
+          warehouse.locationId ? warehouse : { ...warehouse, locationId: defaultLocationId }
+        )
+      );
+    }
+    if (needsMovementPatch) {
+      stockMovementsState.setMovementsDirect(
+        stockMovementsState.movements.map((movement) =>
+          movement.locationId ? movement : { ...movement, locationId: defaultLocationId }
+        )
+      );
+    }
+  }, [hydrated, locationsState.locations, warehousesState, stockMovementsState]);
 
   useEffect(() => {
     if (!hydrated || stockMovementsState.movements.length === 0) return;
@@ -655,8 +702,10 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
         unitSettingsState.replaceUnitSettings(backup.unitSettings);
       }
       warehousesState.setWarehousesDirect(backup.warehouses ?? []);
+      locationsState.setLocationsDirect(backup.locations ?? []);
       stockMovementsState.setMovementsDirect(backup.stockMovements ?? []);
       stockThresholdsState.setThresholdsDirect(backup.stockThresholds ?? []);
+      salesState.setSalesDirect(backup.sales ?? []);
       if (backup.exchangeRateSettings) {
         exchangeRatesState.replaceSettings(backup.exchangeRateSettings);
       }
@@ -678,8 +727,10 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
       taxSettingsState,
       unitSettingsState,
       warehousesState,
+      locationsState,
       stockMovementsState,
       stockThresholdsState,
+      salesState,
       exchangeRatesState,
     ]
   );
@@ -692,6 +743,39 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
       })();
     });
   }, [reloadFromBackup, sync]);
+
+  const saveLocation = useCallback(
+    (input: LocationInput, id?: string, timestamp?: number) => {
+      if (!access.canWrite) {
+        onDenyWrite(access.readonlyMessage);
+        throw new Error(access.readonlyMessage);
+      }
+      return locationsState.saveLocation(input, id, timestamp);
+    },
+    [access, onDenyWrite, locationsState]
+  );
+
+  const deleteLocation = useCallback(
+    (id: string) => {
+      if (!access.canWrite) {
+        onDenyWrite(access.readonlyMessage);
+        return;
+      }
+      locationsState.deleteLocation(id);
+    },
+    [access, onDenyWrite, locationsState]
+  );
+
+  const addSales = useCallback(
+    (records: Parameters<AppDataContextValue['addSales']>[0]) => {
+      if (!access.canManageWarehouses) {
+        onDenyWrite(access.warehousesMessage);
+        return;
+      }
+      salesState.addSales(records);
+    },
+    [access, onDenyWrite, salesState]
+  );
 
   const refreshExchangeRates = useCallback(
     async (force?: boolean) => {
@@ -711,9 +795,11 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
     laborShareSettings: laborShareSettingsState.laborShareSettings,
     taxSettings: taxSettingsState.taxSettings,
     unitSettings: unitSettingsState.unitSettings,
+    locations: ensureDefaultLocations(locationsState.locations),
     warehouses: warehousesState.warehouses,
     stockMovements: stockMovementsState.movements,
     stockThresholds: stockThresholdsState.thresholds,
+    sales: salesState.sales,
     stockLevels,
     stockValuation,
     stockAlerts,
@@ -736,6 +822,8 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
     updateTaxSettings,
     saveUnitSettings,
     resetUnitSettings,
+    saveLocation,
+    deleteLocation,
     saveWarehouse,
     deleteWarehouse,
     registerMovement,
@@ -746,6 +834,8 @@ export function useAppDataCore({ user, onDenyWrite }: UseAppDataCoreOptions): Ap
     registerProductMovement,
     registerProductInitialStock,
     getDefaultWarehouse,
+    getDefaultLocation,
+    addSales,
     reloadFromBackup,
     cloudSync,
     access,

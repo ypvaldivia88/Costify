@@ -17,8 +17,11 @@ import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   getSubscriptionDiscountPercent,
   getSubscriptionPlanPriceUsd,
+  SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD,
+  SUBSCRIPTION_INCLUDED_LOCATIONS,
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
+  formatSubscriptionLocationBreakdown,
 } from '@costify/shared/domain/subscription';
 import { registerRequest } from '@/api/client';
 import { CostifyLogoLockup } from '@/components/brand/CostifyLogoLockup';
@@ -44,6 +47,7 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
     adminPassword: '',
     confirmPassword: '',
     plan: 'monthly' as SubscriptionPlan,
+    locationCount: 1,
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -59,10 +63,10 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
       PLANS.map((plan) => ({
         plan,
         label: SUBSCRIPTION_PLAN_LABELS[plan],
-        priceUsd: getSubscriptionPlanPriceUsd(plan),
+        priceUsd: getSubscriptionPlanPriceUsd(plan, form.locationCount),
         discountPercent: getSubscriptionDiscountPercent(plan),
       })),
-    []
+    [form.locationCount]
   );
 
   const handleSubmit = async () => {
@@ -83,6 +87,7 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
         adminEmail: form.adminEmail.trim(),
         adminPassword: form.adminPassword,
         plan: form.plan,
+        locationCount: form.locationCount,
       });
       setSuccess(result);
       void Linking.openURL(result.whatsappUrl);
@@ -200,10 +205,43 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
               />
 
               <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 8 }]}>
+                Locales
+              </Text>
+              <Text style={[styles.planHint, { color: colors.muted }]}>
+                {SUBSCRIPTION_INCLUDED_LOCATIONS} local incluido. +$
+                {SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD}/mes por local adicional.
+              </Text>
+              <View style={styles.planGrid}>
+                {[1, 2, 3].map((count) => {
+                  const selected = form.locationCount === count;
+                  return (
+                    <Pressable
+                      key={count}
+                      onPress={() => setForm((prev) => ({ ...prev, locationCount: count }))}
+                      style={[
+                        styles.planCard,
+                        {
+                          borderColor: selected ? colors.brand : colors.border,
+                          backgroundColor: selected ? colors.brandMuted : colors.surfaceMuted,
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.planName, { color: colors.foreground }]}>
+                        {count === 3 ? '3 o más' : String(count)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={[styles.planHint, { color: colors.muted }]}>
+                {formatSubscriptionLocationBreakdown(form.locationCount)}
+              </Text>
+
+              <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 8 }]}>
                 Plan de suscripción
               </Text>
               <Text style={[styles.planHint, { color: colors.muted }]}>
-                Base {SUBSCRIPTION_MONTHLY_PRICE_USD} USD/mes. Descuento en planes de 6 meses y anual.
+                Base {SUBSCRIPTION_MONTHLY_PRICE_USD} USD/mes (1 local). Descuento en planes de 6 meses y anual.
               </Text>
 
               <View style={styles.planGrid}>

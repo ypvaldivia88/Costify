@@ -116,6 +116,8 @@ export interface LaborShareBreakdownItem {
 
 export interface ProductInput {
   name: string;
+  /** Código en registradora / importación CSV de ventas */
+  posSku?: string;
   productType: ProductType;
   purchasePrice: number;
   /** Etiqueta libre: unidad, caja, bolsa, kg, par, etc. */
@@ -241,6 +243,8 @@ export interface Warehouse {
   name: string;
   type: WarehouseType;
   active: boolean;
+  /** Local al que pertenece el almacén */
+  locationId?: string;
   timestamp: number;
 }
 
@@ -253,7 +257,8 @@ export type MovementType =
   | 'transferencia'
   | 'merma'
   | 'ajuste'
-  | 'produccion';
+  | 'produccion'
+  | 'venta';
 
 export interface MovementLine {
   refType: StockRefType;
@@ -269,10 +274,14 @@ export interface StockMovement {
   warehouseId: string;
   /** Origen en transferencias */
   sourceWarehouseId?: string;
+  /** Local asociado al movimiento */
+  locationId?: string;
   lines: MovementLine[];
   note?: string;
   /** Producto elaborado asociado a movimientos de producción */
   productId?: string;
+  /** Venta que originó el movimiento de tipo venta */
+  saleId?: string;
   /** Tasa usada si la entrada implicó compra en divisa */
   purchaseMeta?: PurchaseCurrencyMeta;
   timestamp: number;

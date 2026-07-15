@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { CreditCard, Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User, Users } from 'lucide-react-native';
+import { CreditCard, Database, DollarSign, MapPin, Percent, PiggyBank, Receipt, Ruler, User, Users } from 'lucide-react-native';
+import type { Location } from '@costify/shared/domain/location';
+import type { SaleRecord } from '@costify/shared/domain/sales';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -25,10 +27,11 @@ import { LaborShareSettingsPanel } from '@/components/settings/LaborShareSetting
 import { IndirectCostsSettings } from '@/components/settings/IndirectCostsSettings';
 import { TaxSettingsPanel } from '@/components/settings/TaxSettingsPanel';
 import { UnitSettingsPanel } from '@/components/settings/UnitSettingsPanel';
+import { LocationsSettingsPanel } from '@/components/settings/LocationsSettingsPanel';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTheme } from '@/context/ThemeContext';
 
-type SettingsSection = 'account' | 'subscription' | 'taxes' | 'fund' | 'labor' | 'indirect' | 'units' | 'exchange' | 'sync';
+type SettingsSection = 'account' | 'subscription' | 'taxes' | 'fund' | 'labor' | 'indirect' | 'units' | 'exchange' | 'locations' | 'sync';
 
 interface SettingsViewProps {
   user: SessionUser | null;
@@ -43,6 +46,8 @@ interface SettingsViewProps {
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
+  locations: Location[];
+  sales: SaleRecord[];
   cloudSync: ReturnType<typeof useCloudSync>;
   onSaveCosts: (costs: IndirectCost[]) => void;
   onUpdateGlobalFund: (updates: Partial<GlobalFundSettings>) => void;
@@ -50,6 +55,12 @@ interface SettingsViewProps {
   onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
   onSaveUnitSettings: (settings: UnitSettings) => void;
   onResetUnitSettings: () => void;
+  onSaveLocation: (
+    input: { name: string; code?: string; active?: boolean; address?: string },
+    id?: string,
+    timestamp?: number
+  ) => Location;
+  onDeleteLocation: (id: string) => void;
   onBackupImported?: (backup: AppBackupV1) => void;
   initialSection?: SettingsSection;
   onInitialSectionConsumed?: () => void;
@@ -63,6 +74,7 @@ const baseSections: { id: SettingsSection; label: string; icon: typeof Database 
   { id: 'indirect', label: 'Gastos', icon: Percent },
   { id: 'units', label: 'Unidades', icon: Ruler },
   { id: 'exchange', label: 'Tasas', icon: DollarSign },
+  { id: 'locations', label: 'Locales', icon: MapPin },
   { id: 'sync', label: 'Respaldo', icon: Database },
 ];
 
@@ -79,6 +91,8 @@ export function SettingsView({
   warehouses,
   stockMovements,
   stockThresholds,
+  locations,
+  sales,
   cloudSync,
   onSaveCosts,
   onUpdateGlobalFund,
@@ -86,6 +100,8 @@ export function SettingsView({
   onUpdateTaxSettings,
   onSaveUnitSettings,
   onResetUnitSettings,
+  onSaveLocation,
+  onDeleteLocation,
   onBackupImported,
   initialSection,
   onInitialSectionConsumed,
@@ -190,6 +206,13 @@ export function SettingsView({
         />
       ) : null}
       {activeSection === 'exchange' ? <ExchangeRatesPanel /> : null}
+      {activeSection === 'locations' ? (
+        <LocationsSettingsPanel
+          locations={locations}
+          onSave={onSaveLocation}
+          onDelete={onDeleteLocation}
+        />
+      ) : null}
       {activeSection === 'sync' ? (
         <DataSyncPanel
           inventory={inventory}
@@ -203,6 +226,8 @@ export function SettingsView({
           warehouses={warehouses}
           stockMovements={stockMovements}
           stockThresholds={stockThresholds}
+          locations={locations}
+          sales={sales}
           cloudSync={cloudSync}
           onBackupImported={onBackupImported}
         />

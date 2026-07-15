@@ -33,9 +33,11 @@ export async function applyBackupToStorage(backup: AppBackupV1): Promise<void> {
   );
   await saveToStorage(STORAGE_KEYS.taxSettings, migrateTaxSettings(backup.taxSettings));
   await saveToStorage(STORAGE_KEYS.unitSettings, migrateUnitSettings(backup.unitSettings));
+  await saveToStorage(STORAGE_KEYS.locations, backup.locations ?? []);
   await saveToStorage(STORAGE_KEYS.warehouses, backup.warehouses ?? []);
   await saveToStorage(STORAGE_KEYS.stockMovements, backup.stockMovements ?? []);
   await saveToStorage(STORAGE_KEYS.stockThresholds, backup.stockThresholds ?? []);
+  await saveToStorage(STORAGE_KEYS.sales, backup.sales ?? []);
   await saveToStorage(
     STORAGE_KEYS.exchangeRates,
     migrateExchangeRateSettings(backup.exchangeRateSettings)

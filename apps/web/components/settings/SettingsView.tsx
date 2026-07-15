@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Database, DollarSign, Percent, PiggyBank, Receipt, Ruler, User, CreditCard, Users } from 'lucide-react';
+import { Database, DollarSign, MapPin, Percent, PiggyBank, Receipt, Ruler, Scale, User, CreditCard, Users } from 'lucide-react';
+import type { Location } from '@costify/shared/domain/location';
+import type { SaleRecord } from '@costify/shared/domain/sales';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -25,10 +27,23 @@ import { IndirectCostsSettings } from './IndirectCostsSettings';
 import { TaxSettingsPanel } from './TaxSettingsPanel';
 import { UnitSettingsPanel } from './UnitSettingsPanel';
 import { ExchangeRatesPanel } from './ExchangeRatesPanel';
+import { LocationsSettingsPanel } from './LocationsSettingsPanel';
+import { ReconciliationPanel } from './ReconciliationPanel';
 import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 import type { SessionUser } from '@/lib/auth/types';
 
-type SettingsSection = 'taxes' | 'fund' | 'labor' | 'indirect' | 'units' | 'exchange' | 'sync' | 'account' | 'subscription';
+export type SettingsSection =
+  | 'taxes'
+  | 'fund'
+  | 'labor'
+  | 'indirect'
+  | 'units'
+  | 'exchange'
+  | 'locations'
+  | 'reconciliation'
+  | 'sync'
+  | 'account'
+  | 'subscription';
 
 interface SettingsViewProps {
   inventory: ProductCalculation[];
@@ -42,6 +57,8 @@ interface SettingsViewProps {
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
+  locations: Location[];
+  sales: SaleRecord[];
   tenantName?: string;
   user?: SessionUser | null;
   cloudSync: {
@@ -59,6 +76,13 @@ interface SettingsViewProps {
   onUpdateTaxSettings: (updates: Partial<TaxSettings>) => void;
   onSaveUnitSettings: (settings: UnitSettings) => void;
   onResetUnitSettings: () => void;
+  onSaveLocation: (
+    input: { name: string; code?: string; active?: boolean; address?: string },
+    id?: string,
+    timestamp?: number
+  ) => Location;
+  onDeleteLocation: (id: string) => void;
+  onImportSales: (records: SaleRecord[]) => void;
   initialSection?: SettingsSection;
   onInitialSectionConsumed?: () => void;
 }
@@ -70,6 +94,8 @@ const baseSections: { id: SettingsSection; label: string; icon: typeof Database 
   { id: 'indirect', label: 'Gastos', icon: Percent },
   { id: 'units', label: 'Unidades', icon: Ruler },
   { id: 'exchange', label: 'Tasas', icon: DollarSign },
+  { id: 'locations', label: 'Locales', icon: MapPin },
+  { id: 'reconciliation', label: 'Conciliación', icon: Scale },
   { id: 'sync', label: 'Respaldo', icon: Database },
   { id: 'account', label: 'Cuenta', icon: User },
 ];
@@ -86,6 +112,8 @@ export function SettingsView({
   warehouses,
   stockMovements,
   stockThresholds,
+  locations,
+  sales,
   tenantName,
   user,
   cloudSync,
@@ -95,6 +123,9 @@ export function SettingsView({
   onUpdateTaxSettings,
   onSaveUnitSettings,
   onResetUnitSettings,
+  onSaveLocation,
+  onDeleteLocation,
+  onImportSales,
   initialSection,
   onInitialSectionConsumed,
 }: SettingsViewProps) {
@@ -161,6 +192,22 @@ export function SettingsView({
         />
       )}
       {activeSection === 'exchange' && <ExchangeRatesPanel />}
+      {activeSection === 'locations' && (
+        <LocationsSettingsPanel
+          locations={locations}
+          onSave={onSaveLocation}
+          onDelete={onDeleteLocation}
+        />
+      )}
+      {activeSection === 'reconciliation' && (
+        <ReconciliationPanel
+          locations={locations}
+          products={inventory}
+          sales={sales}
+          stockMovements={stockMovements}
+          onImportSales={onImportSales}
+        />
+      )}
       {activeSection === 'sync' && (
         <DataSyncPanel
           inventory={inventory}
@@ -174,6 +221,8 @@ export function SettingsView({
           warehouses={warehouses}
           stockMovements={stockMovements}
           stockThresholds={stockThresholds}
+          locations={locations}
+          sales={sales}
           tenantName={tenantName}
           cloudSync={cloudSync}
         />

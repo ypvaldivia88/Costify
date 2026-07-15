@@ -7,6 +7,8 @@ import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   getSubscriptionDiscountPercent,
   getSubscriptionPlanPriceUsd,
+  SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD,
+  SUBSCRIPTION_INCLUDED_LOCATIONS,
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
 } from '@costify/shared/domain/subscription';
@@ -33,8 +35,9 @@ export function MarketingPricing() {
           Un precio claro, sin sorpresas
         </h2>
         <p className="mt-3 text-muted-foreground">
-          Elige el período que prefieras. Activamos tu cuenta después de confirmar el pago por
-          WhatsApp.
+          Elige el período que prefieras. El precio incluye 1 local; cada local activo adicional suma
+          ${SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD} USD/mes. Activamos tu cuenta después de confirmar el
+          pago por WhatsApp.
         </p>
       </div>
 
@@ -71,7 +74,12 @@ export function MarketingPricing() {
                   </div>
                   {discountPercent > 0 && (
                     <p className="text-xs text-brand font-medium mt-1">
-                      Ahorra {discountPercent}% vs mensual (${SUBSCRIPTION_MONTHLY_PRICE_USD}/mes)
+                      Ahorra {discountPercent}% vs mensual (${SUBSCRIPTION_MONTHLY_PRICE_USD}/mes, 1 local)
+                    </p>
+                  )}
+                  {discountPercent === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      1 local incluido · +${SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD}/mes por local extra
                     </p>
                   )}
                 </div>

@@ -1,4 +1,6 @@
 import type { ExchangeRateSettings, ExchangeRateSnapshot } from '@costify/shared/domain/exchange-rates';
+import type { Location, LocationInput } from '@costify/shared/domain/location';
+import type { SaleRecord } from '@costify/shared/domain/sales';
 import type {
   GlobalFundSettings,
   IndirectCost,
@@ -34,9 +36,11 @@ export interface AppBackupReloadInput {
   laborShareSettings?: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings?: UnitSettings;
+  locations?: Location[];
   warehouses?: Warehouse[];
   stockMovements?: StockMovement[];
   stockThresholds?: StockThreshold[];
+  sales?: SaleRecord[];
   exchangeRateSettings?: ExchangeRateSettings;
 }
 
@@ -50,9 +54,11 @@ export interface AppDataContextValue {
   laborShareSettings: LaborShareSettings;
   taxSettings: TaxSettings;
   unitSettings: UnitSettings;
+  locations: Location[];
   warehouses: Warehouse[];
   stockMovements: StockMovement[];
   stockThresholds: StockThreshold[];
+  sales: SaleRecord[];
   stockLevels: StockLevel[];
   stockValuation: {
     rawMaterialsValue: number;
@@ -88,6 +94,8 @@ export interface AppDataContextValue {
   updateTaxSettings: (updates: Partial<TaxSettings>) => void;
   saveUnitSettings: (settings: UnitSettings) => void;
   resetUnitSettings: () => void;
+  saveLocation: (input: LocationInput, id?: string, timestamp?: number) => Location;
+  deleteLocation: (id: string) => void;
   saveWarehouse: (
     input: Omit<Warehouse, 'id' | 'timestamp'>,
     id?: string,
@@ -120,6 +128,8 @@ export interface AppDataContextValue {
     warehouseId: string
   ) => StockMovement | undefined;
   getDefaultWarehouse: () => Warehouse | undefined;
+  getDefaultLocation: () => Location | undefined;
+  addSales: (records: SaleRecord[]) => void;
   reloadFromBackup: (backup: AppBackupReloadInput) => void;
   cloudSync: ReturnType<typeof useCloudSync>;
   access: ReturnType<typeof createWorkspaceAccessGates>;

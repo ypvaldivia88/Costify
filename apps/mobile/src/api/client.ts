@@ -55,6 +55,7 @@ export interface RegisterRequestInput {
   adminEmail: string;
   adminPassword: string;
   plan: import('@costify/shared/domain/subscription').SubscriptionPlan;
+  locationCount?: number;
 }
 
 export interface RegisterRequestResult {

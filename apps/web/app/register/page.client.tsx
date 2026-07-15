@@ -10,11 +10,15 @@ import type { SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   getSubscriptionDiscountPercent,
   getSubscriptionPlanPriceUsd,
+  SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD,
+  SUBSCRIPTION_INCLUDED_LOCATIONS,
   SUBSCRIPTION_MONTHLY_PRICE_USD,
   SUBSCRIPTION_PLAN_LABELS,
+  formatSubscriptionLocationBreakdown,
 } from '@costify/shared/domain/subscription';
 import { AuthCard } from '@/components/auth/auth-card';
 import { PublicShell } from '@/components/layout/PublicShell';
+import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import {
   FormControl,
@@ -63,15 +67,17 @@ export default function RegisterPage() {
     },
   });
 
+  const [locationCount, setLocationCount] = useState(1);
+
   const planOptions = useMemo(
     () =>
       PLANS.map((plan) => ({
         plan,
         label: SUBSCRIPTION_PLAN_LABELS[plan],
-        priceUsd: getSubscriptionPlanPriceUsd(plan),
+        priceUsd: getSubscriptionPlanPriceUsd(plan, locationCount),
         discountPercent: getSubscriptionDiscountPercent(plan),
       })),
-    []
+    [locationCount]
   );
 
   const onSubmit = async (values: RegisterFormValues) => {
@@ -87,6 +93,7 @@ export default function RegisterPage() {
           adminEmail: values.adminEmail,
           adminPassword: values.adminPassword,
           plan: values.plan,
+          locationCount,
         }),
       });
       const json = (await response.json()) as RegisterSuccess & { error?: string };
@@ -230,6 +237,56 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold">¿Cuántos locales administras?</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Incluye {SUBSCRIPTION_INCLUDED_LOCATIONS} local en el precio base. Cada local activo
+                    adicional: +${SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD} USD/mes.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3].map((count) => (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => setLocationCount(count)}
+                      className={cn(
+                        'rounded-xl border px-4 py-2 text-sm font-semibold transition-colors',
+                        locationCount === count
+                          ? 'border-brand bg-brand-muted'
+                          : 'border-border hover:bg-muted/50'
+                      )}
+                    >
+                      {count === 3 ? '3 o más' : count}
+                    </button>
+                  ))}
+                  {locationCount > 3 ? (
+                    <Input
+                      type="number"
+                      min={3}
+                      max={20}
+                      value={locationCount}
+                      onChange={(e) =>
+                        setLocationCount(Math.min(20, Math.max(3, Number(e.target.value) || 3)))
+                      }
+                      className="w-24"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setLocationCount(4)}
+                      className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/50"
+                    >
+                      4+
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {formatSubscriptionLocationBreakdown(locationCount)}
+                </p>
+              </div>
+
               <FormField
                 control={form.control}
                 name="plan"
@@ -238,8 +295,8 @@ export default function RegisterPage() {
                     <div>
                       <FormLabel>Plan de suscripción</FormLabel>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Precio base: {SUBSCRIPTION_MONTHLY_PRICE_USD} USD / mes. Descuentos en planes
-                        de 6 meses y anual.
+                        Precio base: {SUBSCRIPTION_MONTHLY_PRICE_USD} USD / mes (1 local). Locales
+                        adicionales: +${SUBSCRIPTION_ADDITIONAL_LOCATION_PRICE_USD}/mes cada uno.
                       </p>
                     </div>
                     <FormControl>

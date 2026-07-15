@@ -34,9 +34,11 @@ export function applyBackupToStorage(backup: AppBackupV1): void {
   );
   saveToStorage(STORAGE_KEYS.taxSettings, migrateTaxSettings(backup.taxSettings));
   saveToStorage(STORAGE_KEYS.unitSettings, migrateUnitSettings(backup.unitSettings));
+  saveToStorage(STORAGE_KEYS.locations, backup.locations ?? []);
   saveToStorage(STORAGE_KEYS.warehouses, backup.warehouses ?? []);
   saveToStorage(STORAGE_KEYS.stockMovements, backup.stockMovements ?? []);
   saveToStorage(STORAGE_KEYS.stockThresholds, backup.stockThresholds ?? []);
+  saveToStorage(STORAGE_KEYS.sales, backup.sales ?? []);
   saveToStorage(
     STORAGE_KEYS.exchangeRates,
     migrateExchangeRateSettings(backup.exchangeRateSettings)

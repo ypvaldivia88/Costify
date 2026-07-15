@@ -16,11 +16,19 @@ import { migrateLaborShareSettings } from '@costify/shared/domain/calculations/l
 import { migrateTaxSettings } from '@costify/shared/domain/migrate-tax-settings';
 import { migrateExchangeRateSettings } from '@costify/shared/domain/migrate-exchange-rates';
 import { migrateUnitSettings } from '@costify/shared/domain/unit-settings';
+import { migrateWorkspaceLocations } from '@costify/shared/domain/migrate-workspace-locations';
+import { syncSubscriptionWithActiveLocations } from '@/lib/auth/sync-subscription-locations';
+import { TENANTS_COLLECTION, type TenantDocument } from '@/lib/auth/types';
 import {
   parseJsonBody,
   workspaceIdSchema,
   workspaceSyncPutSchema,
 } from '@costify/shared/schemas/api';
+import { ensureTenantSubscription } from '@costify/shared/domain/subscription';
+
+function withMigratedWorkspace(workspace: WorkspaceDocument): WorkspaceDocument {
+  return migrateWorkspaceLocations(workspace, workspace.updatedAt);
+}
 
 export async function GET(request: Request) {
   try {
@@ -43,7 +51,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ exists: false }, { status: 404 });
     }
 
-    const { _id, ...payload } = workspace as WorkspaceDocument & { _id?: unknown };
+    const migrated = withMigratedWorkspace(workspace);
+    const { _id: _mongoId, ...payload } = migrated as WorkspaceDocument & { _id?: unknown };
 
     return NextResponse.json({
       exists: true,
@@ -91,27 +100,55 @@ export async function PUT(request: Request) {
     }
 
     const now = Date.now();
-    const document: WorkspaceDocument = {
-      workspaceId,
-      tenantId: session.tenantId!,
-      inventory: Array.isArray(body.inventory) ? body.inventory : [],
-      rawMaterials: Array.isArray(body.rawMaterials) ? body.rawMaterials : [],
-      globalCosts: Array.isArray(body.globalCosts) ? body.globalCosts : [],
-      globalFund: migrateGlobalFundSettings(body.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
-      laborShareSettings: migrateLaborShareSettings(
-        body.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS
-      ),
-      taxSettings: migrateTaxSettings(body.taxSettings ?? DEFAULT_TAX_SETTINGS),
-      unitSettings: migrateUnitSettings(body.unitSettings),
-      warehouses: Array.isArray(body.warehouses) ? body.warehouses : [],
-      stockMovements: Array.isArray(body.stockMovements) ? body.stockMovements : [],
-      stockThresholds: Array.isArray(body.stockThresholds) ? body.stockThresholds : [],
-      exchangeRateSettings: migrateExchangeRateSettings(body.exchangeRateSettings),
-      updatedAt,
-      createdAt: existing?.createdAt ?? now,
-    };
+    const migrated = migrateWorkspaceLocations(
+      {
+        workspaceId,
+        tenantId: session.tenantId!,
+        inventory: Array.isArray(body.inventory) ? body.inventory : [],
+        rawMaterials: Array.isArray(body.rawMaterials) ? body.rawMaterials : [],
+        globalCosts: Array.isArray(body.globalCosts) ? body.globalCosts : [],
+        globalFund: migrateGlobalFundSettings(body.globalFund ?? DEFAULT_GLOBAL_FUND_SETTINGS),
+        laborShareSettings: migrateLaborShareSettings(
+          body.laborShareSettings ?? DEFAULT_LABOR_SHARE_SETTINGS
+        ),
+        taxSettings: migrateTaxSettings(body.taxSettings ?? DEFAULT_TAX_SETTINGS),
+        unitSettings: migrateUnitSettings(body.unitSettings),
+        locations: Array.isArray(body.locations) ? body.locations : [],
+        warehouses: Array.isArray(body.warehouses) ? body.warehouses : [],
+        stockMovements: Array.isArray(body.stockMovements) ? body.stockMovements : [],
+        stockThresholds: Array.isArray(body.stockThresholds) ? body.stockThresholds : [],
+        sales: Array.isArray(body.sales) ? body.sales : [],
+        exchangeRateSettings: migrateExchangeRateSettings(body.exchangeRateSettings),
+        updatedAt,
+        createdAt: existing?.createdAt ?? now,
+      },
+      now
+    );
+
+    const document: WorkspaceDocument = migrated;
 
     await collection.updateOne({ workspaceId }, { $set: document }, { upsert: true });
+
+    if (session.tenantId) {
+      const tenant = await db
+        .collection<TenantDocument>(TENANTS_COLLECTION)
+        .findOne({ tenantId: session.tenantId });
+      if (tenant) {
+        const subscription = syncSubscriptionWithActiveLocations(
+          tenant.subscription,
+          document.locations
+        );
+        const current = ensureTenantSubscription(tenant.subscription);
+        if (
+          subscription.locationCount !== current.locationCount ||
+          subscription.priceUsd !== current.priceUsd
+        ) {
+          await db
+            .collection<TenantDocument>(TENANTS_COLLECTION)
+            .updateOne({ tenantId: session.tenantId }, { $set: { subscription } });
+        }
+      }
+    }
 
     return NextResponse.json({
       ok: true,
