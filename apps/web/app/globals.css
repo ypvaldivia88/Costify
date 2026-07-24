@@ -257,11 +257,30 @@ body {
 .stat-card-value {
   font-size: clamp(0.75rem, 11cqi, 1.5rem);
   line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .summary-row-value {
   font-size: clamp(0.75rem, 3.5vw, 0.875rem);
   line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* text-fit (Chromium 150+): shrink/grow scales inline text to fit the line box */
+@supports (text-fit: shrink) {
+  .stat-card-value {
+    font-size: 1.5rem;
+    text-fit: shrink 70%;
+    overflow: visible;
+  }
+
+  .summary-row-value {
+    font-size: 0.875rem;
+    text-fit: shrink 75%;
+    overflow: visible;
+  }
 }
 
 /* Glass surface */

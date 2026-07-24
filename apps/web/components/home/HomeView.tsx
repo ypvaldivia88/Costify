@@ -56,12 +56,12 @@ function KpiCard({
   return (
     <Card
       variant={variant === 'alert' ? 'accent' : 'muted'}
-      className={cn('p-4 sm:p-5', className)}
+      className={cn('stat-card min-w-0 p-4 sm:p-5', className)}
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p
         className={cn(
-          'mt-1 text-2xl font-bold tabular-nums tracking-tight',
+          'stat-card-value mt-1 font-bold tabular-nums tracking-tight',
           variant === 'alert' ? 'text-brand' : 'text-foreground'
         )}
       >
@@ -135,7 +135,7 @@ export function HomeView({
         </Card>
       ) : null}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3">
         <KpiCard
           label="Valor inventario"
           value={formatCurrency(stockValuation.totalValue)}
