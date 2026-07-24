@@ -257,6 +257,8 @@ body {
 .stat-card-value {
   font-size: clamp(0.75rem, 11cqi, 1.5rem);
   line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .summary-row-value {

@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -39,6 +40,10 @@ interface HomeViewProps {
   onNavigateToTarget?: (target: PriceReviewAlertTarget) => void;
 }
 
+function clampKpiFontSize(width: number): number {
+  return Math.min(20, Math.max(12, width * 0.11));
+}
+
 function KpiCard({
   label,
   value,
@@ -51,13 +56,27 @@ function KpiCard({
   alert?: boolean;
 }) {
   const { colors } = useTheme();
+  const [containerWidth, setContainerWidth] = useState(0);
+  const valueFontSize = containerWidth > 0 ? clampKpiFontSize(containerWidth) : 16;
+
   return (
-    <Card variant={alert ? 'accent' : 'muted'} style={styles.kpiCard}>
+    <Card
+      variant={alert ? 'accent' : 'muted'}
+      style={styles.kpiCard}
+      onLayout={(event) => {
+        const width = event.nativeEvent.layout.width;
+        if (width !== containerWidth) setContainerWidth(width);
+      }}
+    >
       <Text style={[styles.kpiLabel, { color: colors.muted }]}>{label}</Text>
       <Text
         style={[
           styles.kpiValue,
-          { color: alert ? colors.brand : colors.foreground },
+          {
+            color: alert ? colors.brand : colors.foreground,
+            fontSize: valueFontSize,
+            lineHeight: valueFontSize * 1.15,
+          },
         ]}
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -240,14 +259,14 @@ const styles = StyleSheet.create({
   },
   checklistLink: { fontSize: 14, fontWeight: '600', flex: 1 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpiCard: { paddingVertical: 14, width: '48%', flexGrow: 1, minWidth: '47%' },
+  kpiCard: { paddingVertical: 14, width: '48%', flexGrow: 1, minWidth: 0 },
   kpiLabel: {
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  kpiValue: { fontSize: 20, fontWeight: '800', marginTop: 4, fontVariant: ['tabular-nums'] },
+  kpiValue: { fontWeight: '800', marginTop: 4, fontVariant: ['tabular-nums'] },
   kpiHint: { fontSize: 12, marginTop: 4 },
   section: { gap: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
