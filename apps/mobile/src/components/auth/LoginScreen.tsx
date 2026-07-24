@@ -15,6 +15,7 @@ import { Moon, Sun } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CostifyLogoLockup } from '@/components/brand/CostifyLogoLockup';
 import { useAuth } from '@/context/AuthContext';
+import { isDeviceOnline } from '@/config/connectivity';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -35,6 +36,14 @@ export function LoginScreen({ onRegister }: LoginScreenProps) {
   const passwordRef = useRef<TextInput>(null);
   const passwordYRef = useRef(0);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (!isDeviceOnline()) {
+      setError(
+        'Sin conexión. Inicia sesión una vez con internet; después la app recordará tu cuenta hasta 7 días.'
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';

@@ -15,7 +15,7 @@ import {
   logoutRequest,
   setStoredToken,
 } from '@/api/client';
-import { saveCachedSession } from '@/auth/offline-session';
+import { saveCachedSession, isCachedSessionValid, isTokenExpired, loadCachedSession, parseSessionUserFromToken } from '@/auth/offline-session';
 import { ensureConnectivityMonitoring, subscribeConnectivity } from '@/config/connectivity';
 import { setStorageScope, loadStorageScope } from '@/storage/scoped-storage';
 import { setActiveWorkspaceId } from '@/sync/workspace-id';
@@ -67,6 +67,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const existingScope = await loadStorageScope();
         setStorageScopeState(existingScope);
+
+        const token = await getStoredToken();
+        const cached = await loadCachedSession();
+        const localUser = isCachedSessionValid(cached)
+          ? cached.user
+          : token && !isTokenExpired(token)
+            ? parseSessionUserFromToken(token)
+            : null;
+
+        if (localUser) {
+          setUser(localUser);
+          const scope = await applySessionScope(localUser);
+          setStorageScopeState(scope);
+          setLoading(false);
+          void refresh();
+          return;
+        }
+
         await refresh();
       } finally {
         setLoading(false);

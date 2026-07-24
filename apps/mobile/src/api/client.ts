@@ -208,42 +208,48 @@ export async function fetchCurrentUser(): Promise<SessionUser | null> {
     cached = await loadCachedSession();
   }
 
-  if (!token && !isCachedSessionValid(cached)) {
+  const cachedUser = isCachedSessionValid(cached)
+    ? cached.user
+    : token && !isTokenExpired(token)
+      ? parseSessionUserFromToken(token)
+      : null;
+
+  if (!cachedUser) {
+    if (token) {
+      await setStoredToken(null);
+      await clearCachedSession();
+    }
     return null;
   }
 
-  const shouldRefreshRemote = hasBackendApi() && Boolean(token);
-  if (shouldRefreshRemote) {
-    const online = isDeviceOnline() ? await probeConnectivityFast() : false;
-    if (online) {
-      const remote = await fetchRemoteSession();
+  if (!hasBackendApi() || !token) {
+    return cachedUser;
+  }
 
-      if (remote.kind === 'user') {
-        if (remote.token) {
-          await setStoredToken(remote.token);
-        }
-        await saveCachedSession(remote.user, remote.token ?? token ?? '');
-        return remote.user;
-      }
+  if (!isDeviceOnline()) {
+    return cachedUser;
+  }
 
-      if (remote.kind === 'unauthorized') {
-        await setStoredToken(null);
-        await clearCachedSession();
-        return null;
-      }
+  const online = await probeConnectivityFast();
+  if (!online) {
+    return cachedUser;
+  }
+
+  const remote = await fetchRemoteSession();
+
+  if (remote.kind === 'user') {
+    if (remote.token) {
+      await setStoredToken(remote.token);
     }
+    await saveCachedSession(remote.user, remote.token ?? token);
+    return remote.user;
   }
 
-  if (isCachedSessionValid(cached)) {
-    return cached.user;
+  if (remote.kind === 'unauthorized') {
+    await setStoredToken(null);
+    await clearCachedSession();
+    return null;
   }
 
-  if (token && !isTokenExpired(token)) {
-    const user = parseSessionUserFromToken(token);
-    if (user) return user;
-  }
-
-  await setStoredToken(null);
-  await clearCachedSession();
-  return null;
+  return cachedUser;
 }
