@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -206,7 +206,7 @@ export function DataSyncPanel({
       </View>
 
       {tab === 'export' ? (
-        <ScrollView style={styles.section} contentContainerStyle={styles.sectionContent}>
+        <View style={styles.sectionContent}>
           <Text style={{ color: colors.muted, fontSize: 13 }}>
             Respaldo actual: <Text style={{ color: colors.foreground, fontWeight: '700' }}>{summary}</Text>
           </Text>
@@ -223,9 +223,9 @@ export function DataSyncPanel({
           <Button variant="outline" onPress={shareBackupFile}>
             Compartir archivo JSON
           </Button>
-        </ScrollView>
+        </View>
       ) : (
-        <ScrollView style={styles.section} contentContainerStyle={styles.sectionContent}>
+        <View style={styles.sectionContent}>
           <Text style={{ color: colors.muted, fontSize: 13 }}>
             Pega un código de respaldo o selecciona un archivo exportado previamente.
           </Text>
@@ -247,7 +247,7 @@ export function DataSyncPanel({
           <Button variant="danger" onPress={importBackup} disabled={!importText.trim()}>
             Importar y reemplazar datos
           </Button>
-        </ScrollView>
+        </View>
       )}
     </Card>
     </View>
@@ -258,7 +258,6 @@ const styles = StyleSheet.create({
   wrap: { gap: 12 },
   tabs: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   tab: { flex: 1 },
-  section: { flex: 1 },
   sectionContent: { gap: 10, paddingBottom: 8 },
   code: {
     borderWidth: 1,

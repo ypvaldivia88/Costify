@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -9,7 +9,7 @@ import {
 import type { PriceReviewAlertTarget } from '@costify/shared/domain/exchange-rates';
 import { getTabForPriceReviewTarget } from '@/hooks/use-exchange-rates-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LayoutGrid, Moon, Sun } from 'lucide-react-native';
 import { AdminScreen } from '@/components/admin/AdminScreen';
@@ -42,6 +42,8 @@ import {
   type AppTab,
 } from '@/navigation/tabs';
 import { CostifyMark } from '@/components/brand/CostifyLogo';
+import { TabScreenScroll } from '@/components/layout/TabScreenScroll';
+import { TAB_BAR_CONTENT_HEIGHT } from '@/hooks/use-screen-insets';
 
 type MobileTab = AppTab | 'menu';
 type RootTabParamList = Record<MobileTab, undefined>;
@@ -89,10 +91,10 @@ function AccountTab() {
   const isTenantAdmin = user?.role === 'tenant_admin';
 
   return (
-    <ScrollView contentContainerStyle={styles.accountContent}>
+    <TabScreenScroll contentContainerStyle={styles.accountContent}>
       {isTenantAdmin ? <SubscriptionSettingsPanel user={user} /> : null}
       <AccountSettingsPanel user={user} />
-    </ScrollView>
+    </TabScreenScroll>
   );
 }
 
@@ -104,23 +106,25 @@ function BackupTab() {
   };
 
   return (
-    <DataSyncPanel
-      inventory={data.inventory}
-      rawMaterials={data.materials}
-      globalCosts={data.globalCosts}
-      globalFund={data.globalFund}
-      laborShareSettings={data.laborShareSettings}
-      taxSettings={data.taxSettings}
-      unitSettings={data.unitSettings}
-      exchangeRateSettings={data.exchangeSettings}
-      warehouses={data.warehouses}
-      stockMovements={data.stockMovements}
-      stockThresholds={data.stockThresholds}
-      locations={data.locations}
-      sales={data.sales}
-      cloudSync={data.cloudSync}
-      onBackupImported={handleBackupImported}
-    />
+    <TabScreenScroll>
+      <DataSyncPanel
+        inventory={data.inventory}
+        rawMaterials={data.materials}
+        globalCosts={data.globalCosts}
+        globalFund={data.globalFund}
+        laborShareSettings={data.laborShareSettings}
+        taxSettings={data.taxSettings}
+        unitSettings={data.unitSettings}
+        exchangeRateSettings={data.exchangeSettings}
+        warehouses={data.warehouses}
+        stockMovements={data.stockMovements}
+        stockThresholds={data.stockThresholds}
+        locations={data.locations}
+        sales={data.sales}
+        cloudSync={data.cloudSync}
+        onBackupImported={handleBackupImported}
+      />
+    </TabScreenScroll>
   );
 }
 
@@ -142,7 +146,7 @@ function ExchangeRatesBridge({ children }: { children: ReactNode }) {
   );
 }
 
-function AppHeader({ title }: { title: string }) {
+function AppHeader({ title, description }: { title: string; description?: string | null }) {
   const { colors, scheme, toggleScheme } = useTheme();
   const { user } = useAuth();
   const data = useAppData();
@@ -159,6 +163,10 @@ function AppHeader({ title }: { title: string }) {
             <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: '800' }}>{title}</Text>
             {user?.tenantName ? (
               <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{user.tenantName}</Text>
+            ) : description ? (
+              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }} numberOfLines={2}>
+                {description}
+              </Text>
             ) : null}
           </View>
         </View>
@@ -194,6 +202,7 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
   const data = useAppData();
   const { user, refresh } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<MobileTab>('home');
   const [focusTarget, setFocusTarget] = useState<PriceReviewAlertTarget | null>(null);
   const [productsInitialMode, setProductsInitialMode] = useState<HomeLaunchOptions['productsMode']>();
@@ -231,11 +240,19 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
 
   const screenTitle =
     activeTab === 'menu' ? 'Menú' : NAV_BY_ID[activeTab as AppTab].title;
+  const screenDescription =
+    activeTab === 'menu' ? null : NAV_BY_ID[activeTab as AppTab].description;
+  const menuSecondaryActive =
+    activeTab !== 'menu' && !PRIMARY_BOTTOM_TAB_IDS.includes(activeTab as AppTab);
+  const productTabBadge =
+    data.inventory.length > 0 ? Math.min(data.inventory.length, 99) : undefined;
+  const warehouseTabBadge =
+    data.stockAlerts.length > 0 ? Math.min(data.stockAlerts.length, 99) : undefined;
 
   return (
     <UnitCatalogProvider settings={data.unitSettings}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <AppHeader title={screenTitle} />
+        <AppHeader title={screenTitle} description={user?.tenantName ? null : screenDescription} />
         <Tab.Navigator
           initialRouteName="home"
           screenListeners={{
@@ -262,16 +279,40 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
               tabBarStyle: {
                 backgroundColor: colors.surface,
                 borderTopColor: colors.border,
-                height: 64,
-                paddingBottom: 8,
+                height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
+                paddingBottom: Math.max(insets.bottom, 8),
                 paddingTop: 8,
               },
               tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
-              tabBarIcon: ({ color, size }) => {
-                if (isMenu) return <LayoutGrid color={color} size={size} />;
+              tabBarBadge:
+                route.name === 'products'
+                  ? productTabBadge
+                  : route.name === 'warehouses'
+                    ? warehouseTabBadge
+                    : undefined,
+              tabBarIcon: ({ color, size, focused }) => {
+                if (isMenu) {
+                  const highlight = focused || menuSecondaryActive;
+                  return (
+                    <LayoutGrid
+                      color={highlight ? colors.brand : colors.muted}
+                      size={size}
+                    />
+                  );
+                }
                 const Icon = meta!.icon;
                 return <Icon color={color} size={size} />;
               },
+              tabBarLabel:
+                isMenu && menuSecondaryActive
+                  ? ({ color }) => (
+                      <Text style={{ color: colors.brand, fontSize: 11, fontWeight: '700' }}>
+                        Más
+                      </Text>
+                    )
+                  : isMenu
+                    ? 'Más'
+                    : meta?.label,
               title: isMenu ? 'Más' : meta?.label,
             };
           }}
@@ -363,26 +404,34 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
           </Tab.Screen>
           <Tab.Screen name="locations" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
             {() => (
-              <LocationsSettingsPanel
-                locations={data.locations}
-                onSave={data.saveLocation}
-                onDelete={data.deleteLocation}
-              />
+              <TabScreenScroll>
+                <LocationsSettingsPanel
+                  locations={data.locations}
+                  onSave={data.saveLocation}
+                  onDelete={data.deleteLocation}
+                />
+              </TabScreenScroll>
             )}
           </Tab.Screen>
           <Tab.Screen name="reconciliation" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
             {() => (
-              <ReconciliationPanel
-                locations={data.locations}
-                products={data.inventory}
-                sales={data.sales}
-                stockMovements={data.stockMovements}
-                onImportSales={data.addSales}
-              />
+              <TabScreenScroll>
+                <ReconciliationPanel
+                  locations={data.locations}
+                  products={data.inventory}
+                  sales={data.sales}
+                  stockMovements={data.stockMovements}
+                  onImportSales={data.addSales}
+                />
+              </TabScreenScroll>
             )}
           </Tab.Screen>
           <Tab.Screen name="exchange" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
-            {() => <ExchangeRatesPanel />}
+            {() => (
+              <TabScreenScroll contentContainerStyle={{ gap: 12 }}>
+                <ExchangeRatesPanel />
+              </TabScreenScroll>
+            )}
           </Tab.Screen>
           <Tab.Screen name="backup" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
             {() => <BackupTab />}
@@ -491,7 +540,7 @@ export function AppNavigator() {
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  accountContent: { padding: 16, gap: 16, paddingBottom: 32 },
+  accountContent: { gap: 16 },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,

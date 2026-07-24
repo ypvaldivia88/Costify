@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
 import type {
@@ -41,6 +41,7 @@ import { NumericInput } from '@/components/ui/NumericInput';
 import { PurchasePriceInput } from '@/components/ui/PurchasePriceInput';
 import { Select } from '@/components/ui/Select';
 import { useTheme } from '@/context/ThemeContext';
+import { useScreenInsets } from '@/hooks/use-screen-insets';
 import { useToast } from '@/context/ToastContext';
 import { useExchangeRatesContext } from '@/hooks/use-exchange-rates-context';
 import { useUnitCatalog } from '@/hooks/use-unit-catalog';
@@ -104,9 +105,28 @@ export function CostCalculator({
   onCancelEdit,
 }: CostCalculatorProps) {
   const { colors } = useTheme();
+  const { scrollPaddingBottom } = useScreenInsets();
   const { showToast } = useToast();
   const unitCatalog = useUnitCatalog();
   const { snapshot, markCostingRate } = useExchangeRatesContext();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -319,7 +339,14 @@ export function CostCalculator({
   const purchaseUnitSuggestions = unitCatalog.getPurchaseUnitSuggestions();
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: Math.max(scrollPaddingBottom, keyboardHeight + 24) },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
       <PricingResults
         result={result}
         rawMaterials={rawMaterials}
@@ -597,7 +624,7 @@ export function CostCalculator({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 16, paddingBottom: 32 },
+  content: { padding: 16, gap: 16 },
   title: { fontSize: 18, fontWeight: '800', marginBottom: 12 },
   form: { gap: 12 },
   typeRow: { flexDirection: 'row', gap: 8 },

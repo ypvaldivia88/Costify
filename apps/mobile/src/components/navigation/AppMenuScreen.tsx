@@ -6,6 +6,7 @@ import {
 import { NAV_BY_ID } from '@/navigation/tabs';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useScreenInsets } from '@/hooks/use-screen-insets';
 
 interface AppMenuScreenProps {
   activeTab: AppTab | 'menu';
@@ -14,11 +15,12 @@ interface AppMenuScreenProps {
 
 export function AppMenuScreen({ activeTab, onNavigate }: AppMenuScreenProps) {
   const { colors } = useTheme();
+  const { scrollPaddingBottom } = useScreenInsets();
   const { user } = useAuth();
   const groups = getNavGroupsForAccess(user?.accessLevel);
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollPaddingBottom }]}>
       {groups.map((group) => (
         <View key={group.id} style={styles.group}>
           <Text style={[styles.groupLabel, { color: colors.muted }]}>{group.label}</Text>
@@ -64,7 +66,7 @@ export function AppMenuScreen({ activeTab, onNavigate }: AppMenuScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 20, paddingBottom: 32 },
+  content: { padding: 16, gap: 20 },
   group: { gap: 8 },
   groupLabel: {
     fontSize: 11,

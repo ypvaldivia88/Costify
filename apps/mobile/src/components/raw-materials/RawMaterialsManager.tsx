@@ -10,6 +10,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { useConfirm } from '@/context/DialogContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useScreenInsets } from '@/hooks/use-screen-insets';
 
 interface RawMaterialsManagerProps {
   materials: RawMaterial[];
@@ -40,6 +41,7 @@ export function RawMaterialsManager({
   onStockChange,
 }: RawMaterialsManagerProps) {
   const { colors } = useTheme();
+  const { scrollPaddingBottom } = useScreenInsets();
   const { confirm } = useConfirm();
   const scrollRef = useRef<ScrollView>(null);
   const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
@@ -69,7 +71,7 @@ export function RawMaterialsManager({
   };
 
   return (
-    <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+    <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, { paddingBottom: scrollPaddingBottom }]}>
       <Card>
         <SectionHeader
           icon={Boxes}
@@ -128,7 +130,7 @@ export function RawMaterialsManager({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 12, paddingBottom: 32 },
+  content: { padding: 16, gap: 12 },
   statsRow: { flexDirection: 'row', gap: 8 },
   statCard: { flex: 1, padding: 12 },
   empty: { alignItems: 'center', paddingVertical: 28 },

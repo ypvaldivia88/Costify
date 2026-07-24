@@ -18,6 +18,7 @@ import { PriceReviewAlerts } from '@/components/settings/PriceReviewAlerts';
 import { TrialBanner } from '@/components/layout/TrialBanner';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useScreenInsets } from '@/hooks/use-screen-insets';
 import { useTheme } from '@/context/ThemeContext';
 import type { WarehouseSubview } from '@/components/warehouses/WarehouseSubNav';
 
@@ -110,12 +111,16 @@ export function HomeView({
   onNavigateToTarget,
 }: HomeViewProps) {
   const { colors } = useTheme();
+  const { scrollPaddingBottom } = useScreenInsets();
   const { alerts: priceAlerts } = useActivePriceReviewAlerts(materials, inventory);
   const isEmpty = inventory.length === 0 && materials.length === 0;
   const alertCount = stockAlerts.length + priceAlerts.length;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={[styles.content, { paddingBottom: scrollPaddingBottom }]}
+      keyboardShouldPersistTaps="handled"
+    >
       <TrialBanner user={user} />
 
       {isEmpty ? (
@@ -221,7 +226,7 @@ export function HomeView({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 20, paddingBottom: 32 },
+  content: { padding: 16, gap: 20 },
   checklist: { gap: 10 },
   checklistRow: {
     flexDirection: 'row',
@@ -231,8 +236,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   checklistLink: { fontSize: 14, fontWeight: '600', flex: 1 },
-  kpiGrid: { gap: 10 },
-  kpiCard: { paddingVertical: 14 },
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  kpiCard: { paddingVertical: 14, width: '48%', flexGrow: 1, minWidth: '47%' },
   kpiLabel: {
     fontSize: 11,
     fontWeight: '700',

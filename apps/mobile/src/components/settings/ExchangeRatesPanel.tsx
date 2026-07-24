@@ -249,9 +249,11 @@ export function ExchangeRatesPanel() {
 const styles = StyleSheet.create({
   stack: { gap: 12 },
   disclaimer: { fontSize: 13, lineHeight: 20, marginBottom: 12 },
-  rateGrid: { flexDirection: 'row', gap: 8 },
+  rateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   rateCard: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '30%',
+    minWidth: 96,
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 12,

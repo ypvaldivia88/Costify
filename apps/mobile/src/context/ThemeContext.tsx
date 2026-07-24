@@ -63,7 +63,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [mode, scheme, setMode, toggleScheme]
   );
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return (
+      <ThemeContext.Provider
+        value={{
+          mode: 'system',
+          scheme: systemScheme === 'dark' ? 'dark' : 'light',
+          colors: colors[systemScheme === 'dark' ? 'dark' : 'light'],
+          setMode: async () => {},
+          toggleScheme: () => {},
+        }}
+      >
+        {children}
+      </ThemeContext.Provider>
+    );
+  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
