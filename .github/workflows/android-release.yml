@@ -9,7 +9,7 @@ on:
       version:
         description: 'Release version (e.g. 1.0.16)'
         required: true
-        default: '1.0.18'
+        default: '1.0.19'
 
 permissions:
   contents: write
@@ -102,20 +102,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          name: v${{ steps.meta.outputs.version }} — Inicio, brand v3 y fix demo
+          name: v${{ steps.meta.outputs.version }} — layout móvil y safe area
           files: costify-demo.v${{ steps.meta.outputs.version }}.apk
           generate_release_notes: false
           body: |
             ## Costify Android v${{ steps.meta.outputs.version }}
 
-            Release desde `main` con navegación Inicio, identidad de marca v3 y correcciones de acceso demo.
+            Release desde `main` con correcciones de layout en pantallas móviles y safe area.
 
             ### Novedades
-            - **Inicio** como pantalla principal con KPIs, alertas y acciones rápidas
-            - **Navegación** reagrupada (Principal, Inventario, Operaciones, Negocio, Cuenta)
-            - **Parámetros de costo** en acordeón (settings unificados)
-            - **Brand v3**: logo, iconos adaptativos y splash actualizados
-            - **Demo**: auto-activación de suscripción al iniciar sesión / refrescar sesión
+            - **Safe area**: tab bar y scroll respetan el área inferior del dispositivo
+            - **Pantallas del menú Más**: Locales, Conciliación, Tasas y Respaldo con scroll correcto
+            - **Respaldo**: fix de exportar/importar que se cortaba en pantalla
+            - **Calculadora**: campos inferiores visibles con el teclado abierto
+            - **Inicio**: KPIs en grid de 2 columnas
+            - **Navegación**: tab "Más" resaltado en rutas anidadas; badges en Productos/Almacenes
 
             ### APK
             - Archivo: `costify-demo.v${{ steps.meta.outputs.version }}.apk`
