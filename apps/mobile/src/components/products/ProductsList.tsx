@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { InteractionManager, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Package, Plus, RefreshCw } from 'lucide-react-native';
 import type { ProductCalculation, TaxSettings } from '@costify/shared/domain/types';
 import { calculateBusinessSummary } from '@costify/shared/domain/calculations';
@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { useConfirm } from '@/context/DialogContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useToast } from '@/context/ToastContext';
 import { useScreenInsets } from '@/hooks/use-screen-insets';
 
 interface ProductsListProps {
@@ -37,8 +38,28 @@ export function ProductsList({
   const { colors } = useTheme();
   const { scrollPaddingBottom } = useScreenInsets();
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
   const summary = calculateBusinessSummary(items, taxSettings);
+
+  const handleRecalculateAll = () => {
+    if (recalculating) return;
+    setRecalculating(true);
+    InteractionManager.runAfterInteractions(() => {
+      try {
+        onRecalculateAll();
+        showToast('Productos recalculados.', 'success');
+      } catch (error) {
+        showToast(
+          error instanceof Error ? error.message : 'No se pudieron recalcular los productos.',
+          'error'
+        );
+      } finally {
+        setRecalculating(false);
+      }
+    });
+  };
 
   const handleDelete = async (item: ProductCalculation) => {
     const confirmed = await confirm({
@@ -73,9 +94,11 @@ export function ProductsList({
           {items.length} producto{items.length !== 1 ? 's' : ''}
         </Text>
         <View style={styles.headerActions}>
-          <Button variant="outline" size="sm" onPress={onRecalculateAll}>
+          <Button variant="outline" size="sm" onPress={handleRecalculateAll} disabled={recalculating}>
             <RefreshCw size={14} color={colors.foreground} />
-            <Text style={{ color: colors.foreground, fontWeight: '700', fontSize: 13 }}>Recalcular</Text>
+            <Text style={{ color: colors.foreground, fontWeight: '700', fontSize: 13 }}>
+              {recalculating ? 'Recalculando…' : 'Recalcular'}
+            </Text>
           </Button>
           <Button size="sm" onPress={onNew}>
             <Plus size={16} color="#ffffff" />

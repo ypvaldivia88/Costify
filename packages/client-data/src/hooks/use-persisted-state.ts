@@ -60,7 +60,9 @@ export function useAsyncPersistedResource<T>({
 
   useEffect(() => {
     if (!hydratedRef.current) return;
-    void saveRef.current(value);
+    void saveRef.current(value).catch(() => {
+      // Storage failures (quota, etc.) must not crash the app.
+    });
   }, [value]);
 
   return { value, setValue, hydrated, reload };

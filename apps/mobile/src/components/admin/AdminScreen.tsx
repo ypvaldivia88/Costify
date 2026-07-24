@@ -452,7 +452,16 @@ export function AdminScreen() {
 
               <AdminSubscriptionPanel
                 tenant={selectedTenant}
-                onUpdated={() => {
+                onUpdated={(updated) => {
+                  if (updated) {
+                    setTenants((prev) =>
+                      prev.map((item) =>
+                        item.tenantId === updated.tenantId
+                          ? { ...item, subscription: updated.subscription }
+                          : item
+                      )
+                    );
+                  }
                   void loadTenants().catch((err) => {
                     setError(err instanceof Error ? err.message : 'Error al actualizar.');
                   });

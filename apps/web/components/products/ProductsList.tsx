@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
 import { BusinessSummaryCard } from '@/components/inventory/BusinessSummaryCard';
 import { InventoryItem } from '@/components/inventory/InventoryItem';
 
@@ -35,8 +36,26 @@ export function ProductsList({
   stockValuation,
 }: ProductsListProps) {
   const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
   const summary = calculateBusinessSummary(items, taxSettings);
+
+  const handleRecalculateAll = () => {
+    if (recalculating) return;
+    setRecalculating(true);
+    try {
+      onRecalculateAll();
+      showToast('Productos recalculados.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'No se pudieron recalcular los productos.',
+        'error'
+      );
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   const handleDelete = async (item: ProductCalculation) => {
     const confirmed = await confirm({
@@ -71,8 +90,9 @@ export function ProductsList({
           {items.length} producto{items.length !== 1 ? 's' : ''}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onRecalculateAll}>
-            <RefreshCw className="w-3.5 h-3.5" /> Recalcular
+          <Button variant="outline" size="sm" onClick={handleRecalculateAll} disabled={recalculating}>
+            <RefreshCw className={`w-3.5 h-3.5 ${recalculating ? 'animate-spin' : ''}`} />
+            {recalculating ? 'Recalculando…' : 'Recalcular'}
           </Button>
           <Button size="sm" onClick={onNew}>
             <Plus className="w-4 h-4" /> Nuevo

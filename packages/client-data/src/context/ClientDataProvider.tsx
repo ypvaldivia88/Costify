@@ -23,6 +23,8 @@ export interface ClientDataContextValue {
   sync: SyncApi;
   onlineEvents: OnlineEvents;
   fetchExchangeSnapshot: () => Promise<ExchangeRateSnapshot>;
+  /** Optional: force a connectivity re-check before manual sync (mobile). */
+  refreshOnlineStatus?: () => Promise<boolean>;
 }
 
 const ClientDataContext = createContext<ClientDataContextValue | null>(null);

@@ -14,7 +14,7 @@ import {
   groupSaleCsvRowsIntoRecords,
   parseSaleCsv,
 } from '@costify/shared/domain/sales';
-import { RESTAURANT_DISCOVERY_CHECKLIST } from '@costify/shared';
+import { RECONCILIATION_GUIDE_ITEMS } from '@costify/shared';
 import { randomId } from '@costify/shared/random-id';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -214,12 +214,13 @@ export function ReconciliationPanel({
 
       <View style={[styles.checklist, { borderColor: colors.border, backgroundColor: colors.surfaceMuted }]}>
         <Text style={[styles.checklistTitle, { color: colors.foreground }]}>
-          Checklist para reunión con cliente (caja / POS)
+          Cómo usar la conciliación
         </Text>
-        {RESTAURANT_DISCOVERY_CHECKLIST.map((item, index) => (
-          <Text key={item} style={[styles.checklistItem, { color: colors.muted }]}>
-            {index + 1}. {item}
-          </Text>
+        {RECONCILIATION_GUIDE_ITEMS.map((item) => (
+          <View key={item.title} style={styles.guideItem}>
+            <Text style={[styles.guideTitle, { color: colors.foreground }]}>{item.title}</Text>
+            <Text style={[styles.checklistItem, { color: colors.muted }]}>{item.description}</Text>
+          </View>
         ))}
       </View>
     </Card>
@@ -278,5 +279,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   checklistTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  guideItem: { gap: 2, marginTop: 6 },
+  guideTitle: { fontSize: 13, fontWeight: '700' },
   checklistItem: { fontSize: 13, lineHeight: 18 },
 });

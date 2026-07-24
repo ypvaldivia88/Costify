@@ -13,6 +13,7 @@ export * from './format/numeric-input';
 export * from './purchase-price';
 export * from './domain/subscription';
 export * from './commercial/discovery-checklist';
+export * from './commercial/reconciliation-guide';
 export * from './domain/access';
 export * from './backup/backup-core';
 export * from './sync/workspace-id';

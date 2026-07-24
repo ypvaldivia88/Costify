@@ -20,6 +20,7 @@ import { hasBackendApi, hasDirectEltoqueAccess } from '@/config/env';
 import {
   ensureConnectivityMonitoring,
   isDeviceOnline,
+  probeConnectivity,
   subscribeConnectivity,
 } from '@/config/connectivity';
 import { loadStorageScope, setStorageScope } from '@/storage/scoped-storage';
@@ -156,6 +157,7 @@ function buildMobileClientDataValue(): ClientDataContextValue {
     sync: syncCore,
     onlineEvents: mobileOnlineEvents,
     fetchExchangeSnapshot,
+    refreshOnlineStatus: probeConnectivity,
   };
 }
 

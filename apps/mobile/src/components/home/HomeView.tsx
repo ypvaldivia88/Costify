@@ -59,6 +59,9 @@ function KpiCard({
           styles.kpiValue,
           { color: alert ? colors.brand : colors.foreground },
         ]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
       >
         {value}
       </Text>
@@ -244,7 +247,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  kpiValue: { fontSize: 24, fontWeight: '800', marginTop: 4, fontVariant: ['tabular-nums'] },
+  kpiValue: { fontSize: 20, fontWeight: '800', marginTop: 4, fontVariant: ['tabular-nums'] },
   kpiHint: { fontSize: 12, marginTop: 4 },
   section: { gap: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },

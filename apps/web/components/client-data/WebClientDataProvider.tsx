@@ -149,6 +149,12 @@ function buildWebClientDataValue(): ClientDataContextValue {
     sync: syncCore,
     onlineEvents: webOnlineEvents,
     fetchExchangeSnapshot,
+    refreshOnlineStatus: async () => {
+      if (typeof navigator !== 'undefined' && 'onLine' in navigator) {
+        return navigator.onLine;
+      }
+      return true;
+    },
   };
 }
 

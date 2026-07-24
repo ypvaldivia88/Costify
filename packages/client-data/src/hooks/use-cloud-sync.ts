@@ -15,7 +15,7 @@ interface UseCloudSyncOptions {
 export function useCloudSync({ enabled, data, tenantId, workspaceId }: UseCloudSyncOptions) {
   const storage = useStorage();
   const sync = useSyncApi();
-  const { onlineEvents } = useClientData();
+  const { onlineEvents, refreshOnlineStatus } = useClientData();
   const [status, setStatus] = useState<SyncStatus>(() => (sync.isOnline() ? 'idle' : 'offline'));
   const [direction, setDirection] = useState<SyncDirection>('none');
   const [lastSyncedAt, setLastSyncedAt] = useState(0);
@@ -38,7 +38,7 @@ export function useCloudSync({ enabled, data, tenantId, workspaceId }: UseCloudS
     if (!enabled || syncingRef.current || !tenantId || !workspaceId) return;
 
     syncingRef.current = true;
-    setStatus(sync.isOnline() ? 'syncing' : 'offline');
+    setStatus('syncing');
     setErrorMessage(null);
 
     const result = await sync.syncWithCloud(workspaceId, tenantId);
@@ -48,12 +48,19 @@ export function useCloudSync({ enabled, data, tenantId, workspaceId }: UseCloudS
     }
 
     syncingRef.current = false;
-    setStatus(result.status);
+    setStatus(result.status === 'offline' && sync.isOnline() ? 'idle' : result.status);
     setDirection(result.direction);
     setErrorMessage(result.message ?? null);
     setDisplayWorkspaceId(workspaceId);
     await refreshMetadata();
   }, [enabled, refreshMetadata, sync, tenantId, workspaceId]);
+
+  const syncNow = useCallback(async () => {
+    if (refreshOnlineStatus) {
+      await refreshOnlineStatus();
+    }
+    await runSync();
+  }, [refreshOnlineStatus, runSync]);
 
   useEffect(() => {
     if (workspaceId) setDisplayWorkspaceId(workspaceId);
@@ -120,7 +127,7 @@ export function useCloudSync({ enabled, data, tenantId, workspaceId }: UseCloudS
     errorMessage,
     workspaceId: displayWorkspaceId,
     isOnline: status !== 'offline',
-    syncNow: runSync,
+    syncNow,
     refreshMetadata,
   };
 }

@@ -43,7 +43,7 @@ export function CloudSyncStatus({
 }: CloudSyncStatusProps) {
   const offline = status === 'offline';
   const syncing = status === 'syncing';
-  const Icon = offline ? CloudOff : Cloud;
+  const Icon = syncing ? RefreshCw : offline ? CloudOff : Cloud;
 
   if (compact) {
     return (
@@ -63,7 +63,7 @@ export function CloudSyncStatus({
         )}
         aria-label={statusLabel(status, pending, direction)}
       >
-        <Icon className={cn('w-4 h-4', syncing && 'animate-pulse')} />
+        <Icon className={cn('w-4 h-4', syncing && 'animate-spin')} />
       </button>
     );
   }
@@ -104,10 +104,10 @@ export function CloudSyncStatus({
         <button
           type="button"
           onClick={onSync}
-          disabled={syncing || offline}
+          disabled={syncing}
           className={cn(
             'inline-flex items-center gap-1.5 shrink-0 min-h-11 px-3 rounded-lg text-xs font-semibold border transition-colors',
-            syncing || offline
+            syncing
               ? 'border-border text-muted cursor-not-allowed'
               : 'border-brand/30 text-brand hover:bg-brand-muted'
           )}

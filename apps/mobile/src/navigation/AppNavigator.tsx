@@ -244,8 +244,6 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
     activeTab === 'menu' ? null : NAV_BY_ID[activeTab as AppTab].description;
   const menuSecondaryActive =
     activeTab !== 'menu' && !PRIMARY_BOTTOM_TAB_IDS.includes(activeTab as AppTab);
-  const productTabBadge =
-    data.inventory.length > 0 ? Math.min(data.inventory.length, 99) : undefined;
   const warehouseTabBadge =
     data.stockAlerts.length > 0 ? Math.min(data.stockAlerts.length, 99) : undefined;
 
@@ -280,16 +278,22 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
                 backgroundColor: colors.surface,
                 borderTopColor: colors.border,
                 height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
-                paddingBottom: Math.max(insets.bottom, 8),
-                paddingTop: 8,
+                paddingBottom: Math.max(insets.bottom, 6),
+                paddingTop: 6,
               },
-              tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+              tabBarItemStyle: { paddingVertical: 2 },
+              tabBarIconStyle: { marginBottom: 0 },
+              tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
+              tabBarAllowFontScaling: false,
               tabBarBadge:
-                route.name === 'products'
-                  ? productTabBadge
-                  : route.name === 'warehouses'
-                    ? warehouseTabBadge
-                    : undefined,
+                route.name === 'warehouses' ? warehouseTabBadge : undefined,
+              tabBarBadgeStyle: {
+                fontSize: 9,
+                minWidth: 16,
+                height: 16,
+                lineHeight: 16,
+                top: -2,
+              },
               tabBarIcon: ({ color, size, focused }) => {
                 if (isMenu) {
                   const highlight = focused || menuSecondaryActive;
@@ -306,13 +310,16 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
               tabBarLabel:
                 isMenu && menuSecondaryActive
                   ? ({ color }) => (
-                      <Text style={{ color: colors.brand, fontSize: 11, fontWeight: '700' }}>
+                      <Text
+                        style={{ color: colors.brand, fontSize: 10, fontWeight: '700' }}
+                        numberOfLines={1}
+                      >
                         Más
                       </Text>
                     )
                   : isMenu
                     ? 'Más'
-                    : meta?.label,
+                    : meta?.shortLabel ?? meta?.label,
               title: isMenu ? 'Más' : meta?.label,
             };
           }}

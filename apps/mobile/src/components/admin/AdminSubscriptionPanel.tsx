@@ -5,12 +5,17 @@ import type { PublicTenant } from '@/auth/types';
 import type { SubscriptionAdminAction, SubscriptionPlan } from '@costify/shared/domain/subscription';
 import {
   formatSubscriptionExpiry,
+  formatSubscriptionLocationBreakdown,
   getSubscriptionStatusLabel,
+  isSubscriptionCurrentlyActive,
+  normalizeLocationCount,
   SUBSCRIPTION_PLAN_LABELS,
   SUBSCRIPTION_PLANS,
+  SUBSCRIPTION_STATUS_LABELS,
 } from '@costify/shared/domain/subscription';
 import { apiFetch } from '@/api/client';
 import { useTheme } from '@/context/ThemeContext';
+import { useConfirm } from '@/context/DialogContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -18,16 +23,18 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 
 interface AdminSubscriptionPanelProps {
   tenant: PublicTenant;
-  onUpdated: () => void;
+  onUpdated: (tenant?: PublicTenant) => void;
 }
 
 export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionPanelProps) {
   const { colors } = useTheme();
+  const { confirm } = useConfirm();
   const { showToast } = useToast();
   const subscription = tenant.subscription;
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(
     subscription?.requestedPlan ?? subscription?.plan ?? 'monthly'
   );
+  const [locationCount, setLocationCount] = useState(subscription?.locationCount ?? 1);
   const [saving, setSaving] = useState(false);
 
   if (!subscription) {
@@ -38,19 +45,45 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
     );
   }
 
+  const subscriptionLive = isSubscriptionCurrentlyActive(subscription);
+
   const runAction = async (action: SubscriptionAdminAction, plan?: SubscriptionPlan) => {
+    if (action === 'expire') {
+      const ok = await confirm({
+        title: 'Marcar vencida',
+        message:
+          '¿Marcar esta suscripción como vencida? El cliente perderá acceso de escritura.',
+        confirmLabel: 'Marcar vencida',
+        variant: 'danger',
+      });
+      if (!ok) return;
+    }
+    if (action === 'pending') {
+      const ok = await confirm({
+        title: 'Pendiente de pago',
+        message:
+          '¿Marcar como pendiente de pago? El cliente quedará en solo lectura hasta activar el plan.',
+        confirmLabel: 'Marcar pendiente',
+      });
+      if (!ok) return;
+    }
+
     setSaving(true);
     try {
       const response = await apiFetch(`/api/admin/tenants/${tenant.tenantId}/subscription`, {
         method: 'PATCH',
-        body: JSON.stringify({ action, plan }),
+        body: JSON.stringify({
+          action,
+          plan,
+          locationCount: normalizeLocationCount(locationCount),
+        }),
       });
-      const json = (await response.json()) as { error?: string };
+      const json = (await response.json()) as { error?: string; tenant?: PublicTenant };
       if (!response.ok) {
         throw new Error(json.error || 'No se pudo actualizar la suscripción.');
       }
       showToast('Suscripción actualizada.', 'success');
-      onUpdated();
+      onUpdated(json.tenant);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Error al actualizar.', 'error');
     } finally {
@@ -73,10 +106,21 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
             {getSubscriptionStatusLabel(subscription)} · {SUBSCRIPTION_PLAN_LABELS[subscription.plan]}
           </Text>
           <Text style={[styles.hint, { color: colors.muted }]}>
-            {subscription.priceUsd.toFixed(2)} USD
+            {subscription.priceUsd.toFixed(2)} USD ·{' '}
+            {formatSubscriptionLocationBreakdown(subscription.locationCount)}
             {subscription.expiresAt
               ? ` · Vence: ${formatSubscriptionExpiry(subscription.expiresAt)}`
               : ''}
+          </Text>
+          <Text
+            style={[
+              styles.statusHint,
+              { color: subscriptionLive ? colors.brand : colors.warning },
+            ]}
+          >
+            {subscriptionLive
+              ? 'Acceso completo activo'
+              : `Solo lectura · ${SUBSCRIPTION_STATUS_LABELS[subscription.status]}`}
           </Text>
           {subscription.requestedPlan && subscription.requestedPlan !== subscription.plan ? (
             <Text style={[styles.requestedPlan, { color: colors.warning }]}>
@@ -137,6 +181,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '700' },
   value: { fontSize: 15, fontWeight: '700' },
   hint: { fontSize: 12, lineHeight: 16 },
+  statusHint: { fontSize: 12, lineHeight: 16, marginTop: 4, fontWeight: '600' },
   requestedPlan: { fontSize: 12, lineHeight: 16, marginTop: 4, fontWeight: '600' },
   planGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   planCard: {

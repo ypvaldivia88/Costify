@@ -24,7 +24,7 @@ import { useToast } from '@/components/ui/Toast';
 
 interface AdminSubscriptionPanelProps {
   tenant: PublicTenant;
-  onUpdated: () => void;
+  onUpdated: (tenant?: PublicTenant) => void;
 }
 
 export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionPanelProps) {
@@ -48,6 +48,19 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
   const previewPrice = getSubscriptionPlanPriceUsd(selectedPlan, locationCount);
 
   const runAction = async (action: SubscriptionAdminAction, plan?: SubscriptionPlan) => {
+    if (action === 'expire') {
+      const ok = window.confirm(
+        '¿Marcar esta suscripción como vencida? El cliente perderá acceso de escritura.'
+      );
+      if (!ok) return;
+    }
+    if (action === 'pending') {
+      const ok = window.confirm(
+        '¿Marcar como pendiente de pago? El cliente quedará en solo lectura hasta que actives el plan.'
+      );
+      if (!ok) return;
+    }
+
     setSaving(true);
     try {
       const response = await fetch(`/api/admin/tenants/${tenant.tenantId}/subscription`, {
@@ -60,12 +73,12 @@ export function AdminSubscriptionPanel({ tenant, onUpdated }: AdminSubscriptionP
           locationCount: normalizeLocationCount(locationCount),
         }),
       });
-      const json = (await response.json()) as { error?: string };
+      const json = (await response.json()) as { error?: string; tenant?: PublicTenant };
       if (!response.ok) {
         throw new Error(json.error || 'No se pudo actualizar la suscripción.');
       }
       showToast('Suscripción actualizada.', 'success');
-      onUpdated();
+      onUpdated(json.tenant);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Error al actualizar.', 'error');
     } finally {

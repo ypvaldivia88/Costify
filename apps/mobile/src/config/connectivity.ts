@@ -30,6 +30,13 @@ export function isDeviceOnline(): boolean {
   return online;
 }
 
+/** Re-check connectivity and update cached online state. */
+export async function probeConnectivity(): Promise<boolean> {
+  const next = await probeOnline();
+  notify(next);
+  return next;
+}
+
 export function subscribeConnectivity(
   onOnline: () => void,
   onOffline: () => void

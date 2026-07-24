@@ -1,7 +1,7 @@
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Visible tab bar content height (excluding safe-area inset). */
-export const TAB_BAR_CONTENT_HEIGHT = 56;
+export const TAB_BAR_CONTENT_HEIGHT = 64;
 
 export function useScreenInsets() {
   const insets = useSafeAreaInsets();

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Cloud, CloudOff, RefreshCw } from 'lucide-react-native';
 import type { SyncDirection, SyncStatus } from '@/sync/sync-service';
 import { useTheme } from '@/context/ThemeContext';
@@ -44,7 +44,7 @@ export function CloudSyncStatus({
   const { colors } = useTheme();
   const offline = status === 'offline';
   const syncing = status === 'syncing';
-  const Icon = offline ? CloudOff : Cloud;
+  const Icon = syncing ? RefreshCw : offline ? CloudOff : Cloud;
 
   if (compact) {
     return (
@@ -60,7 +60,11 @@ export function CloudSyncStatus({
         ]}
         accessibilityLabel={statusLabel(status, pending, direction)}
       >
-        <Icon size={16} color={offline ? colors.warning : colors.brand} />
+        {syncing ? (
+          <ActivityIndicator size="small" color={colors.brand} />
+        ) : (
+          <Icon size={16} color={offline ? colors.warning : colors.brand} />
+        )}
       </Pressable>
     );
   }
@@ -74,7 +78,11 @@ export function CloudSyncStatus({
             { backgroundColor: offline ? colors.accentSurface : colors.brandMuted },
           ]}
         >
-          <Icon size={20} color={offline ? colors.warning : colors.brand} />
+          {syncing ? (
+            <ActivityIndicator size="small" color={colors.brand} />
+          ) : (
+            <Icon size={20} color={offline ? colors.warning : colors.brand} />
+          )}
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: colors.foreground }]}>
@@ -89,7 +97,7 @@ export function CloudSyncStatus({
             <Text style={[styles.error, { color: colors.danger }]}>{errorMessage}</Text>
           ) : null}
         </View>
-        <Button variant="outline" onPress={onSync} disabled={syncing || offline}>
+        <Button variant="outline" onPress={onSync} disabled={syncing}>
           <RefreshCw size={14} color={colors.brand} />
           {' Sync'}
         </Button>

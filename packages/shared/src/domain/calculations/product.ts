@@ -156,16 +156,20 @@ export function recalculateInventory(
   laborShareSettings?: LaborShareSettings
 ): ProductCalculation[] {
   return products.map((product) => {
-    const others = products.filter((p) => p.id !== product.id);
-    return calculateProduct(
-      migrateProductInput(product, unitSettings),
-      others,
-      rawMaterials,
-      globalFund,
-      product.id,
-      product.timestamp,
-      unitSettings,
-      laborShareSettings
-    );
+    try {
+      const others = products.filter((p) => p.id !== product.id);
+      return calculateProduct(
+        migrateProductInput(product, unitSettings),
+        others,
+        rawMaterials,
+        globalFund,
+        product.id,
+        product.timestamp,
+        unitSettings,
+        laborShareSettings
+      );
+    } catch {
+      return product;
+    }
   });
 }

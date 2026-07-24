@@ -12,7 +12,7 @@ import {
   groupSaleCsvRowsIntoRecords,
   parseSaleCsv,
 } from '@costify/shared/domain/sales';
-import { RESTAURANT_DISCOVERY_CHECKLIST } from '@costify/shared';
+import { RECONCILIATION_GUIDE_ITEMS } from '@costify/shared';
 import { randomId } from '@costify/shared/random-id';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -165,11 +165,14 @@ export function ReconciliationPanel({
         </div>
       )}
 
-      <div className="mt-8 rounded-xl border border-border bg-surface-muted/40 p-4">
-        <p className="text-sm font-semibold mb-2">Checklist para reunión con cliente (caja / POS)</p>
-        <ul className="space-y-1.5 text-sm text-muted-foreground list-decimal list-inside">
-          {RESTAURANT_DISCOVERY_CHECKLIST.map((item) => (
-            <li key={item}>{item}</li>
+      <div className="mt-8 rounded-xl border border-border bg-surface-muted/40 p-4 space-y-3">
+        <p className="text-sm font-semibold">Cómo usar la conciliación</p>
+        <ul className="space-y-3 text-sm text-muted-foreground">
+          {RECONCILIATION_GUIDE_ITEMS.map((item) => (
+            <li key={item.title}>
+              <p className="font-semibold text-foreground">{item.title}</p>
+              <p className="mt-0.5">{item.description}</p>
+            </li>
           ))}
         </ul>
       </div>
