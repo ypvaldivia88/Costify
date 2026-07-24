@@ -13,7 +13,7 @@ export interface MobileDownloadInfo {
   updatedAt: string;
 }
 
-const DEFAULT_VERSION = '1.0.21';
+const DEFAULT_VERSION = '1.0.22';
 const GITHUB_REPO = 'https://github.com/ypvaldivia88/Costify';
 
 function trimOrNull(value: string | undefined): string | null {

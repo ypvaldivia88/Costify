@@ -11,13 +11,13 @@ function notify(next: boolean) {
   listeners.forEach((listener) => listener(next));
 }
 
-async function probeOnline(): Promise<boolean> {
+async function probeOnline(timeoutMs = 8000): Promise<boolean> {
   try {
     const url = hasBackendApi()
       ? `${getApiBaseUrl()}/api/health`
       : 'https://clients3.google.com/generate_204';
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const response = await fetch(url, {
       method: 'GET',
       cache: 'no-store',
@@ -37,6 +37,13 @@ export function isDeviceOnline(): boolean {
 /** Re-check connectivity and update cached online state. */
 export async function probeConnectivity(): Promise<boolean> {
   const next = await probeOnline();
+  notify(next);
+  return next;
+}
+
+/** Faster probe for auth bootstrap — avoids long waits when offline. */
+export async function probeConnectivityFast(): Promise<boolean> {
+  const next = await probeOnline(2500);
   notify(next);
   return next;
 }

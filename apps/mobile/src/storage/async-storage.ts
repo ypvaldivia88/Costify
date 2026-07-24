@@ -1,7 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scopedStorageKey } from '@/storage/scoped-storage';
 
-const UNSCOPED_KEYS = new Set(['costify_theme_v1', 'costify_tenant_scope', 'costify_session_token']);
+const UNSCOPED_KEYS = new Set([
+  'costify_theme_v1',
+  'costify_tenant_scope',
+  'costify_session_token',
+  'costify_session_cache',
+]);
 
 function resolveKey(key: string): string {
   if (UNSCOPED_KEYS.has(key)) return key;

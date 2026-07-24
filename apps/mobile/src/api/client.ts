@@ -1,5 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { SessionUser } from '@/auth/types';
+import {
+  clearCachedSession,
+  isCachedSessionValid,
+  isNetworkError,
+  isTokenExpired,
+  loadCachedSession,
+  parseSessionUserFromToken,
+  saveCachedSession,
+} from '@/auth/offline-session';
+import { isDeviceOnline, probeConnectivityFast } from '@/config/connectivity';
 import { getApiBaseUrl, hasBackendApi } from '@/config/env';
 
 const TOKEN_KEY = 'costify_session_token';
@@ -86,10 +96,21 @@ export async function loginRequest(
   email: string,
   password: string
 ): Promise<{ user: SessionUser; token: string }> {
-  const response = await apiFetch('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
+  let response: Response;
+  try {
+    response = await publicApiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  } catch (error) {
+    if (isNetworkError(error)) {
+      throw new Error(
+        'Sin conexión. Necesitas internet para iniciar sesión por primera vez en este dispositivo.'
+      );
+    }
+    throw error;
+  }
+
   const json = (await response.json()) as {
     user?: SessionUser;
     token?: string;
@@ -99,6 +120,7 @@ export async function loginRequest(
     throw new Error(json.error || 'No se pudo iniciar sesión.');
   }
   await setStoredToken(json.token);
+  await saveCachedSession(json.user, json.token);
   return { user: json.user, token: json.token };
 }
 
@@ -109,6 +131,7 @@ export async function logoutRequest(): Promise<void> {
     // Ignorar errores de red al cerrar sesión.
   }
   await setStoredToken(null);
+  await clearCachedSession();
 }
 
 export async function requestSubscriptionPlanChange(
@@ -124,40 +147,103 @@ export async function requestSubscriptionPlanChange(
   }
 }
 
-export async function refreshSessionRequest(): Promise<SessionUser | null> {
+type RemoteSessionResult =
+  | { kind: 'user'; user: SessionUser; token?: string }
+  | { kind: 'unauthorized' }
+  | { kind: 'unavailable' };
+
+async function fetchRemoteSession(): Promise<RemoteSessionResult> {
   const token = await getStoredToken();
-  if (!token) return null;
+  if (!token) return { kind: 'unauthorized' };
 
-  const response = await apiFetch('/api/auth/refresh', { method: 'POST' });
-  if (!response.ok) {
-    if (response.status === 401) {
-      await setStoredToken(null);
+  try {
+    const refreshResponse = await apiFetch('/api/auth/refresh', { method: 'POST' });
+    if (refreshResponse.ok) {
+      const json = (await refreshResponse.json()) as { user?: SessionUser; token?: string };
+      if (json.user) {
+        return { kind: 'user', user: json.user, token: json.token };
+      }
     }
-    return null;
-  }
+    if (refreshResponse.status === 401) {
+      return { kind: 'unauthorized' };
+    }
 
-  const json = (await response.json()) as { user?: SessionUser; token?: string };
-  if (json.token) {
-    await setStoredToken(json.token);
+    const meResponse = await apiFetch('/api/auth/me', { method: 'GET' });
+    if (meResponse.ok) {
+      const json = (await meResponse.json()) as { user?: SessionUser };
+      if (json.user) {
+        return { kind: 'user', user: json.user };
+      }
+    }
+    if (meResponse.status === 401) {
+      return { kind: 'unauthorized' };
+    }
+
+    return { kind: 'unavailable' };
+  } catch (error) {
+    if (isNetworkError(error)) {
+      return { kind: 'unavailable' };
+    }
+    throw error;
   }
-  return json.user ?? null;
+}
+
+async function ensureCachedSessionFromToken(token: string): Promise<void> {
+  if (isTokenExpired(token)) return;
+  const cached = await loadCachedSession();
+  if (isCachedSessionValid(cached)) return;
+
+  const user = parseSessionUserFromToken(token);
+  if (user) {
+    await saveCachedSession(user, token);
+  }
 }
 
 export async function fetchCurrentUser(): Promise<SessionUser | null> {
-  const refreshed = await refreshSessionRequest();
-  if (refreshed) return refreshed;
-
   const token = await getStoredToken();
-  if (!token) return null;
+  let cached = await loadCachedSession();
 
-  const response = await apiFetch('/api/auth/me', { method: 'GET' });
-  if (!response.ok) {
-    if (response.status === 401) {
-      await setStoredToken(null);
-    }
+  if (token) {
+    await ensureCachedSessionFromToken(token);
+    cached = await loadCachedSession();
+  }
+
+  if (!token && !isCachedSessionValid(cached)) {
     return null;
   }
 
-  const json = (await response.json()) as { user?: SessionUser };
-  return json.user ?? null;
+  const shouldRefreshRemote = hasBackendApi() && Boolean(token);
+  if (shouldRefreshRemote) {
+    const online = isDeviceOnline() ? await probeConnectivityFast() : false;
+    if (online) {
+      const remote = await fetchRemoteSession();
+
+      if (remote.kind === 'user') {
+        if (remote.token) {
+          await setStoredToken(remote.token);
+        }
+        await saveCachedSession(remote.user, remote.token ?? token ?? '');
+        return remote.user;
+      }
+
+      if (remote.kind === 'unauthorized') {
+        await setStoredToken(null);
+        await clearCachedSession();
+        return null;
+      }
+    }
+  }
+
+  if (isCachedSessionValid(cached)) {
+    return cached.user;
+  }
+
+  if (token && !isTokenExpired(token)) {
+    const user = parseSessionUserFromToken(token);
+    if (user) return user;
+  }
+
+  await setStoredToken(null);
+  await clearCachedSession();
+  return null;
 }

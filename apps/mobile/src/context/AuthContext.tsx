@@ -10,10 +10,13 @@ import {
 import type { SessionUser } from '@/auth/types';
 import {
   fetchCurrentUser,
+  getStoredToken,
   loginRequest,
   logoutRequest,
   setStoredToken,
 } from '@/api/client';
+import { saveCachedSession } from '@/auth/offline-session';
+import { ensureConnectivityMonitoring, subscribeConnectivity } from '@/config/connectivity';
 import { setStorageScope, loadStorageScope } from '@/storage/scoped-storage';
 import { setActiveWorkspaceId } from '@/sync/workspace-id';
 
@@ -47,12 +50,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     const sessionUser = await fetchCurrentUser();
-    setUser(sessionUser);
-    const scope = await applySessionScope(sessionUser);
-    setStorageScopeState(scope);
+    if (sessionUser) {
+      setUser(sessionUser);
+      const scope = await applySessionScope(sessionUser);
+      setStorageScopeState(scope);
+      return;
+    }
+    setUser(null);
+    await applySessionScope(null);
+    setStorageScopeState(null);
   }, []);
 
   useEffect(() => {
+    ensureConnectivityMonitoring();
     void (async () => {
       try {
         const existingScope = await loadStorageScope();
@@ -62,6 +72,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     })();
+  }, [refresh]);
+
+  useEffect(() => {
+    return subscribeConnectivity(
+      () => {
+        void refresh();
+      },
+      () => undefined
+    );
   }, [refresh]);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -82,6 +101,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateSession = useCallback(async (sessionUser: SessionUser, token?: string) => {
     if (token) {
       await setStoredToken(token);
+      await saveCachedSession(sessionUser, token);
+    } else {
+      const existingToken = await getStoredToken();
+      if (existingToken) {
+        await saveCachedSession(sessionUser, existingToken);
+      }
     }
     setUser(sessionUser);
     const scope = await applySessionScope(sessionUser);
