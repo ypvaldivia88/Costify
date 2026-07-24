@@ -1,6 +1,6 @@
 'use client';
 
-import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, AlertCircle } from 'lucide-react';
 import type { SyncDirection, SyncStatus } from '@/lib/sync/sync-service';
 import { cn } from '@/lib/utils';
 
@@ -43,7 +43,8 @@ export function CloudSyncStatus({
 }: CloudSyncStatusProps) {
   const offline = status === 'offline';
   const syncing = status === 'syncing';
-  const Icon = syncing ? RefreshCw : offline ? CloudOff : Cloud;
+  const errored = status === 'error';
+  const Icon = syncing ? RefreshCw : offline ? CloudOff : errored ? AlertCircle : Cloud;
 
   if (compact) {
     return (

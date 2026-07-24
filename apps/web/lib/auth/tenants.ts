@@ -24,10 +24,12 @@ import {
   changeSubscriptionPlan,
   ensureTenantSubscription,
   isSubscriptionCurrentlyActive,
+  markSubscriptionExpired,
   type SubscriptionAdminAction,
   type SubscriptionPlan,
   type TenantSubscription,
 } from '@costify/shared/domain/subscription';
+import { shouldExpireTrialSubscription } from '@costify/shared/domain/access';
 
 function toPublicTenant(tenant: TenantDocument): PublicTenant {
   return {
@@ -41,6 +43,22 @@ function toPublicTenant(tenant: TenantDocument): PublicTenant {
   };
 }
 
+export async function expireTrialIfNeeded(tenant: TenantDocument): Promise<TenantDocument> {
+  if (!shouldExpireTrialSubscription(tenant.createdAt, tenant.subscription)) {
+    return tenant;
+  }
+
+  const db = await getDb();
+  const subscription = markSubscriptionExpired(ensureTenantSubscription(tenant.subscription));
+  const result = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOneAndUpdate(
+    { tenantId: tenant.tenantId },
+    { $set: { subscription } },
+    { returnDocument: 'after' }
+  );
+
+  return result ?? { ...tenant, subscription };
+}
+
 export async function listTenants(): Promise<PublicTenant[]> {
   const db = await getDb();
   const tenants = await db
@@ -49,7 +67,8 @@ export async function listTenants(): Promise<PublicTenant[]> {
     .sort({ createdAt: -1 })
     .toArray();
 
-  return tenants.map(toPublicTenant);
+  const synced = await Promise.all(tenants.map((tenant) => expireTrialIfNeeded(tenant)));
+  return synced.map(toPublicTenant);
 }
 
 export async function listPendingTenants(): Promise<PublicTenant[]> {
@@ -205,7 +224,7 @@ export async function registerPendingTenant(input: RegisterTenantInput): Promise
     adminName: input.adminName,
     adminEmail: input.adminEmail,
     adminPassword: input.adminPassword,
-    status: 'pending',
+    status: 'active',
     subscription: buildPendingSubscription(input.plan, Date.now(), input.locationCount),
   });
 }

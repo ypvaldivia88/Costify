@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Cloud, CloudOff, RefreshCw } from 'lucide-react-native';
+import { Cloud, CloudOff, RefreshCw, AlertCircle } from 'lucide-react-native';
 import type { SyncDirection, SyncStatus } from '@/sync/sync-service';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/Button';
@@ -44,7 +44,8 @@ export function CloudSyncStatus({
   const { colors } = useTheme();
   const offline = status === 'offline';
   const syncing = status === 'syncing';
-  const Icon = syncing ? RefreshCw : offline ? CloudOff : Cloud;
+  const errored = status === 'error';
+  const Icon = syncing ? RefreshCw : offline ? CloudOff : errored ? AlertCircle : Cloud;
 
   if (compact) {
     return (
@@ -54,8 +55,14 @@ export function CloudSyncStatus({
         style={[
           styles.compactBtn,
           {
-            borderColor: offline ? colors.warning : pending ? colors.brand : colors.border,
-            backgroundColor: offline ? colors.accentSurface : pending ? colors.brandMuted : colors.surfaceMuted,
+            borderColor: offline ? colors.warning : errored ? colors.danger : pending ? colors.brand : colors.border,
+            backgroundColor: offline
+              ? colors.accentSurface
+              : errored
+                ? colors.accentSurface
+                : pending
+                  ? colors.brandMuted
+                  : colors.surfaceMuted,
           },
         ]}
         accessibilityLabel={statusLabel(status, pending, direction)}
@@ -63,7 +70,7 @@ export function CloudSyncStatus({
         {syncing ? (
           <ActivityIndicator size="small" color={colors.brand} />
         ) : (
-          <Icon size={16} color={offline ? colors.warning : colors.brand} />
+          <Icon size={16} color={offline ? colors.warning : errored ? colors.danger : colors.brand} />
         )}
       </Pressable>
     );

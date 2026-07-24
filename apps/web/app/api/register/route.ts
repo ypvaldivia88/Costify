@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         priceUsd,
         whatsappUrl: buildWhatsAppPaymentUrl(whatsappMessage),
         message:
-          'Registro recibido. Escríbenos por WhatsApp para completar el pago y activar tu cuenta.',
+          'Registro completado. Tienes 14 días de prueba gratuita. Escríbenos por WhatsApp cuando quieras activar tu plan.',
       },
       { status: 201 }
     );

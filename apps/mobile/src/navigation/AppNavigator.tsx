@@ -44,14 +44,13 @@ import {
 import { CostifyMark } from '@/components/brand/CostifyLogo';
 import { TabScreenScroll } from '@/components/layout/TabScreenScroll';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/hooks/use-screen-insets';
+import { PrimaryTabBar } from '@/navigation/PrimaryTabBar';
 
 type MobileTab = AppTab | 'menu';
 type RootTabParamList = Record<MobileTab, undefined>;
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const navigationRef = createNavigationContainerRef<RootTabParamList>();
-
-const HIDDEN_TAB_BUTTON = () => null;
 
 function LoadingScreen({ message = 'Cargando…' }: { message?: string }) {
   const { colors, scheme } = useTheme();
@@ -253,6 +252,7 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
         <AppHeader title={screenTitle} description={user?.tenantName ? null : screenDescription} />
         <Tab.Navigator
           initialRouteName="home"
+          tabBar={(props) => <PrimaryTabBar {...props} />}
           screenListeners={{
             state: (e) => {
               const route = e.data.state?.routes[e.data.state.index];
@@ -266,12 +266,8 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
           screenOptions={({ route }) => {
             const isMenu = route.name === 'menu';
             const meta = isMenu ? null : NAV_BY_ID[route.name as AppTab];
-            const showInBar =
-              route.name === 'menu' || PRIMARY_BOTTOM_TAB_IDS.includes(route.name as AppTab);
-
             return {
               headerShown: false,
-              tabBarButton: showInBar ? undefined : HIDDEN_TAB_BUTTON,
               tabBarActiveTintColor: colors.brand,
               tabBarInactiveTintColor: colors.muted,
               tabBarStyle: {
@@ -281,7 +277,7 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
                 paddingBottom: Math.max(insets.bottom, 6),
                 paddingTop: 6,
               },
-              tabBarItemStyle: { paddingVertical: 2 },
+              tabBarItemStyle: { flex: 1, paddingVertical: 2, maxWidth: undefined },
               tabBarIconStyle: { marginBottom: 0 },
               tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
               tabBarAllowFontScaling: false,
@@ -409,7 +405,7 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
               <AppMenuScreen activeTab={activeTab} onNavigate={navigateToTab} />
             )}
           </Tab.Screen>
-          <Tab.Screen name="locations" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+          <Tab.Screen name="locations">
             {() => (
               <TabScreenScroll>
                 <LocationsSettingsPanel
@@ -420,7 +416,7 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
               </TabScreenScroll>
             )}
           </Tab.Screen>
-          <Tab.Screen name="reconciliation" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+          <Tab.Screen name="reconciliation">
             {() => (
               <TabScreenScroll>
                 <ReconciliationPanel
@@ -433,17 +429,17 @@ function MainTabs({ onRouteChange }: { onRouteChange: (route: MobileTab) => void
               </TabScreenScroll>
             )}
           </Tab.Screen>
-          <Tab.Screen name="exchange" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+          <Tab.Screen name="exchange">
             {() => (
               <TabScreenScroll contentContainerStyle={{ gap: 12 }}>
                 <ExchangeRatesPanel />
               </TabScreenScroll>
             )}
           </Tab.Screen>
-          <Tab.Screen name="backup" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+          <Tab.Screen name="backup">
             {() => <BackupTab />}
           </Tab.Screen>
-          <Tab.Screen name="account" options={{ tabBarButton: HIDDEN_TAB_BUTTON }}>
+          <Tab.Screen name="account">
             {() => <AccountTab />}
           </Tab.Screen>
         </Tab.Navigator>

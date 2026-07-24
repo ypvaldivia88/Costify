@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getSessionFromRequest, verifySessionToken } from '@/lib/auth/session';
 import type { SessionUser } from '@/lib/auth/types';
 
-const PUBLIC_PATHS = ['/login', '/register', '/descarga', '/api/auth/login', '/api/register'];
+const PUBLIC_PATHS = ['/login', '/register', '/descarga', '/api/auth/login', '/api/register', '/api/health'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

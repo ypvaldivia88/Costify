@@ -48,19 +48,30 @@ export function useCloudSync({ enabled, data, tenantId, workspaceId }: UseCloudS
     }
 
     syncingRef.current = false;
-    setStatus(result.status === 'offline' && sync.isOnline() ? 'idle' : result.status);
+
+    const onlineNow = refreshOnlineStatus ? await refreshOnlineStatus() : sync.isOnline();
+    if (result.status === 'offline' && onlineNow) {
+      setStatus('error');
+      setErrorMessage(result.message ?? 'No se pudo sincronizar con la nube.');
+    } else {
+      setStatus(result.status);
+      setErrorMessage(result.message ?? null);
+    }
     setDirection(result.direction);
-    setErrorMessage(result.message ?? null);
     setDisplayWorkspaceId(workspaceId);
     await refreshMetadata();
-  }, [enabled, refreshMetadata, sync, tenantId, workspaceId]);
+  }, [enabled, refreshMetadata, refreshOnlineStatus, sync, tenantId, workspaceId]);
 
   const syncNow = useCallback(async () => {
-    if (refreshOnlineStatus) {
-      await refreshOnlineStatus();
+    const onlineNow = refreshOnlineStatus ? await refreshOnlineStatus() : sync.isOnline();
+    if (!onlineNow) {
+      setStatus('offline');
+      setErrorMessage(null);
+      return;
     }
+    setStatus('idle');
     await runSync();
-  }, [refreshOnlineStatus, runSync]);
+  }, [refreshOnlineStatus, runSync, sync]);
 
   useEffect(() => {
     if (workspaceId) setDisplayWorkspaceId(workspaceId);
@@ -72,7 +83,7 @@ export function useCloudSync({ enabled, data, tenantId, workspaceId }: UseCloudS
 
     return onlineEvents.subscribe(
       () => {
-        setStatus('idle');
+        setStatus((current) => (current === 'offline' ? 'idle' : current));
         void runSync();
       },
       () => setStatus('offline')
@@ -96,7 +107,9 @@ export function useCloudSync({ enabled, data, tenantId, workspaceId }: UseCloudS
     void refreshMetadata();
 
     if (!sync.isOnline()) {
-      setStatus('offline');
+      void (refreshOnlineStatus?.() ?? Promise.resolve(false)).then((online) => {
+        if (!online) setStatus('offline');
+      });
       return;
     }
 

@@ -1,5 +1,6 @@
 import {
   ensureTenantSubscription,
+  isSubscriptionCurrentlyActive,
   type SubscriptionStatus,
   type TenantSubscription,
 } from './subscription';
@@ -8,7 +9,7 @@ export type AccountLifecycleStatus = 'pending' | 'active' | 'suspended';
 
 export type AccessLevel = 'trial' | 'readonly' | 'full';
 
-export const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+export const TRIAL_DURATION_MS = 14 * 24 * 60 * 60 * 1000;
 export const TRIAL_PRODUCT_LIMIT = 5;
 export const TRIAL_RAW_MATERIAL_LIMIT = 10;
 
@@ -27,6 +28,17 @@ export interface ResolvedTenantAccess {
   rawMaterialLimit?: number;
   subscriptionStatus: SubscriptionStatus;
   tenantPending: boolean;
+}
+
+export function shouldExpireTrialSubscription(
+  tenantCreatedAt: number,
+  subscription?: TenantSubscription | null,
+  now = Date.now()
+): boolean {
+  const sub = ensureTenantSubscription(subscription);
+  if (sub.status === 'expired') return false;
+  if (isSubscriptionCurrentlyActive(sub, now)) return false;
+  return now >= tenantCreatedAt + TRIAL_DURATION_MS;
 }
 
 export function resolveTenantAccess(input: TenantAccessContext): ResolvedTenantAccess {
@@ -89,7 +101,7 @@ export function canWriteWorkspaceData(level: AccessLevel): boolean {
 }
 
 export function canSyncToCloud(level: AccessLevel): boolean {
-  return level === 'full';
+  return level === 'trial' || level === 'full';
 }
 
 export function canAddProduct(level: AccessLevel, currentCount: number, limit = TRIAL_PRODUCT_LIMIT): boolean {

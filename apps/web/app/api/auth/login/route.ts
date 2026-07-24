@@ -6,7 +6,7 @@ import {
   getSessionCookieOptions,
   SESSION_COOKIE,
 } from '@/lib/auth/session';
-import { ensureDemoTenantSubscription, findTenantById } from '@/lib/auth/tenants';
+import { ensureDemoTenantSubscription, expireTrialIfNeeded, findTenantById } from '@/lib/auth/tenants';
 import { enrichSessionUser } from '@/lib/auth/session-access';
 import type { SessionUser } from '@/lib/auth/types';
 import { loginRequestSchema, parseJsonBody } from '@costify/shared/schemas/api';
@@ -58,9 +58,10 @@ export async function POST(request: Request) {
       if (tenant.status === 'suspended') {
         return NextResponse.json({ error: 'El negocio asociado está suspendido.' }, { status: 403 });
       }
-      sessionUser.tenantId = tenant.tenantId;
-      sessionUser.tenantName = tenant.name;
-      sessionUser.workspaceId = tenant.workspaceId;
+      const syncedTenant = await expireTrialIfNeeded(tenant);
+      sessionUser.tenantId = syncedTenant.tenantId;
+      sessionUser.tenantName = syncedTenant.name;
+      sessionUser.workspaceId = syncedTenant.workspaceId;
     }
 
     const enriched = await enrichSessionUser(sessionUser);

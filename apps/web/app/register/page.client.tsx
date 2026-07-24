@@ -116,14 +116,12 @@ export default function RegisterPage() {
     <PublicShell showFooter={false}>
       <div className="w-full max-w-2xl mx-auto">
         {success ? (
-          <AuthCard title="Solicitud enviada">
+          <AuthCard title="Cuenta creada">
             <div className="space-y-5">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-6 h-6 text-brand shrink-0 mt-0.5" />
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Te redirigimos a WhatsApp para confirmar el pago y activar tu cuenta.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{success.message}</p>
                   <p className="text-sm">
                     Plan seleccionado: <strong>{success.planLabel}</strong> ({success.priceUsd} USD)
                   </p>
@@ -140,7 +138,7 @@ export default function RegisterPage() {
         ) : (
           <AuthCard
             title="Registrar negocio"
-            description="Elige tu plan y te contactamos por WhatsApp para activar la cuenta."
+            description="Crea tu cuenta y empieza con 14 días de prueba gratuita."
             className="max-w-2xl"
           >
             <FormRoot form={form} onSubmit={onSubmit} className="space-y-6">

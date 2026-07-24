@@ -1,4 +1,4 @@
-import { findTenantById } from '@/lib/auth/tenants';
+import { findTenantById, expireTrialIfNeeded } from '@/lib/auth/tenants';
 import { findUserById } from '@/lib/auth/users';
 import type { SessionUser } from '@/lib/auth/types';
 import { resolveTenantAccess } from '@costify/shared/domain/access';
@@ -17,17 +17,19 @@ export async function enrichSessionUser(session: SessionUser): Promise<SessionUs
     return session;
   }
 
+  const syncedTenant = await expireTrialIfNeeded(tenant);
+
   const access = resolveTenantAccess({
-    tenantStatus: tenant.status,
+    tenantStatus: syncedTenant.status,
     userStatus: user.status,
-    tenantCreatedAt: tenant.createdAt,
-    subscription: tenant.subscription,
+    tenantCreatedAt: syncedTenant.createdAt,
+    subscription: syncedTenant.subscription,
   });
 
   return {
     ...session,
-    tenantName: tenant.name,
-    workspaceId: tenant.workspaceId,
+    tenantName: syncedTenant.name,
+    workspaceId: syncedTenant.workspaceId,
     accessLevel: access.level,
     trialEndsAt: access.trialEndsAt,
     trialProductLimit: access.productLimit,

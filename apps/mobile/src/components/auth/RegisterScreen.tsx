@@ -129,7 +129,7 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
           <View style={styles.hero}>
             <CostifyLogoLockup size="xl" />
             <Text style={[styles.subtitle, { color: colors.muted }]}>
-              Tu solicitud quedará pendiente hasta confirmar el pago por WhatsApp
+              14 días de prueba gratuita. Entra de inmediato con tu correo y contraseña.
             </Text>
           </View>
 
@@ -138,7 +138,7 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
               <View style={styles.successHeader}>
                 <CheckCircle2 size={24} color={colors.brand} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.successTitle, { color: colors.foreground }]}>Solicitud enviada</Text>
+                  <Text style={[styles.successTitle, { color: colors.foreground }]}>Cuenta creada</Text>
                   <Text style={[styles.successBody, { color: colors.muted }]}>{success.message}</Text>
                   <Text style={[styles.successBody, { color: colors.foreground, marginTop: 8 }]}>
                     Plan: {success.planLabel} ({success.priceUsd} USD)
@@ -147,7 +147,7 @@ export function RegisterScreen({ onBackToLogin }: RegisterScreenProps) {
               </View>
 
               <Text style={[styles.successBody, { color: colors.muted }]}>
-                Te redirigimos a WhatsApp para confirmar el pago y activar tu cuenta.
+                Puedes iniciar sesión ahora. Cuando quieras activar el plan, contáctanos por WhatsApp.
               </Text>
 
               <Pressable onPress={onBackToLogin} style={styles.loginLink}>

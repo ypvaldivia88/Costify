@@ -14,13 +14,17 @@ function notify(next: boolean) {
 async function probeOnline(): Promise<boolean> {
   try {
     const url = hasBackendApi()
-      ? `${getApiBaseUrl()}/api/exchange-rates`
+      ? `${getApiBaseUrl()}/api/health`
       : 'https://clients3.google.com/generate_204';
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const response = await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
     clearTimeout(timer);
-    return response.ok || response.status === 405 || response.status === 401;
+    return response.ok;
   } catch {
     return false;
   }

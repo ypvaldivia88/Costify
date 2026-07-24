@@ -267,7 +267,10 @@ export function AdminTenantsTable({
                           tenantStatusTone(tenant.status)
                         )}
                       >
-                        {tenantStatusLabel(tenant.status)}
+                        {tenantStatusLabel(tenant.status, {
+                          createdAt: tenant.createdAt,
+                          subscription: tenant.subscription,
+                        })}
                       </span>
                     </td>
                     <td className="px-3 py-3 align-top text-xs">
@@ -386,7 +389,10 @@ export function AdminTenantsTable({
                       tenantStatusTone(tenant.status)
                     )}
                   >
-                    {tenantStatusLabel(tenant.status)}
+                    {tenantStatusLabel(tenant.status, {
+                      createdAt: tenant.createdAt,
+                      subscription: tenant.subscription,
+                    })}
                   </span>
                 </div>
 
