@@ -14,6 +14,7 @@ import { UnitCatalogProvider } from '@/hooks/use-unit-catalog';
 import { ExchangeRatesProvider } from '@/hooks/use-exchange-rates-context';
 import { HomeView, type HomeLaunchOptions } from '@/components/home/HomeView';
 import { AppHeader } from '@/components/layout/AppHeader';
+import { OfflineBanner } from '@/components/layout/OfflineBanner';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { BottomNav } from '@/components/ui/BottomNav';
@@ -90,6 +91,7 @@ export function AppShell() {
             user={user}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
+          <OfflineBanner />
 
           <div className="flex flex-1 min-h-0">
             <AppSidebar

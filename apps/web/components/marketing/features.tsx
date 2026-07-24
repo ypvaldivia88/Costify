@@ -27,13 +27,13 @@ const FEATURES = [
     icon: Cloud,
     title: 'Sincronización en la nube',
     description:
-      'Trabaja offline en Android y sincroniza cuando tengas conexión. Tus datos respaldados en MongoDB.',
+      'Trabaja offline en web y Android. Tus datos se guardan en el dispositivo y se sincronizan con MongoDB al volver la conexión.',
   },
   {
     icon: Smartphone,
-    title: 'App Android offline-first',
+    title: 'Web y Android offline-first',
     description:
-      'Opera en el local sin internet. La calculadora y el inventario siguen funcionando.',
+      'Opera en el local sin internet. Instala la web como app (PWA) o usa la APK de Android.',
   },
   {
     icon: Users,

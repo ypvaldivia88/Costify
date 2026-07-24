@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +26,14 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setServerError(
+        'Sin conexión. Inicia sesión una vez con internet; después la web recordará tu cuenta hasta 7 días.'
+      );
+    }
+  }, []);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

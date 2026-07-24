@@ -21,7 +21,7 @@ const PLANS: SubscriptionPlan[] = ['monthly', 'semiannual', 'annual'];
 const PLAN_FEATURES = [
   'Ficha de costos y precios',
   'Inventario multi-almacén',
-  'App Android offline',
+  'Web y Android offline',
   'Sincronización en la nube',
   'Soporte por WhatsApp',
 ] as const;

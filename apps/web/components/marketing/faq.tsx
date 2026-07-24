@@ -10,7 +10,7 @@ import {
 const FAQ_ITEMS = [
   {
     q: '¿Necesito internet para usar Costify?',
-    a: 'La app Android funciona offline para calcular costos e inventario. La sincronización con la nube requiere conexión. La web necesita internet.',
+    a: 'Tanto la app Android como la web guardan tus datos localmente y funcionan sin conexión después del primer inicio de sesión. La sincronización con la nube requiere internet.',
   },
   {
     q: '¿Cómo activo mi cuenta después de registrarme?',

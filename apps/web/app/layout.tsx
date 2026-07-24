@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { brandColors } from '@costify/ui-tokens/colors';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { WebClientDataProvider } from '@/components/client-data/WebClientDataProvider';
+import { ServiceWorkerRegistration } from '@/components/pwa/ServiceWorkerRegistration';
 import { ClientProviders } from '@/components/providers/ClientProviders';
 import './globals.css';
 
@@ -25,6 +26,14 @@ export const metadata: Metadata = {
   description:
     'Calculadora de fichas de costos y precios de venta para micro y pequeñas empresas privadas en Cuba.',
   applicationName: 'Costify',
+  appleWebApp: {
+    capable: true,
+    title: 'Costify',
+    statusBarStyle: 'default',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -62,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className="antialiased">
+        <ServiceWorkerRegistration />
         <AuthProvider>
           <WebClientDataProvider>
             <ClientProviders>{children}</ClientProviders>

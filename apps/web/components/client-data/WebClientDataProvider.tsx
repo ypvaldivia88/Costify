@@ -17,6 +17,28 @@ import {
 import { applyBackupToStorage } from '@/lib/backup/app-backup';
 import { getStorageScope, setStorageScope } from '@/lib/storage/scoped-storage';
 
+const EXCHANGE_SNAPSHOT_CACHE_KEY = 'costify_exchange_snapshot_cache';
+
+function loadCachedExchangeSnapshot(): ExchangeRateSnapshot | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(EXCHANGE_SNAPSHOT_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ExchangeRateSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedExchangeSnapshot(snapshot: ExchangeRateSnapshot): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(EXCHANGE_SNAPSHOT_CACHE_KEY, JSON.stringify(snapshot));
+  } catch {
+    // Quota exceeded or private browsing.
+  }
+}
+
 const webRawStorage: StoragePort = {
   async load<T>(key: string, fallback: T): Promise<T> {
     if (typeof window === 'undefined') return fallback;
@@ -64,26 +86,36 @@ const webOnlineEvents: OnlineEvents = {
 };
 
 async function fetchExchangeSnapshot(): Promise<ExchangeRateSnapshot> {
-  const response = await fetch('/api/exchange-rates', {
-    method: 'GET',
-    cache: 'no-store',
-    credentials: 'include',
-  });
+  try {
+    const response = await fetch('/api/exchange-rates', {
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'include',
+    });
 
-  if (!response.ok) {
-    const json = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(json.error ?? 'No se pudieron obtener las tasas.');
+    if (!response.ok) {
+      const json = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new Error(json.error ?? 'No se pudieron obtener las tasas.');
+    }
+
+    const json = (await response.json()) as {
+      snapshot: ExchangeRateSnapshot;
+      warning?: string;
+    };
+
+    const snapshot = {
+      ...json.snapshot,
+      stale: json.snapshot.stale ?? Boolean(json.warning),
+    };
+    saveCachedExchangeSnapshot(snapshot);
+    return snapshot;
+  } catch (error) {
+    const cached = loadCachedExchangeSnapshot();
+    if (cached) {
+      return { ...cached, stale: true };
+    }
+    throw error;
   }
-
-  const json = (await response.json()) as {
-    snapshot: ExchangeRateSnapshot;
-    warning?: string;
-  };
-
-  return {
-    ...json.snapshot,
-    stale: json.snapshot.stale ?? Boolean(json.warning),
-  };
 }
 
 async function fetchRemoteWorkspace(workspaceId: string): Promise<WorkspaceDocument | null> {

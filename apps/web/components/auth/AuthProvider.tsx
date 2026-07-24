@@ -11,12 +11,22 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SessionUser } from '@/lib/auth/types';
+import {
+  clearCachedSession,
+  isBrowserOffline,
+  isCachedSessionValid,
+  isNetworkError,
+  loadCachedSession,
+  saveCachedSession,
+} from '@/lib/auth/offline-session';
+import { fetchCurrentSession } from '@/lib/auth/session-client';
 import { setStorageScope } from '@/lib/storage/scoped-storage';
 import { setActiveWorkspaceId } from '@/lib/sync/workspace-id';
 
 interface AuthContextValue {
   user: SessionUser | null;
   loading: boolean;
+  isOfflineSession: boolean;
   login: (email: string, password: string) => Promise<SessionUser>;
   logout: () => Promise<void>;
   refresh: () => Promise<SessionUser | null>;
@@ -38,79 +48,114 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOfflineSession, setIsOfflineSession] = useState(false);
 
   const refresh = useCallback(async (): Promise<SessionUser | null> => {
-    const response = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      credentials: 'include',
-      cache: 'no-store',
-    });
-    if (!response.ok) {
-      const fallback = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
-      if (!fallback.ok) {
-        setUser(null);
-        applySessionScope(null);
-        return null;
-      }
-      const json = (await fallback.json()) as { user: SessionUser };
-      setUser(json.user);
-      applySessionScope(json.user);
-      return json.user;
+    const wasOffline = isBrowserOffline();
+    const sessionUser = await fetchCurrentSession();
+
+    if (sessionUser) {
+      setUser(sessionUser);
+      applySessionScope(sessionUser);
+      setIsOfflineSession(wasOffline || isBrowserOffline());
+      return sessionUser;
     }
-    const json = (await response.json()) as { user: SessionUser };
-    setUser(json.user);
-    applySessionScope(json.user);
-    return json.user;
+
+    setUser(null);
+    applySessionScope(null);
+    setIsOfflineSession(false);
+    return null;
   }, []);
 
   useEffect(() => {
-    void (async () => {
-      try {
-        await refresh();
-      } finally {
-        setLoading(false);
-      }
-    })();
+    const cached = loadCachedSession();
+    if (isCachedSessionValid(cached)) {
+      setUser(cached.user);
+      applySessionScope(cached.user);
+      setIsOfflineSession(isBrowserOffline());
+      setLoading(false);
+      void refresh();
+      return;
+    }
+
+    void refresh().finally(() => setLoading(false));
+  }, [refresh]);
+
+  useEffect(() => {
+    const onOnline = () => {
+      void refresh();
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
   }, [refresh]);
 
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== 'visible' || isBrowserOffline()) return;
       void refresh();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refresh]);
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const response = await fetch('/api/auth/login', {
+  const login = useCallback(async (email: string, password: string) => {
+    if (isBrowserOffline()) {
+      throw new Error(
+        'Sin conexión. Necesitas internet para iniciar sesión por primera vez en este dispositivo.'
+      );
+    }
+
+    let response: Response;
+    try {
+      response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
-      const json = (await response.json()) as { user?: SessionUser; error?: string };
-      if (!response.ok || !json.user) {
-        throw new Error(json.error || 'No se pudo iniciar sesión.');
+    } catch (error) {
+      if (isNetworkError(error)) {
+        throw new Error(
+          'Sin conexión. Necesitas internet para iniciar sesión por primera vez en este dispositivo.'
+        );
       }
-      setUser(json.user);
-      applySessionScope(json.user);
-      return json.user;
-    },
-    []
-  );
+      throw error;
+    }
+
+    const json = (await response.json()) as {
+      user?: SessionUser;
+      token?: string;
+      error?: string;
+    };
+    if (!response.ok || !json.user) {
+      throw new Error(json.error || 'No se pudo iniciar sesión.');
+    }
+
+    saveCachedSession(json.user, json.token);
+    setUser(json.user);
+    applySessionScope(json.user);
+    setIsOfflineSession(false);
+    return json.user;
+  }, []);
 
   const logout = useCallback(async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    try {
+      if (!isBrowserOffline()) {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      }
+    } catch {
+      // Ignore network errors during logout.
+    }
+    clearCachedSession();
     setUser(null);
     applySessionScope(null);
+    setIsOfflineSession(false);
     router.push('/login');
   }, [router]);
 
   const value = useMemo(
-    () => ({ user, loading, login, logout, refresh }),
-    [user, loading, login, logout, refresh]
+    () => ({ user, loading, isOfflineSession, login, logout, refresh }),
+    [user, loading, isOfflineSession, login, logout, refresh]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
