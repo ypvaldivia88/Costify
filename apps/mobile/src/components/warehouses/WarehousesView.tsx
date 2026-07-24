@@ -16,6 +16,7 @@ import { StockOverview } from '@/components/warehouses/StockOverview';
 import { WarehouseList } from '@/components/warehouses/WarehouseList';
 import { WarehouseSubNav, type WarehouseSubview } from '@/components/warehouses/WarehouseSubNav';
 import { useTheme } from '@/context/ThemeContext';
+import { useScreenInsets } from '@/hooks/use-screen-insets';
 
 interface WarehousesViewProps {
   warehouses: Warehouse[];
@@ -57,6 +58,7 @@ export function WarehousesView({
   onInitialSubviewConsumed,
 }: WarehousesViewProps) {
   const { colors } = useTheme();
+  const { scrollPaddingBottom } = useScreenInsets();
   const [subview, setSubview] = useState<WarehouseSubview>(initialSubview ?? 'stock');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | undefined>();
 
@@ -76,7 +78,7 @@ export function WarehousesView({
   }, [materials, products]);
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollPaddingBottom }]}>
       <WarehouseSubNav
         active={subview}
         onChange={setSubview}
@@ -138,7 +140,7 @@ export function WarehousesView({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 12, paddingBottom: 32 },
+  content: { padding: 16, gap: 12 },
   movementsSection: { gap: 16 },
   historySection: { gap: 8 },
   historyTitle: { fontSize: 14, fontWeight: '600' },

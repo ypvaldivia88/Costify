@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { useConfirm } from '@/context/DialogContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useScreenInsets } from '@/hooks/use-screen-insets';
 
 interface ProductsListProps {
   items: ProductCalculation[];
@@ -34,6 +35,7 @@ export function ProductsList({
   stockValuation,
 }: ProductsListProps) {
   const { colors } = useTheme();
+  const { scrollPaddingBottom } = useScreenInsets();
   const { confirm } = useConfirm();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const summary = calculateBusinessSummary(items, taxSettings);
@@ -65,7 +67,7 @@ export function ProductsList({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollPaddingBottom }]}>
       <View style={styles.header}>
         <Text style={{ color: colors.muted, fontWeight: '700' }}>
           {items.length} producto{items.length !== 1 ? 's' : ''}
@@ -119,7 +121,7 @@ export function ProductsList({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 12, paddingBottom: 32 },
+  content: { padding: 16, gap: 12 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   headerActions: { flexDirection: 'row', gap: 8 },
   empty: {

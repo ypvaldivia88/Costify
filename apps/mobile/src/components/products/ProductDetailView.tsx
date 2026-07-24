@@ -21,6 +21,7 @@ import { Card } from '@/components/ui/Card';
 import { ProductionSection } from '@/components/products/ProductionSection';
 import { ProductStockSection } from '@/components/products/ProductStockSection';
 import { useTheme } from '@/context/ThemeContext';
+import { useScreenInsets } from '@/hooks/use-screen-insets';
 
 type DetailSection = 'costos' | 'stock' | 'produccion';
 
@@ -62,6 +63,7 @@ export function ProductDetailView({
   onRegisterProduction,
 }: ProductDetailViewProps) {
   const { colors } = useTheme();
+  const { scrollPaddingBottom } = useScreenInsets();
   const unitCatalog = useUnitCatalog();
   const [section, setSection] = useState<DetailSection>('costos');
   const monthlyRevenue = product.suggestedPrice * product.productionUnits;
@@ -73,7 +75,7 @@ export function ProductDetailView({
   const visibleSections = SECTIONS.filter((s) => s.id !== 'produccion' || canProduce);
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollPaddingBottom }]}>
       <View style={styles.toolbar}>
         <Button variant="outline" size="sm" onPress={onBack}>
           <ArrowLeft size={16} color={colors.foreground} />
@@ -295,10 +297,10 @@ export function ProductDetailView({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 12, paddingBottom: 32 },
+  content: { padding: 16, gap: 12 },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   editBtn: { marginLeft: 'auto' },
-  hero: { flexDirection: 'row', gap: 12 },
+  hero: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start' },
   heroMeta: { flex: 1, gap: 6 },
   nameRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   name: { fontSize: 20, fontWeight: '800', flexShrink: 1 },
